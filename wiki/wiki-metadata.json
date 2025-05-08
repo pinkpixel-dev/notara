@@ -1,0 +1,47 @@
+{
+  "pages": [
+    {
+      "id": "a1691299-d5d1-4769-98ab-6480a9193803",
+      "title": "Project Documentation",
+      "filename": "project-documentation.md",
+      "links": [
+        "0a962857-151e-44fa-b08c-399a4ae43dbd",
+        "cfd77749-1fd0-4c24-959d-874df6aa0203",
+        "e50937f6-d61d-4585-88c8-40ce5554431a",
+        "cc50c45f-5057-43b5-b58c-c1965f1b011f"
+      ]
+    },
+    {
+      "id": "0a962857-151e-44fa-b08c-399a4ae43dbd",
+      "title": "Project Overview",
+      "filename": "project-overview.md",
+      "links": [
+        "a1691299-d5d1-4769-98ab-6480a9193803"
+      ]
+    },
+    {
+      "id": "cfd77749-1fd0-4c24-959d-874df6aa0203",
+      "title": "Architecture",
+      "filename": "architecture.md",
+      "links": [
+        "a1691299-d5d1-4769-98ab-6480a9193803"
+      ]
+    },
+    {
+      "id": "e50937f6-d61d-4585-88c8-40ce5554431a",
+      "title": "API Reference",
+      "filename": "api-reference.md",
+      "links": [
+        "a1691299-d5d1-4769-98ab-6480a9193803"
+      ]
+    },
+    {
+      "id": "cc50c45f-5057-43b5-b58c-c1965f1b011f",
+      "title": "Usage Examples",
+      "filename": "usage-examples.md",
+      "links": [
+        "a1691299-d5d1-4769-98ab-6480a9193803"
+      ]
+    }
+  ]
+}
