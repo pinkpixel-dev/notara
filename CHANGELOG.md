@@ -40,6 +40,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configured TailwindCSS for styling
 - Added shadcn/ui components based on Radix UI
 
+## [1.2.0] - 2025-05-09
+
+### ✨ Added
+
+- Improved AI assistant integration with Pollinations API
+- Enhanced UI components and animations
+- Additional Radix UI components integration
+- Expanded documentation
+
+### 🔄 Changed
+
+- Updated dependencies to latest versions
+- Refined cosmic theme styling
+- Improved responsive layout
+
+### 🐛 Fixed
+
+- Authentication flow improvements
+- Various UI and performance optimizations
+
 ## [Unreleased]
 
 ### Planned Features
@@ -56,4 +76,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-✨ Made with ❤️ by Pink Pixel 
+✨ Made with ❤️ by Pink Pixel

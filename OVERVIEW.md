@@ -1,6 +1,6 @@
 # ✨ Notara - Cosmic Note-Taking App
 
-![Last Updated](https://img.shields.io/badge/Last%20Updated-May%203%2C%202025-blueviolet)
+![Last Updated](https://img.shields.io/badge/Last%20Updated-May%209%2C%202025-blueviolet)
 
 ## 🌌 Introduction
 
@@ -114,7 +114,7 @@ The project appears to be in active development:
 - UI components and styling are polished
 - Some features (AI Assistant, Constellation View) are in early stages
 - Authentication is implemented but may still be in progress
-- Current version is 1.0.0, released on May 3, 2025
+- Current version is 1.2.0, with ongoing improvements since the initial 1.0.0 release
 
 ## 🔮 Future Development Opportunities
 
@@ -128,4 +128,4 @@ The project appears to be in active development:
 
 ---
 
-✨ Made with ❤️ by Pink Pixel 
+✨ Made with ❤️ by Pink Pixel

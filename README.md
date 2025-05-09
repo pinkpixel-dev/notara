@@ -5,8 +5,8 @@
 </div>
 
 ![Notara Logo](https://img.shields.io/badge/✨-Notara-blueviolet?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
-![Last Updated](https://img.shields.io/badge/Last%20Updated-May%203%2C%202025-purple?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
+![Last Updated](https://img.shields.io/badge/Last%20Updated-May%209%2C%202025-purple?style=for-the-badge)
 
 **Notara** is a beautiful, cosmic-themed note-taking application that combines powerful organization features with an immersive user experience.
 
