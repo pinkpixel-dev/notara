@@ -8,14 +8,14 @@ Notara is a beautiful, cosmic-themed note-taking application that combines power
 
 ## 🚀 Features
 
-- **📝 Markdown Notes**: Create and edit notes with full Markdown support
-- **🏷️ Tags**: Organize notes with colorful tags
-- **🌠 Constellation View**: Visualize connections between your notes
-- **🎨 Mood Boards**: Create visual collections for inspiration
-- **🤖 AI Assistant**: Get help with your note-taking (in development)
-- **📅 Calendar View**: Organize notes by date
-- **🔒 Authentication**: Secure your notes with user accounts
-- **🌃 Cosmic UI**: Enjoy a beautiful, space-themed interface with animations
+- **📝 Rich Markdown Support**: Create and format your notes with full Markdown capabilities
+- **🏷️ Smart Tagging**: Organize notes with customizable, colorful tags
+- **🌠 Constellation View**: Visualize and navigate connections between related notes
+- **🎨 Mood Boards**: Create visual collections for inspiration and ideas
+- **🤖 AI Assistant**: Get help with your writing and organization with text generation, summarization, and image creation
+- **📅 Calendar Integration**: View and organize notes by date with a beautiful calendar
+- **🔒 Secure Authentication**: Keep your notes private and secure with Supabase
+- **🌃 Cosmic UI**: Enjoy a beautiful, space-themed interface with animations and effects
 
 ## 🏗️ Architecture
 
@@ -30,6 +30,7 @@ Notara is built with modern web technologies:
 - **Data Fetching**: TanStack Query (React Query)
 - **Form Handling**: React Hook Form with Zod validation
 - **Authentication**: Supabase Auth
+- **AI Services**: Pollinations API for text and image generation, with support for multiple embedding providers (OpenAI, Ollama, HuggingFace)
 
 ## 📂 Project Structure
 
@@ -84,6 +85,11 @@ notara/
 - cmdk - Command menu interface
 - embla-carousel-react - Carousel component
 
+### AI & Embedding Providers
+
+- Pollinations API for text and image generation
+- OpenAI, Ollama, HuggingFace embedding providers
+
 ### Development Dependencies
 
 - vite, @vitejs/plugin-react-swc - Build tooling
@@ -108,23 +114,28 @@ The application features a distinctive cosmic theme with:
 
 ## 🚧 Project Status
 
-The project appears to be in active development:
+The project is in active development:
 
-- Core note-taking functionality is well-implemented
-- UI components and styling are polished
-- Some features (AI Assistant, Constellation View) are in early stages
-- Authentication is implemented but may still be in progress
+- Core note-taking functionality is well-implemented with rich Markdown support
+- UI components and styling are polished with a consistent cosmic theme
+- AI Assistant has been enhanced with note summarization and context awareness
+- Constellation View provides visualization of connections between notes
+- Calendar integration allows for temporal organization of notes
+- Authentication is implemented with Supabase
 - Current version is 1.2.0, with ongoing improvements since the initial 1.0.0 release
 
 ## 🔮 Future Development Opportunities
 
-- Complete server-side storage with Supabase
-- Implement full Constellation View functionality
-- Enhance AI Assistant capabilities
-- Add collaborative features
-- Implement search functionality
-- Add export/import options
-- Develop mobile responsive design
+- Complete server-side storage with Supabase for notes, tags, and mood boards
+- Further enhance AI Assistant capabilities:
+  - Improve context awareness for mood boards and constellation view
+  - Add calendar integration for meeting schedule queries
+  - Enhance note summarization capabilities
+- Implement full Constellation View functionality with more interactive features
+- Add collaborative features for shared note-taking
+- Implement comprehensive search functionality across all content types
+- Add export/import options for notes and collections
+- Develop fully responsive mobile design
 
 ---
 

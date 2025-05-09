@@ -131,12 +131,14 @@ export const NotesProvider: React.FC<{children: React.ReactNode}> = ({ children 
   }, [moodBoards]);
 
   const addNote = (note: Partial<Note>) => {
+    // Allow overriding createdAt if provided, otherwise use current time
+    const now = new Date().toISOString();
     const newNote: Note = {
       id: uuidv4(),
       title: note.title || 'Untitled',
       content: note.content || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: note.createdAt || now,
+      updatedAt: now,
       tags: note.tags || [],
       isPinned: note.isPinned || false
     };

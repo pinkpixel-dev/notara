@@ -151,6 +151,124 @@ const AiAssistant: React.FC = () => {
     }
   }, [messages]);
 
+  // Check if a message is a calendar-related query
+  const isCalendarQuery = (message: string): boolean => {
+    const calendarKeywords = [
+      'calendar', 'schedule', 'event', 'meeting', 'appointment', 'reminder',
+      'when is', 'what time', 'what day', 'what date', 'upcoming', 'today\'s',
+      'tomorrow\'s', 'next week', 'this week', 'this month'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return calendarKeywords.some(keyword => lowerMessage.includes(keyword));
+  };
+
+  // Parse a calendar query to determine the date range
+  const parseCalendarDateRange = (query: string): { startDate?: Date, endDate?: Date } => {
+    const lowerQuery = query.toLowerCase();
+    const now = new Date();
+
+    // Default to current month
+    let startDate: Date | undefined = new Date(now.getFullYear(), now.getMonth(), 1);
+    let endDate: Date | undefined = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Check for specific date patterns
+    if (lowerQuery.includes('today')) {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (lowerQuery.includes('tomorrow')) {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59);
+    } else if (lowerQuery.includes('this week')) {
+      // Start of current week (Sunday)
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (6 - dayOfWeek), 23, 59, 59);
+    } else if (lowerQuery.includes('next week')) {
+      // Start of next week (Sunday)
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 7);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 13, 23, 59, 59);
+    } else if (lowerQuery.includes('this month')) {
+      // Already set to current month by default
+    } else if (lowerQuery.includes('next month')) {
+      startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+    }
+
+    // Check for specific event queries
+    if (lowerQuery.includes('meeting') || lowerQuery.includes('appointment')) {
+      // Look for specific event titles in the query
+      const eventKeywords = query.split(' ')
+        .filter(word => word.length > 3) // Filter out short words
+        .map(word => word.replace(/[.,?!;:]/g, '').toLowerCase()); // Remove punctuation
+
+      // Find events that match the keywords
+      const matchingEvents = notes.filter(note => {
+        const noteDate = new Date(note.createdAt);
+        const isInDefaultRange = noteDate >= startDate! && noteDate <= endDate!;
+        const hasSpecificTime = noteDate.getHours() !== 0 || noteDate.getMinutes() !== 0;
+
+        // Check if the note title or content contains any of the keywords
+        const matchesKeywords = eventKeywords.some(keyword =>
+          note.title.toLowerCase().includes(keyword) ||
+          note.content.toLowerCase().includes(keyword)
+        );
+
+        return isInDefaultRange && hasSpecificTime && matchesKeywords;
+      });
+
+      // If we found specific matching events, adjust the date range to focus on them
+      if (matchingEvents.length > 0) {
+        // Find the earliest and latest matching events
+        const eventDates = matchingEvents.map(event => new Date(event.createdAt));
+        const earliestEvent = new Date(Math.min(...eventDates.map(date => date.getTime())));
+        const latestEvent = new Date(Math.max(...eventDates.map(date => date.getTime())));
+
+        // Set the date range to cover all matching events with a small buffer
+        startDate = new Date(earliestEvent);
+        startDate.setDate(startDate.getDate() - 1);
+
+        endDate = new Date(latestEvent);
+        endDate.setDate(endDate.getDate() + 1);
+      }
+    }
+
+    return { startDate, endDate };
+  };
+
+  // Handle calendar-related queries
+  const handleCalendarQuery = async (query: string) => {
+    // Parse the query to determine the date range
+    const { startDate, endDate } = parseCalendarDateRange(query);
+
+    // Get calendar data for the specified date range
+    const calendarData = formatCalendarData(startDate, endDate);
+
+    // Create a prompt that includes the calendar data and the user's query
+    const prompt = `
+I need to answer a question about the user's calendar or schedule.
+
+Here is the calendar data:
+${calendarData || "No calendar events found for the specified time period."}
+
+The user's question is: "${query}"
+
+Please provide a helpful and concise response that directly answers their question about their calendar or schedule.
+If there are no relevant events, let them know. If their question is about a specific date or time period that's not
+covered in the calendar data, please mention that.
+`;
+
+    // Send the prompt to the API
+    await streamChatCompletion(
+      [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt }
+      ],
+      handleStreamChunk
+    );
+  };
+
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isProcessing) return;
@@ -180,17 +298,23 @@ const AiAssistant: React.FC = () => {
         }
       ]);
 
-      await streamChatCompletion(
-        [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...messages.filter(msg => msg.imageUrl === undefined).map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant' as 'user' | 'assistant',
-            content: msg.content
-          })),
-          { role: "user", content: inputMessage }
-        ],
-        handleStreamChunk
-      );
+      // Check if this is a calendar-related query
+      if (isCalendarQuery(inputMessage)) {
+        await handleCalendarQuery(inputMessage);
+      } else {
+        // Regular message processing
+        await streamChatCompletion(
+          [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...messages.filter(msg => msg.imageUrl === undefined).map(msg => ({
+              role: msg.sender === 'user' ? 'user' : 'assistant' as 'user' | 'assistant',
+              content: msg.content
+            })),
+            { role: "user", content: inputMessage }
+          ],
+          handleStreamChunk
+        );
+      }
     } catch (error) {
       console.error("Error in chat completion:", error);
 
@@ -824,6 +948,86 @@ ${constellationContent}
       if (notesWithTag.length > 1) {
         formattedData += `- Tag "${tag.name}" connects these notes: ${notesWithTag.map(n => `"${n.title}"`).join(', ')}\n`;
       }
+    });
+
+    return formattedData;
+  };
+
+  // Format Calendar data for AI context
+  const formatCalendarData = (startDate?: Date, endDate?: Date) => {
+    // If no date range is provided, use the current month
+    if (!startDate) {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (!endDate) {
+      // If only start date is provided, use a 30-day range
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 30);
+    }
+
+    // Filter notes that are within the date range and likely to be events
+    // We'll consider notes with a specific time (hours/minutes set) as events
+    const events = notes.filter(note => {
+      const noteDate = new Date(note.createdAt);
+
+      // Check if the note is within the date range
+      const isInRange = noteDate >= startDate! && noteDate <= endDate!;
+
+      // Check if the note has a specific time (not midnight)
+      const hasSpecificTime = noteDate.getHours() !== 0 || noteDate.getMinutes() !== 0;
+
+      return isInRange && hasSpecificTime;
+    });
+
+    if (events.length === 0) return '';
+
+    let formattedData = '## Calendar Events\n\n';
+
+    // Group events by date
+    const eventsByDate: Record<string, Note[]> = {};
+
+    events.forEach(event => {
+      const eventDate = new Date(event.createdAt);
+      const dateKey = eventDate.toISOString().split('T')[0];
+
+      if (!eventsByDate[dateKey]) {
+        eventsByDate[dateKey] = [];
+      }
+
+      eventsByDate[dateKey].push(event);
+    });
+
+    // Format events by date
+    Object.keys(eventsByDate).sort().forEach(dateKey => {
+      const date = new Date(dateKey);
+      formattedData += `### ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n`;
+
+      // Sort events by time
+      const sortedEvents = eventsByDate[dateKey].sort((a, b) => {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+
+      sortedEvents.forEach(event => {
+        const eventTime = new Date(event.createdAt);
+        const timeString = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        formattedData += `- **${timeString}**: ${event.title}\n`;
+
+        // Add event description if available
+        if (event.content.trim()) {
+          // Extract the first line or first 100 characters, whichever is shorter
+          const description = event.content.split('\n')[0].substring(0, 100);
+          formattedData += `  ${description}${description.length === 100 ? '...' : ''}\n`;
+        }
+
+        // Add tags if available
+        if (event.tags.length > 0) {
+          formattedData += `  Tags: ${event.tags.map(tag => tag.name).join(', ')}\n`;
+        }
+
+        formattedData += '\n';
+      });
     });
 
     return formattedData;

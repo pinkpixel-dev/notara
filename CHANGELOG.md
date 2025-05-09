@@ -44,35 +44,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
-- Improved AI assistant integration with Pollinations API
+- Improved AI assistant integration with Pollinations API:
+  - Enhanced note summarization capabilities
+  - Added context awareness for mood boards and constellation view
+  - Implemented image generation based on prompts
+  - Added focus prompt generation for creative writing
+  - Added connection analysis between different content types
 - Enhanced UI components and animations
 - Additional Radix UI components integration
 - Expanded documentation
+- Calendar integration for temporal organization of notes
 
 ### 🔄 Changed
 
 - Updated dependencies to latest versions
 - Refined cosmic theme styling
 - Improved responsive layout
+- Enhanced AI system prompt for better context awareness
 
 ### 🐛 Fixed
 
 - Authentication flow improvements
 - Various UI and performance optimizations
+- Streaming API connection stability
 
 ## [Unreleased]
 
 ### Planned Features
 
-- Enhanced AI assistant functionality
-- Full implementation of constellation view
-- Server-side storage with Supabase
-- Search functionality
-- Export/import options
-- Collaborative editing
-- Mobile-responsive design
-- Dark/light theme toggle
-- More customization options
+- Further enhanced AI assistant functionality:
+  - Improved calendar integration for meeting schedule queries
+  - More advanced note summarization options
+  - Enhanced context awareness across all app features
+- Full implementation of constellation view with interactive features
+- Server-side storage with Supabase for notes, tags, and mood boards
+- Comprehensive search functionality across all content types
+- Export/import options for notes and collections
+- Collaborative editing and sharing
+- Fully responsive mobile design
+- Dark/light theme toggle with customizable cosmic themes
+- More customization options for UI and note organization
 
 ---
 
