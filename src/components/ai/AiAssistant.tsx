@@ -78,11 +78,11 @@ Be concise, helpful, and creative. When generating content, focus on quality and
 If asked to create images, describe what you would generate but don't attempt to create the image yourself - the user will use the image generation button.`;
 
 const AiAssistant: React.FC = () => {
-  const { notes, tags, addNote } = useNotes();
+  const { notes, tags, moodBoards, addNote } = useNotes();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your AI assistant for Notara. I can help you with your notes, generate ideas, or answer questions. How can I help you today?",
+      content: "Hello! I'm your AI assistant for Notara. I can help you with your notes, generate ideas, or answer questions. I can also analyze your Mood Boards and Constellation View. How can I help you today?",
       sender: 'ai',
       timestamp: new Date().toISOString()
     }
@@ -134,6 +134,12 @@ const AiAssistant: React.FC = () => {
   const [showSummaryHistory, setShowSummaryHistory] = useState<boolean>(false);
   const [summaryMode, setSummaryMode] = useState<'all' | 'selected' | 'new' | 'related'>('all');
   const [groupByTags, setGroupByTags] = useState<boolean>(false);
+
+  // New state variables for Mood Board and Constellation View
+  const [includeMoodBoards, setIncludeMoodBoards] = useState<boolean>(false);
+  const [includeConstellationView, setIncludeConstellationView] = useState<boolean>(false);
+  const [selectedMoodBoards, setSelectedMoodBoards] = useState<string[]>([]);
+  const [constellationSimilarityThreshold, setConstellationSimilarityThreshold] = useState<number>(0.3);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentMessageId = useRef<string>('');
@@ -559,6 +565,18 @@ const AiAssistant: React.FC = () => {
         ).join('\n\n');
       }
 
+      // Get additional context from Mood Boards if enabled
+      let moodBoardContent = '';
+      if (includeMoodBoards) {
+        moodBoardContent = formatMoodBoardData(selectedMoodBoards);
+      }
+
+      // Get additional context from Constellation View if enabled
+      let constellationContent = '';
+      if (includeConstellationView) {
+        constellationContent = formatConstellationData(constellationSimilarityThreshold);
+      }
+
       // Get previous summary if doing incremental summarization
       let prompt = summaryType.prompt;
       if (summaryMode === 'new' && summaryHistory.length > 0) {
@@ -573,6 +591,9 @@ ${lastSummary.content}
 Here are new or updated notes that need to be incorporated:
 ${notesContent}
 
+${moodBoardContent}
+${constellationContent}
+
 Please provide an updated summary that includes both the previous information and the new content.
 Use the following style: ${summaryType.prompt}
 `;
@@ -584,6 +605,9 @@ Please summarize them, highlighting the connections and common themes between th
 Use the following style: ${summaryType.prompt}
 
 ${notesContent}
+
+${moodBoardContent}
+${constellationContent}
 `;
       } else {
         // Standard summarization
@@ -592,6 +616,9 @@ Please summarize the following notes.
 ${summaryType.prompt}
 
 ${notesContent}
+
+${moodBoardContent}
+${constellationContent}
 `;
       }
 
@@ -711,6 +738,191 @@ ${notesContent}
     return newNote;
   };
 
+  // Format Mood Board data for AI context
+  const formatMoodBoardData = (moodBoardIds: string[] = []) => {
+    // If no specific mood boards are selected, use all mood boards
+    const boardsToFormat = moodBoardIds.length > 0
+      ? moodBoards.filter(board => moodBoardIds.includes(board.id))
+      : moodBoards;
+
+    if (boardsToFormat.length === 0) return '';
+
+    let formattedData = '## Mood Boards\n\n';
+
+    boardsToFormat.forEach(board => {
+      formattedData += `### ${board.name}\n\n`;
+
+      // Group items by type
+      const textItems = board.items.filter(item => item.type === 'text');
+      const imageItems = board.items.filter(item => item.type === 'image');
+
+      if (textItems.length > 0) {
+        formattedData += '#### Text Items:\n';
+        textItems.forEach(item => {
+          formattedData += `- ${item.content}\n`;
+        });
+        formattedData += '\n';
+      }
+
+      if (imageItems.length > 0) {
+        formattedData += '#### Image Items:\n';
+        formattedData += `- ${imageItems.length} images are present in this mood board\n`;
+        formattedData += '\n';
+      }
+    });
+
+    return formattedData;
+  };
+
+  // Format Constellation View data for AI context
+  const formatConstellationData = (similarityThreshold: number = 0.3) => {
+    if (notes.length < 2) return '';
+
+    // Calculate similarities between notes
+    const similarities = calculateNoteSimilarity(notes);
+
+    // Find relationships above the threshold
+    const relationships: {sourceId: string, targetId: string, strength: number}[] = [];
+
+    Object.keys(similarities).forEach(sourceId => {
+      Object.keys(similarities[sourceId]).forEach(targetId => {
+        const strength = similarities[sourceId][targetId];
+
+        if (strength >= similarityThreshold) {
+          relationships.push({
+            sourceId,
+            targetId,
+            strength
+          });
+        }
+      });
+    });
+
+    if (relationships.length === 0) return '';
+
+    let formattedData = '## Constellation View (Note Relationships)\n\n';
+
+    // Format relationships
+    formattedData += '### Content Similarities:\n';
+
+    relationships.forEach(rel => {
+      const sourceNote = notes.find(note => note.id === rel.sourceId);
+      const targetNote = notes.find(note => note.id === rel.targetId);
+
+      if (sourceNote && targetNote) {
+        formattedData += `- "${sourceNote.title}" is related to "${targetNote.title}" (similarity: ${(rel.strength * 100).toFixed(0)}%)\n`;
+      }
+    });
+
+    // Add tag relationships
+    formattedData += '\n### Tag Relationships:\n';
+
+    // Group notes by tag
+    tags.forEach(tag => {
+      const notesWithTag = notes.filter(note => note.tags.some(t => t.id === tag.id));
+
+      if (notesWithTag.length > 1) {
+        formattedData += `- Tag "${tag.name}" connects these notes: ${notesWithTag.map(n => `"${n.title}"`).join(', ')}\n`;
+      }
+    });
+
+    return formattedData;
+  };
+
+  // Analyze connections between notes, mood boards, and constellation view
+  const handleAnalyzeConnections = async () => {
+    if ((moodBoards.length === 0 && notes.length < 2)) {
+      toast({
+        title: "Not enough content to analyze",
+        description: "You need at least 2 notes or 1 mood board to analyze connections.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsTyping(true);
+    setIsProcessing(true);
+
+    try {
+      // Format mood board data
+      const moodBoardContent = formatMoodBoardData(selectedMoodBoards.length > 0 ? selectedMoodBoards : moodBoards.map(board => board.id));
+
+      // Format constellation data
+      const constellationContent = formatConstellationData(constellationSimilarityThreshold);
+
+      // Create a prompt for analyzing connections
+      const prompt = `
+I'd like you to analyze the connections and relationships between my content in Notara.
+
+${moodBoardContent}
+
+${constellationContent}
+
+Please provide insights on:
+1. Common themes and patterns across my content
+2. Interesting connections between different elements
+3. Potential areas for further exploration
+4. Any recommendations based on the connections you see
+
+Focus on finding meaningful relationships and insights rather than just summarizing the content.
+`;
+
+      // Initialize response message with empty content
+      const newMessageId = uuidv4();
+      currentMessageId.current = newMessageId;
+
+      setMessages(prev => [...prev, {
+        id: newMessageId,
+        content: '',
+        sender: 'ai',
+        timestamp: new Date().toISOString()
+      }]);
+
+      // Send request to API
+      await streamChatCompletion(
+        [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt }
+        ],
+        handleStreamChunk
+      );
+
+      toast({
+        title: "Analysis Complete",
+        description: "An analysis of your content connections has been created."
+      });
+    } catch (error) {
+      console.error("Error analyzing connections:", error);
+
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last.sender === 'ai' && last.content === '') {
+          return [
+            ...prev.slice(0, -1),
+            {
+              id: uuidv4(),
+              content: "I'm sorry, I encountered an error analyzing your content connections. Please try again.",
+              sender: 'ai',
+              timestamp: new Date().toISOString()
+            }
+          ];
+        }
+        return [
+          ...prev,
+          {
+            id: uuidv4(),
+            content: "I'm sorry, I encountered an error analyzing your content connections. Please try again.",
+            sender: 'ai',
+            timestamp: new Date().toISOString()
+          }
+        ];
+      });
+    } finally {
+      setIsTyping(false);
+      setIsProcessing(false);
+    }
+  };
+
   // Generate image
   const handleGenerateImage = async () => {
     if (!imagePrompt.trim() || isProcessing) {
@@ -769,6 +981,10 @@ ${notesContent}
     const [localSelectedSummaryType, setLocalSelectedSummaryType] = useState<string>(selectedSummaryType);
     const [localGroupByTags, setLocalGroupByTags] = useState<boolean>(groupByTags);
     const [localSelectedNotes, setLocalSelectedNotes] = useState<NoteSelection[]>([]);
+    const [localIncludeMoodBoards, setLocalIncludeMoodBoards] = useState<boolean>(includeMoodBoards);
+    const [localIncludeConstellationView, setLocalIncludeConstellationView] = useState<boolean>(includeConstellationView);
+    const [localSelectedMoodBoards, setLocalSelectedMoodBoards] = useState<string[]>(selectedMoodBoards);
+    const [localConstellationSimilarityThreshold, setLocalConstellationSimilarityThreshold] = useState<number>(constellationSimilarityThreshold);
 
     // Sync local state with parent state when dialog opens
     useEffect(() => {
@@ -777,8 +993,13 @@ ${notesContent}
         setLocalSelectedSummaryType(selectedSummaryType);
         setLocalGroupByTags(groupByTags);
         setLocalSelectedNotes(selectedNotes);
+        setLocalIncludeMoodBoards(includeMoodBoards);
+        setLocalIncludeConstellationView(includeConstellationView);
+        setLocalSelectedMoodBoards(selectedMoodBoards);
+        setLocalConstellationSimilarityThreshold(constellationSimilarityThreshold);
       }
-    }, [showSummaryOptions, summaryMode, selectedSummaryType, groupByTags, selectedNotes]);
+    }, [showSummaryOptions, summaryMode, selectedSummaryType, groupByTags, selectedNotes,
+        includeMoodBoards, includeConstellationView, selectedMoodBoards, constellationSimilarityThreshold]);
 
     // Apply changes to parent state only when needed
     const applyChanges = () => {
@@ -786,6 +1007,10 @@ ${notesContent}
       setSelectedSummaryType(localSelectedSummaryType);
       setGroupByTags(localGroupByTags);
       setSelectedNotes(localSelectedNotes);
+      setIncludeMoodBoards(localIncludeMoodBoards);
+      setIncludeConstellationView(localIncludeConstellationView);
+      setSelectedMoodBoards(localSelectedMoodBoards);
+      setConstellationSimilarityThreshold(localConstellationSimilarityThreshold);
     };
 
     // Handle dialog close
@@ -916,6 +1141,104 @@ ${notesContent}
                 <Label htmlFor="group-by-tags">Group by tags</Label>
               </div>
             )}
+
+            {/* Additional Context Options */}
+            <div className="space-y-4 pt-4 border-t border-border/30">
+              <h3 className="text-sm font-medium">Additional Context</h3>
+
+              {/* Mood Board Options */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-moodboards"
+                    checked={localIncludeMoodBoards}
+                    onCheckedChange={(checked) => setLocalIncludeMoodBoards(!!checked)}
+                  />
+                  <Label htmlFor="include-moodboards">Include Mood Boards</Label>
+                </div>
+
+                {localIncludeMoodBoards && moodBoards.length > 0 && (
+                  <div className="pl-6 space-y-2">
+                    <Label className="text-xs">Select Mood Boards</Label>
+                    <div className="max-h-[150px] overflow-y-auto space-y-1 pr-2">
+                      {moodBoards.map(board => (
+                        <div key={board.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`moodboard-${board.id}`}
+                            checked={localSelectedMoodBoards.includes(board.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setLocalSelectedMoodBoards(prev => [...prev, board.id]);
+                              } else {
+                                setLocalSelectedMoodBoards(prev => prev.filter(id => id !== board.id));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`moodboard-${board.id}`} className="text-sm">
+                            {board.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 mt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocalSelectedMoodBoards(moodBoards.map(board => board.id))}
+                        className="text-xs py-0 h-7"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocalSelectedMoodBoards([])}
+                        className="text-xs py-0 h-7"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Constellation View Options */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-constellation"
+                    checked={localIncludeConstellationView}
+                    onCheckedChange={(checked) => setLocalIncludeConstellationView(!!checked)}
+                  />
+                  <Label htmlFor="include-constellation">Include Constellation View</Label>
+                </div>
+
+                {localIncludeConstellationView && (
+                  <div className="pl-6 space-y-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-xs">Similarity Threshold</Label>
+                        <span className="text-xs w-8 text-right">{(localConstellationSimilarityThreshold * 100).toFixed(0)}%</span>
+                      </div>
+
+                      <Slider
+                        value={[localConstellationSimilarityThreshold]}
+                        min={0.1}
+                        max={0.9}
+                        step={0.05}
+                        onValueChange={(value) => setLocalConstellationSimilarityThreshold(value[0])}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Higher threshold = fewer but stronger connections
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Summary History Button */}
             {summaryHistory.length > 0 && (
@@ -1181,6 +1504,16 @@ ${notesContent}
           >
             <FileText className="w-3 h-3" />
             Summarize Notes
+          </Button>
+          <Button
+            variant="cosmic"
+            size="sm"
+            onClick={handleAnalyzeConnections}
+            disabled={isProcessing || (moodBoards.length === 0 && notes.length < 2)}
+            className="text-xs gap-1 transition-all hover:scale-105 btn-glow"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Analyze Connections
           </Button>
           <Button
             variant="cosmic"
