@@ -1,4 +1,3 @@
-
 export interface NoteTag {
   id: string;
   name: string;
@@ -27,4 +26,20 @@ export interface MoodBoard {
   id: string;
   name: string;
   items: MoodBoardItem[];
+}
+
+export interface TodoItem {
+  id: string;
+  content: string;
+  checked: boolean;
+  time: string;      // HH:mm format
+  subItems?: TodoItem[];
+}
+
+export interface TodoList {
+  id: string;
+  title: string;
+  date: string;   // ISO date string (yyyy-MM-dd)
+  time: string;   // HH:mm format
+  items: TodoItem[];
 }

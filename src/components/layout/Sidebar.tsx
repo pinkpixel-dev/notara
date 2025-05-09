@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
-  FileText, Tag, Star, Image, MessageSquare, 
+  FileText, Tag, Star, Image, MessageSquare, CheckSquare, 
   Calendar, ChevronLeft, Plus, Settings, ArrowUpRight, 
   LogIn, User, LogOut, UserCircle, Github, FileCode
 } from 'lucide-react';
@@ -36,6 +36,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { name: 'Constellations', icon: Star, path: '/constellations' },
     { name: 'Mood Board', icon: Image, path: '/mood-board' },
     { name: 'AI Assistant', icon: MessageSquare, path: '/ai-assistant' },
+    { name: 'To-Do', icon: CheckSquare, path: '/todos' },
     { name: 'Calendar', icon: Calendar, path: '/calendar' }
   ];
 
