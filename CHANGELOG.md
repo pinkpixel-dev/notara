@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional Radix UI components integration
 - Expanded documentation
 - Calendar integration for temporal organization of notes
+- Todo list management with sub-items
 
 ### 🔄 Changed
 
@@ -67,6 +68,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authentication flow improvements
 - Various UI and performance optimizations
 - Streaming API connection stability
+
+## [1.2.1] - 2025-05-14
+
+### 📝 Documentation
+
+- Comprehensive project documentation update
+- Enhanced OVERVIEW.md with detailed architecture information
+- Added data models documentation
+- Expanded UI/UX design documentation
+- Updated feature descriptions
+- Added technical roadmap section
+- Improved contributing guidelines
+
+### 🔄 Changed
+
+- Updated dependencies to latest versions
+- Minor UI refinements
 
 ## [Unreleased]
 
