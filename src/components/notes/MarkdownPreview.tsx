@@ -1,10 +1,12 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Highlight, themes } from 'prism-react-renderer';
 import type { Language } from 'prism-react-renderer';
 import { cn } from '@/lib/utils';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import type { Options as RehypeSanitizeOptions } from 'rehype-sanitize';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -12,12 +14,46 @@ interface MarkdownPreviewProps {
 }
 
 const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, className }) => {
+  const enhancedSchema = useMemo<RehypeSanitizeOptions>(() => {
+    const base = defaultSchema as RehypeSanitizeOptions;
+
+    const withTagNames = Array.from(
+      new Set([...(base.tagNames || []), 'mark', 'span', 'u'])
+    );
+
+    const appendAttributes = (existing: unknown, additions: string[]) => {
+      const source = Array.isArray(existing) ? existing : [];
+      return Array.from(new Set([...source, ...additions]));
+    };
+
+    return {
+      ...base,
+      tagNames: withTagNames,
+      attributes: {
+        ...(base.attributes || {}),
+        '*': appendAttributes(base.attributes?.['*'], ['className']),
+        span: appendAttributes(base.attributes?.span, ['style', 'className']),
+        mark: appendAttributes(base.attributes?.mark, ['style', 'className']),
+        code: appendAttributes(base.attributes?.code, ['className']),
+        pre: appendAttributes(base.attributes?.pre, ['className']),
+        img: appendAttributes(base.attributes?.img, [
+          'src',
+          'alt',
+          'title',
+          'width',
+          'height',
+          'loading',
+          'className',
+        ]),
+      },
+    };
+  }, []);
+
   return (
     <div className={cn('markdown-content', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-
-
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, enhancedSchema]]}
         components={{
           a({ href, children, ...props }) {
             return (
@@ -41,12 +77,12 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, className })
 
             return (
               <Highlight theme={themes.nightOwl} code={code} language={language}>
-                {({ className, style, tokens, getLineProps, getTokenProps }) => (
-                  <pre className={cn('markdown-code-block', className)} style={style}>
-                    {tokens.map((line, i) => (
-                      <div key={i} {...getLineProps({ line })}>
-                        {line.map((token, key) => (
-                          <span key={key} {...getTokenProps({ token })} />
+                {({ className: highlightClass, style, tokens, getLineProps, getTokenProps }) => (
+                  <pre className={cn('markdown-code-block', highlightClass)} style={style}>
+                    {tokens.map((line, lineIndex) => (
+                      <div key={lineIndex} {...getLineProps({ line })}>
+                        {line.map((token, tokenIndex) => (
+                          <span key={tokenIndex} {...getTokenProps({ token })} />
                         ))}
                       </div>
                     ))}

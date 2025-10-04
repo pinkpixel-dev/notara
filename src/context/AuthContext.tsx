@@ -1,13 +1,14 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { 
-  supabase, 
-  signInWithGithub, 
+import {
+  supabase,
+  signInWithGithub,
   signInWithEmail,
   signUpWithEmail,
   resetPassword,
-  signOut, 
-  getCurrentUser 
+  signOut,
+  getCurrentUser,
+  isAuthEnabled,
 } from '../lib/supabase';
 import { toast } from '@/hooks/use-toast';
 
@@ -31,26 +32,37 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const authAvailable = isAuthEnabled && !!supabase;
+
+  const showAuthDisabledToast = (message: string) => {
+    toast({
+      title: 'Authentication disabled',
+      description: message,
+      variant: 'destructive',
+    });
+  };
 
   useEffect(() => {
+    if (!authAvailable) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     // Check active session
     const checkUser = async () => {
       try {
         // First try to get the session directly
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase!.auth.getSession();
         
         if (session?.user) {
-          console.log('Found active session', session.user.email);
           setUser(session.user);
         } else {
           // Fallback to getCurrentUser
           try {
             const currentUser = await getCurrentUser();
             if (currentUser) {
-              console.log('Retrieved user from getCurrentUser', currentUser.email);
               setUser(currentUser);
-            } else {
-              console.log('No authenticated user found');
             }
           } catch (error) {
             console.error("Error in getCurrentUser:", error);
@@ -63,12 +75,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    checkUser();
+    void checkUser();
 
     // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase!.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
         
@@ -98,9 +109,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [authAvailable]);
 
   const handleSignInWithGithub = async () => {
+    if (!authAvailable) {
+      showAuthDisabledToast('GitHub sign-in is currently unavailable.');
+      return;
+    }
     try {
       setLoading(true);
       await signInWithGithub();
@@ -117,6 +132,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleSignInWithEmail = async (email: string, password: string) => {
+    if (!authAvailable) {
+      showAuthDisabledToast('Email sign-in is currently unavailable.');
+      return;
+    }
     try {
       setLoading(true);
       const { error } = await signInWithEmail(email, password);
@@ -134,6 +153,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleSignUpWithEmail = async (email: string, password: string) => {
+    if (!authAvailable) {
+      showAuthDisabledToast('Account creation is currently unavailable.');
+      return;
+    }
     try {
       setLoading(true);
       const { error } = await signUpWithEmail(email, password);
@@ -157,6 +180,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleResetPassword = async (email: string) => {
+    if (!authAvailable) {
+      showAuthDisabledToast('Password reset is currently unavailable.');
+      return;
+    }
     try {
       setLoading(true);
       const { error } = await resetPassword(email);
@@ -178,6 +205,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleSignOut = async () => {
+    if (!authAvailable) {
+      showAuthDisabledToast('Sign out is currently unavailable.');
+      return;
+    }
     try {
       setLoading(true);
       await signOut();
@@ -202,7 +233,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUpWithEmail: handleSignUpWithEmail,
     resetPassword: handleResetPassword,
     signOut: handleSignOut,
-    isAuthenticated: !!user,
+    isAuthenticated: authAvailable && !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

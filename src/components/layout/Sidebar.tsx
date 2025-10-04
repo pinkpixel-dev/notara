@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
-  FileText, Tag, Star, Image, MessageSquare, CheckSquare, 
+  FileText, Star, Image, MessageSquare, CheckSquare, 
   Calendar, ChevronLeft, Plus, Settings, FileCode, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   
   const navItems = [
     { name: 'All Notes', icon: FileText, path: '/' },
-    { name: 'Tags', icon: Tag, path: '/tags' },
     { name: 'Constellations', icon: Star, path: '/constellations' },
     { name: 'Vision Board', icon: Image, path: '/vision-board' },
     { name: 'AI Assistant', icon: MessageSquare, path: '/ai-assistant' },

@@ -552,6 +552,17 @@
   @apply bg-muted px-1 py-0.5 rounded font-mono text-sm;
 }
 
+.markdown-content mark {
+  @apply px-1 rounded-sm;
+  background-color: #fef08a;
+  color: inherit;
+}
+
+.markdown-content u {
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+}
+
 .markdown-table-wrapper {
   @apply my-4 overflow-x-auto rounded-md border border-border/40;
 }

@@ -1,22 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Get environment variables for Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const authFeatureEnabled = import.meta.env.VITE_ENABLE_AUTH === 'true';
 
-// Add debug logging to check for missing environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', { 
-    urlExists: !!supabaseUrl, 
-    keyExists: !!supabaseAnonKey 
-  });
-}
+export const isAuthEnabled = Boolean(authFeatureEnabled && supabaseUrl && supabaseAnonKey);
 
-// Create the Supabase client
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// Create the Supabase client only when auth is enabled
+export const supabase: SupabaseClient | null = isAuthEnabled
+  ? createClient(supabaseUrl as string, supabaseAnonKey as string)
+  : null;
 
 // Authentication functions
 export const signInWithGithub = async () => {
+  if (!supabase) {
+    throw new Error('Supabase authentication is disabled.');
+  }
   try {
     return await supabase.auth.signInWithOAuth({
       provider: 'github',
@@ -32,6 +32,9 @@ export const signInWithGithub = async () => {
 };
 
 export const signInWithEmail = async (email: string, password: string) => {
+  if (!supabase) {
+    throw new Error('Supabase authentication is disabled.');
+  }
   try {
     return await supabase.auth.signInWithPassword({
       email,
@@ -44,6 +47,9 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
+  if (!supabase) {
+    throw new Error('Supabase authentication is disabled.');
+  }
   try {
     // For development: Auto-confirm email signups by setting emailRedirectTo to null
     // and adding data.user in the success case
@@ -63,7 +69,6 @@ export const signUpWithEmail = async (email: string, password: string) => {
 
     // If successful registration and auto-confirm enabled, sign in the user immediately
     if (data.user && !error) {
-      console.log('Auto-confirming user and signing in');
       await signInWithEmail(email, password);
     }
 
@@ -75,16 +80,25 @@ export const signUpWithEmail = async (email: string, password: string) => {
 };
 
 export const resetPassword = async (email: string) => {
+  if (!supabase) {
+    throw new Error('Supabase authentication is disabled.');
+  }
   return await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/auth/reset-password`
   });
 };
 
 export const signOut = async () => {
+  if (!supabase) {
+    throw new Error('Supabase authentication is disabled.');
+  }
   return await supabase.auth.signOut();
 };
 
 export const getCurrentUser = async () => {
+  if (!supabase) {
+    return null;
+  }
   try {
     const { data, error } = await supabase.auth.getUser();
     if (error) {

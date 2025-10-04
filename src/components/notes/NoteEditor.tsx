@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
@@ -6,6 +6,7 @@ import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
 import TagSelector from './TagSelector';
 import MarkdownPreview from './MarkdownPreview';
+import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Maximize2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -33,6 +34,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (note) {
@@ -207,12 +209,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
         {isPreview ? (
           <MarkdownPreview content={content} />
         ) : (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start typing..."
-            className="w-full h-[calc(100%-4rem)] bg-transparent border-none outline-none resize-none font-mono focus:ring-0"
-          />
+          <>
+            <MarkdownToolbar textareaRef={editorRef} content={content} setContent={setContent} />
+            <textarea
+              ref={editorRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Start typing..."
+              className="w-full min-h-[60vh] bg-transparent border-none outline-none resize-none font-mono focus:ring-0"
+            />
+          </>
         )}
       </div>
 

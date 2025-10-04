@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, BookOpen, Settings, Menu } from 'lucide-react';
+import { Search, BookOpen, Settings, Menu, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const location = useLocation();
+  const isOnTagsPage = location.pathname.startsWith('/tags');
 
   return (
     <div className="h-screen flex overflow-hidden font-poppins">
@@ -37,6 +39,25 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               </Button>
             )}
             <AppMenuBar />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "rounded-full hover:bg-secondary/50 transition-all hover:scale-105",
+                    isOnTagsPage && "bg-secondary/60 text-primary"
+                  )}
+                  aria-label="Open tags"
+                >
+                  <Link to="/tags">
+                    <Tag className="h-5 w-5" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Tags</TooltipContent>
+            </Tooltip>
             <StorageStatusBadge />
           </div>
           

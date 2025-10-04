@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import { supabase, isAuthEnabled } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { AlertCircleIcon } from 'lucide-react';
 
@@ -13,12 +13,6 @@ const AuthCallbackPage: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the URL hash and log for debugging
-        const hash = window.location.hash;
-        if (hash) {
-          console.log('Auth callback hash:', hash);
-        }
-
         // Get the URL parameters
         const url = new URL(window.location.href);
         const errorParam = url.searchParams.get('error');
@@ -32,21 +26,20 @@ const AuthCallbackPage: React.FC = () => {
 
         // Get the auth callback code
         const code = url.searchParams.get('code');
-        if (!code) {
-          console.log('No auth code found in URL');
+        if (!isAuthEnabled || !supabase) {
+          setError('Authentication is disabled for this workspace.');
+          return;
         }
 
         // Exchange the code for a session (Supabase will handle this automatically)
-        const { data, error } = await supabase.auth.getSession();
-        
+        const { error } = await supabase.auth.getSession();
+
         if (error) {
           console.error('Error processing auth callback:', error);
           setError(error.message);
           return;
         }
 
-        console.log('Auth callback successful', !!data.session);
-        
         // Navigate back to home after a successful authentication
         const timer = setTimeout(() => {
           navigate('/');

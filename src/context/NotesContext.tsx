@@ -250,7 +250,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     void persistBundle().catch((error) => {
       console.error('Error saving notes bundle to filesystem', error);
     });
-  }, [isInitialised, persistBundle]);
+  }, [isInitialised, notes, tags, visionBoards, persistBundle]);
 
   const addNote = (note: Partial<Note>) => {
     const now = new Date().toISOString();
