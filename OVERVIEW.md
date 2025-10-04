@@ -67,7 +67,7 @@ src/
 │   ├── todos/           # Todo management components
 │   └── ui/              # shadcn/ui base components
 ├── context/             # React Context providers
-│   ├── AuthContext.tsx      # Legacy authentication state (deprecated)
+│   ├── AuthContext.tsx      # Optional Supabase auth (disabled unless VITE_ENABLE_AUTH=true)
 │   ├── FileSystemContext.tsx # Local file system integration
 │   ├── NotesContext.tsx     # Notes management
 │   ├── TodoContext.tsx      # Todo management
@@ -253,19 +253,23 @@ graph TD
 - **ReactMarkdown + remark-gfm** convert note content into GitHub-flavoured HTML elements (tables, task lists, links)
 - **prism-react-renderer** applies Night Owl theming and tokenizes fenced code blocks client-side
 - **Responsive styling** wraps tables and images to prevent overflow in preview panes and dialogs
+- **rehype-raw + rehype-sanitize** allow safe inline colour spans, highlights, and remote images by extending the sanitizer while keeping scripts/styles blocked
 
 ### Interaction Enhancements
 
 - Global keyboard shortcuts: `Ctrl/Cmd+S` saves the active note, `Ctrl/Cmd+Shift+S` triggers Save All
 - Save toasts clarify whether changes wrote to disk or temporarily remained in browser storage
+- Markdown toolbar surfaces headings, lists, quotes, code blocks, inline styles, colour accents, highlights, and quick link/image prompts without manual syntax
+- Header toolbar houses a dedicated Tags icon, while pinning swaps to a prominent star glyph that mirrors the note list indicator
+- Settings ▸ Tags consolidates tag creation, renaming, colour selection, deletion, and displays per-tag usage counts sourced from `NotesContext`
 
 ## 📂 Local-First Storage Model
 
-### Supabase Retirement
+### Supabase Retirement (Opt-In Legacy Mode)
 
-- **Removed Dependencies**: Supabase auth, database, and GitHub OAuth flows were deprecated in October 2025.
-- **Legacy Artifacts**: `AuthContext` and `lib/supabase.ts` remain in the tree for historical reference but are no longer mounted in production builds.
-- **Migration Path**: Existing users export their cloud data once, then adopt the local Notara folder workflow. No new Supabase environment variables are required.
+- **Removed Dependencies**: Supabase auth, database, and GitHub OAuth flows were deprecated in October 2025 and are now disabled by default.
+- **Legacy Artifacts**: `AuthContext` and `lib/supabase.ts` remain for backwards compatibility and only initialise when `VITE_ENABLE_AUTH=true` with valid Supabase keys.
+- **Migration Path**: Local-first users can ignore Supabase entirely; teams needing the legacy workflow can re-enable it explicitly without touching the default experience.
 
 ### Current Storage Layers
 

@@ -14,10 +14,11 @@
 
 ### 📝 **Smart Note-Taking**
 - **Markdown Editor**: Rich text editing with live preview
+- **Formatting Toolbar**: One-click headings, lists, quotes, code blocks, inline styles, colour accents, and highlights without leaving the keyboard
 - **Enhanced Preview**: GitHub-flavoured tables, syntax-highlighted code, clickable links, and embedded images right beside the editor
 - **One-Click Saves**: Save button and File menu write notes instantly, with `Ctrl/Cmd+S` for active note and `Ctrl/Cmd+Shift+S` for Save All
-- **Tag Organization**: Color-coded tags for easy categorization  
-- **Pinned Notes**: Star your most important notes for quick access
+- **Tag Organization**: Color-coded tags plus a Settings ▸ Tags hub for adding, renaming, recolouring, and deleting tags with usage counts  
+- **Pinned Notes**: Star your most important notes for quick access right from the editor header or note list
 - **Search & Filter**: Find notes instantly with powerful search
 
 ### ✅ **Todo Management**
@@ -31,7 +32,7 @@
 - **Calendar View**: Organize notes and todos temporally
 - **Constellations**: Visualize connections between your content
 - **Glass Theme**: Beautiful frosted glass UI effects
-- **Refined Navigation**: Starred notes live in the main nav with footer icon chips for settings, docs, and the markdown cheat sheet
+- **Refined Navigation**: Starred notes live in the main nav with footer icon chips for settings, docs, and the markdown cheat sheet, plus a persistent header icon for quick tag management
 
 ### 🤖 **AI Assistant**
 - **Writing Support**: AI-powered content generation and editing
@@ -48,7 +49,7 @@
 
 ### 🔄 **Local-First Workspace**
 - **On-Disk Sync**: Choose a Notara folder and work against readable JSON files
-- **Cloud-Agnostic**: No external auth or Supabase project required
+- **Cloud-Agnostic**: No external auth or Supabase project required—set `VITE_ENABLE_AUTH=true` only if you purposely want Supabase sign-in
 - **Graceful Fallbacks**: Automatically returns to browser storage if the folder disconnects
 - **Portable Data**: Copy the Notara directory anywhere to migrate your vault
 
@@ -83,9 +84,10 @@
    Only the Pollinations token is optional if you want authenticated AI image requests:
    ```env
    VITE_POLLINATIONS_API_TOKEN=optional_pollinations_token
+   VITE_ENABLE_AUTH=false
    ```
 
-   > **Optional**: Add `VITE_POLLINATIONS_API_TOKEN` when you have a Pollinations key and want the AI assistant to include an `Authorization` header. Cloudflare Pages deployments should mirror this value via `wrangler secret put POLLINATIONS_API_TOKEN`.
+   > **Optional**: Add `VITE_POLLINATIONS_API_TOKEN` when you have a Pollinations key and want the AI assistant to include an `Authorization` header. Cloudflare Pages deployments should mirror this value via `wrangler secret put POLLINATIONS_API_TOKEN`. Set `VITE_ENABLE_AUTH=true` (and supply Supabase keys) only if you intend to use the legacy authentication flows.
 
 4. **Start development server**
    ```bash

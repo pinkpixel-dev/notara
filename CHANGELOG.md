@@ -10,6 +10,8 @@ All notable changes to the Notara project will be documented in this file.
 - Global keyboard shortcuts: `Ctrl/Cmd+S` saves the active note and `Ctrl/Cmd+Shift+S` runs Save All without opening the browser download dialog
 - Richer markdown preview rendering powered by `prism-react-renderer`, including VSCode-quality code themes, GitHub-flavoured tables, and lazy-loaded images
 - Pollinations proxy endpoints for chat and image generation, available locally at `/api/pollinations/*` and in Cloudflare Pages functions with optional API token support
+- Markdown formatting toolbar with headings, block styles, inline styles, and quick link/image helpers plus inline color and highlight pickers for markdown content
+- Settings ▸ Tags tab for creating, recolouring, renaming, and deleting tags alongside live usage counts
 
 ### 🔄 Changed
 
@@ -20,6 +22,8 @@ All notable changes to the Notara project will be documented in this file.
 - Calendar component styling updated to align with `react-day-picker@9` class names and keep day cells square
 - App header now highlights search, docs, and settings with gradient glass styling and icon tooltips
 - Sidebar promotes Starred Notes to the primary nav and replaces footer cards with compact icon chips for settings, docs, and the markdown cheat sheet
+- Tags navigation now lives beside the app menu bar as a dedicated icon button while starred indicators use a prominent star glyph in the editor and note list
+- Supabase authentication is opt-in behind `VITE_ENABLE_AUTH`; when disabled the app stays signed out and suppresses legacy auth console logging
 
 ### 🐛 Fixed
 
@@ -28,6 +32,7 @@ All notable changes to the Notara project will be documented in this file.
 - Fixed calendar page layout issues caused by nested ResizablePanel components
 - Removed deprecated cosmic-glow classes from calendar components
 - Restored calendar day grid proportions by retargeting custom CSS to the new DayPicker markup
+- Restored markdown image rendering by expanding the sanitizer allow-list for `img`, `span`, and highlight elements
 
 ### 🗑️ Removed
 
