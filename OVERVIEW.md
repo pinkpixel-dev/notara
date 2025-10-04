@@ -1,7 +1,8 @@
 # 🏗️ Notara - Technical Overview
 
 > **Version 1.0.0+** - Complete technical architecture and implementation guide  
-> **Last Updated**: October 4, 2025
+> **Last Updated**: October 4, 2025 00:53 EDT
+> **Integration System**: Phase 1 Complete | Phase 2 (GitHub OAuth) 40% Complete
 
 ## 📋 Project Summary
 
@@ -34,13 +35,15 @@ graph TB
         G[NotesContext]
         H[TodoContext]
         I[ThemeContext]
-        J[React Query]
+        J[IntegrationContext]
+        K[React Query]
     end
 
     subgraph "Storage & Integrations"
-        K[File System Access API]
-        L[IndexedDB Fallback]
-        M[Pollinations API]
+        L[File System Access API]
+        M[IndexedDB Fallback]
+        N[Pollinations API]
+        O[Integration System]
     end
 
     A --> B
@@ -51,10 +54,12 @@ graph TB
     B --> G
     B --> H  
     B --> I
-    D --> J
-    F --> K
+    B --> J
+    D --> K
     F --> L
-    D --> M
+    F --> M
+    D --> N
+    J --> O
 ```
 
 ### 📁 Project Structure
@@ -62,23 +67,39 @@ graph TB
 ```
 src/
 ├── components/           # Reusable UI components
+│   ├── integrations/    # Integration system UI
+│   │   └── IntegrationCard.tsx
 │   ├── layout/          # Layout components (AppLayout, Navigation)
 │   ├── notes/           # Note-related components
 │   ├── todos/           # Todo management components
 │   └── ui/              # shadcn/ui base components
 ├── context/             # React Context providers
-│   ├── AuthContext.tsx      # Optional Supabase auth (disabled unless VITE_ENABLE_AUTH=true)
-│   ├── FileSystemContext.tsx # Local file system integration
-│   ├── NotesContext.tsx     # Notes management
-│   ├── TodoContext.tsx      # Todo management
-│   └── ThemeContext.tsx     # UI theming
+│   ├── AuthContext.tsx         # Optional Supabase auth (disabled unless VITE_ENABLE_AUTH=true)
+│   ├── FileSystemContext.tsx   # Local file system integration
+│   ├── IntegrationContext.tsx  # Integration system state & orchestration
+│   ├── NotesContext.tsx        # Notes management
+│   ├── TodoContext.tsx         # Todo management
+│   └── ThemeContext.tsx        # UI theming
 ├── hooks/               # Custom React hooks
 │   ├── use-mobile.tsx   # Mobile detection
 │   └── use-toast.ts     # Toast notifications
 ├── lib/                 # Utility libraries
+│   ├── integrations/    # Integration system core
+│   │   ├── adapters/    # Provider adapters
+│   │   │   ├── GitHubAdapter.ts
+│   │   │   ├── GoogleDriveAdapter.ts
+│   │   │   ├── DropboxAdapter.ts
+│   │   │   └── index.ts
+│   │   ├── oauth/       # OAuth helpers
+│   │   │   └── github.ts
+│   │   ├── index.ts
+│   │   ├── syncOrchestrator.ts  # Sync queue & retry logic
+│   │   ├── tokenVault.ts        # Encrypted token storage
+│   │   └── types.ts             # Integration type definitions
 │   ├── supabase.ts      # Legacy Supabase helpers (kept for backward compatibility)
 │   └── utils.ts         # General utilities
 ├── pages/               # Route components
+│   ├── GitHubOAuthCallback.tsx # GitHub OAuth callback handler
 │   ├── HomePage.tsx     # Main note editing interface
 │   ├── TodoPage.tsx     # Todo management
 │   ├── AuthPage.tsx     # Authentication
@@ -181,7 +202,183 @@ interface VisionBoardItem {
 |---------|---------|
 | **File System Access API** | Writes JSON bundles and markdown files to the user-selected Notara folder |
 | **IndexedDB** | Local fallback when filesystem permissions are unavailable |
-| **Pollinations Proxy** | `/api/pollinations/*` Cloudflare Pages functions that forward chat/image requests with optional API token |
+|| **Pollinations Proxy** | `/api/pollinations/*` Cloudflare Pages functions that forward chat/image requests with optional API token |
+
+## 🔄 Integration System
+
+### Overview
+
+The **Integration System** provides a secure, extensible framework for syncing notes with external platforms like GitHub, Google Drive, and Dropbox. Built with a modular adapter pattern, it enables automatic background synchronization while maintaining local-first data ownership.
+
+### Architecture Components
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Integration System                     │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   GitHub     │  │ Google Drive │  │   Dropbox    │ │
+│  │   Adapter    │  │   Adapter    │  │   Adapter    │ │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
+│         │                  │                  │         │
+│  ┌──────┴──────────────────┴──────────────────┴─────┐  │
+│  │          IntegrationContext (State)               │  │
+│  └────────────────────────┬──────────────────────────┘  │
+│                           │                             │
+│  ┌────────────────────────┴──────────────────────────┐  │
+│  │         SyncOrchestrator (Queue, Retry)           │  │
+│  └────────────────────────┬──────────────────────────┘  │
+│                           │                             │
+│  ┌────────────────────────┴──────────────────────────┐  │
+│  │    TokenVault (Encrypted IndexedDB Storage)       │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+#### 🔒 Secure Token Storage (TokenVault)
+- **Web Crypto API Encryption**: All OAuth tokens encrypted with AES-GCM (256-bit)
+- **Device Fingerprinting**: Encryption key derived from unique device characteristics
+- **IndexedDB Persistence**: Tokens stored client-side with zero backend dependency
+- **Auto-Expiry Handling**: Automatically detects and manages expired tokens
+- **Secure Key Derivation**: PBKDF2 with 100,000 iterations for key stretching
+
+#### 🔄 Intelligent Sync Orchestration
+- **Debounced Syncing**: Prevents excessive API calls during rapid edits (2-second delay)
+- **Queue Management**: Manages concurrent sync operations safely
+- **Exponential Backoff**: Automatic retry with increasing delays (2s, 4s, 8s, 16s, 32s max)
+- **Conflict Detection**: Identifies when local and remote versions diverge
+- **Background Sync**: Automatically triggered on note save/update when integrations are connected
+- **Batch Operations**: Groups multiple note changes into single API calls when possible
+
+#### 🎨 Rich UI Components
+- **IntegrationCard**: Displays connection status, sync metrics, and configuration options
+- **Status Indicators**: Real-time connection, syncing, error, and success states
+- **Error Handling**: Clear error messages with actionable recovery steps
+- **Metrics Dashboard**: Track sync success rates, last sync time, and note counts
+
+#### 🧩 Extensible Adapter Pattern
+- **Provider-Agnostic**: Easy to add new integration providers
+- **Common Interface**: Consistent API across all adapters (`connect()`, `disconnect()`, `sync()`, `getStatus()`)
+- **Async-First**: Built for modern async/await patterns
+- **Type-Safe**: Full TypeScript coverage with strict interface contracts
+
+### Development Status
+
+| Provider      | Phase    | Status    | OAuth | Sync | Notes                          |
+|---------------|----------|-----------|-------|------|--------------------------------|
+| **GitHub**    | Phase 2  | 40% Done  | 🚧    | ❌   | OAuth flow complete, needs API |
+| Google Drive  | Phase 3  | Planned   | ❌    | ❌   | Stub adapter created           |
+| Dropbox       | Phase 3  | Planned   | ❌    | ❌   | Stub adapter created           |
+
+#### Phase 1: Foundation (✅ Complete)
+- [x] Feature flag system (global + per-provider toggles)
+- [x] TypeScript type definitions for adapters, sync results, conflicts, metrics
+- [x] TokenVault with Web Crypto API encryption
+- [x] IntegrationContext for state management
+- [x] IntegrationCard UI component
+- [x] SyncOrchestrator with debouncing and retry logic
+- [x] Adapter stubs for GitHub, Google Drive, Dropbox
+- [x] Comprehensive integration documentation
+
+#### Phase 2: GitHub OAuth (🚧 40% Complete)
+- [x] OAuth helper utilities with PKCE support
+- [x] Authorization URL builder with state/code_challenge
+- [x] Token exchange via proxy endpoints (CORS fix)
+- [x] Popup-based OAuth workflow with message passing
+- [x] GitHub OAuth callback page with status UI
+- [x] Token revocation on disconnect
+- [x] Configuration persistence in localStorage
+- [ ] Repository selection UI with search/filter
+- [ ] Note-to-Markdown converter with YAML frontmatter
+- [ ] GitHub API sync logic (Contents API integration)
+- [ ] Conflict detection and resolution UI
+- [ ] End-to-end testing and error handling
+
+#### Phase 3: Google Drive & Dropbox (⏳ Planned)
+- [ ] Google Drive OAuth flow
+- [ ] Drive API folder sync implementation
+- [ ] Dropbox OAuth flow
+- [ ] Dropbox API file sync implementation
+
+### Configuration
+
+#### Environment Variables
+
+```bash
+# Global integrations toggle (master switch)
+VITE_ENABLE_INTEGRATIONS=true
+
+# Provider-specific toggles
+VITE_ENABLE_GITHUB_INTEGRATION=true
+VITE_ENABLE_GOOGLE_DRIVE_INTEGRATION=false
+VITE_ENABLE_DROPBOX_INTEGRATION=false
+
+# OAuth Credentials (Phase 2+)
+VITE_GITHUB_OAUTH_CLIENT_ID=your_github_client_id
+VITE_GITHUB_CLIENT_SECRET=your_github_client_secret  # Required for OAuth Apps
+VITE_GOOGLE_DRIVE_API_KEY=your_google_api_key
+VITE_DROPBOX_APP_KEY=your_dropbox_app_key
+```
+
+### Security Considerations
+
+1. **Token Encryption**: All OAuth tokens encrypted before storage using AES-GCM with 256-bit keys
+2. **PKCE Flow**: GitHub OAuth implements PKCE (Proof Key for Code Exchange) for enhanced security
+3. **State Parameter**: CSRF protection via cryptographically random state values
+4. **Proxy Endpoints**: Token exchanges happen through secure proxy to prevent client_secret exposure
+5. **Automatic Cleanup**: Tokens are revoked and cleared on disconnection
+6. **No Backend Storage**: All tokens stored client-side only, never sent to Notara servers
+
+### Integration Context API
+
+The `IntegrationContext` provides the following methods:
+
+```typescript
+interface IntegrationContextType {
+  // Connection Management
+  connectIntegration: (provider: IntegrationProvider) => Promise<boolean>;
+  disconnectIntegration: (provider: IntegrationProvider) => Promise<void>;
+  
+  // Sync Operations
+  syncIntegration: (provider: IntegrationProvider) => Promise<void>;
+  syncAll: () => Promise<void>;
+  
+  // Status & Config
+  getIntegrationStatus: (provider: IntegrationProvider) => IntegrationStatus;
+  getIntegrationConfig: (provider: IntegrationProvider) => IntegrationConfig | null;
+  updateConfig: (provider: IntegrationProvider, config: Partial<IntegrationConfig>) => void;
+  
+  // State
+  integrations: Map<IntegrationProvider, IntegrationState>;
+  syncInProgress: boolean;
+  lastSyncTime: Date | null;
+}
+```
+
+### Usage Example
+
+```typescript
+// Connect to GitHub
+const success = await connectIntegration('github');
+if (success) {
+  // Configure repository
+  updateConfig('github', {
+    repository: 'username/my-notes',
+    branch: 'main',
+    folderPath: 'notes/'
+  });
+  
+  // Trigger manual sync
+  await syncIntegration('github');
+}
+
+// Disconnect when done
+await disconnectIntegration('github');
+```
 
 ## 🤖 AI Assistant Integration
 
@@ -485,6 +682,8 @@ npm run dev
 ## 📊 Version History
 
 ### Version 1.0.0+ (Current - October 2025)
+- **Integration System Phase 1 (Complete)**: Secure token vault with Web Crypto API, SyncOrchestrator with exponential backoff, IntegrationContext state management, IntegrationCard UI, adapter pattern for GitHub/Drive/Dropbox
+- **Integration System Phase 2 (40% Complete)**: GitHub OAuth flow with PKCE, popup-based authentication, proxy endpoints for CORS handling, callback page with status UI, token storage and revocation
 - **Local File Storage**: FileSystemContext integration with File System Access API
 - **Manual Save Workflows**: Save button and File ▸ Save Active Note menu option
 - **Keyboard Shortcuts**: `Ctrl/Cmd+S` for active note, `Ctrl/Cmd+Shift+S` for Save All
@@ -492,6 +691,7 @@ npm run dev
 - **GitHub-Flavoured Markdown**: Tables, task lists, and enhanced formatting
 - **Smart Notifications**: Save toasts indicate disk vs browser storage status
 - **Supabase Deprecation**: Authentication and remote database requirements removed in favor of local-first storage
+- **Pollinations AI Proxy**: Development and production endpoints for chat and image generation with optional API token support
 
 ### Version 1.0.0 (2025-09-26)
 - **Major Overhaul**: Complete modernization from cosmic theme

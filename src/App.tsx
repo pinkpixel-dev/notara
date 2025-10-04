@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { TodoProvider } from "./context/TodoContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { FileSystemProvider } from "./context/FileSystemContext";
+import { IntegrationProvider } from "./context/IntegrationContext";
 import HomePage from "./pages/HomePage";
 import TagsPage from "./pages/TagsPage";
 import ConstellationsPage from "./pages/ConstellationsPage";
@@ -23,6 +24,7 @@ import AuthPage from "./pages/AuthPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import TodoPage from "./pages/TodoPage";
 import StarredNotesPage from "./pages/StarredNotesPage";
+import GitHubOAuthCallback from "./pages/GitHubOAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -32,8 +34,9 @@ const App = () => (
       <FileSystemProvider>
         <ThemeProvider>
           <AuthProvider>
-            <NotesProvider>
-              <TodoProvider>
+            <IntegrationProvider>
+              <NotesProvider>
+                <TodoProvider>
                 <BrowserRouter>
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -48,13 +51,15 @@ const App = () => (
                 <Route path="/note/:id" element={<NoteViewPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/oauth/github/callback" element={<GitHubOAuthCallback />} />
                 <Route path="/todos" element={<TodoPage />} />
                 <Route path="/starred" element={<StarredNotesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
                 </BrowserRouter>
-              </TodoProvider>
-            </NotesProvider>
+                </TodoProvider>
+              </NotesProvider>
+            </IntegrationProvider>
           </AuthProvider>
         </ThemeProvider>
       </FileSystemProvider>

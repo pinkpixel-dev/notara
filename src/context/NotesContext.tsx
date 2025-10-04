@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Note, NoteTag, VisionBoard } from '../types';
 import { NotesContext } from './NotesContextTypes';
 import { useFileSystem } from './FileSystemContext';
+import { useIntegrations } from './IntegrationContext';
 import type { NotesBundle } from '@/lib/filesystem';
 
 const defaultTags: NoteTag[] = [
@@ -109,6 +110,7 @@ const defaultVisionBoards: VisionBoard[] = [
 
 export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { status, loadNotesBundle, saveNotesBundle } = useFileSystem();
+  const integrations = useIntegrations();
   const [notes, setNotes] = useState<Note[]>(defaultNotes);
   const [tags, setTags] = useState<NoteTag[]>(defaultTags);
   const [visionBoards, setVisionBoards] = useState<VisionBoard[]>(defaultVisionBoards);
@@ -174,6 +176,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const persistBundle = useCallback(async (bundle?: NotesBundle) => {
     const snapshot = bundle ?? getCurrentBundle();
 
+    // Save to filesystem or localStorage
     if (status === 'ready') {
       try {
         await saveNotesBundle(snapshot);
@@ -185,7 +188,27 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       persistToLocalStorage(snapshot);
     }
-  }, [getCurrentBundle, persistToLocalStorage, saveNotesBundle, status]);
+
+    // Trigger integration sync if enabled
+    if (integrations.areIntegrationsEnabled() && integrations.isInitialized) {
+      const providers = Array.from(integrations.integrations.keys());
+      for (const provider of providers) {
+        const state = integrations.getIntegrationState(provider);
+        if (state?.status === 'connected' && state?.isEnabled) {
+          if (provider === 'github') {
+            const repoConfigured = Boolean(state.config?.repoOwner && state.config?.repoName);
+            if (!repoConfigured) {
+              continue;
+            }
+          }
+          // Trigger background sync - don't await to prevent blocking
+          integrations.manualSync(provider).catch(error => {
+            console.error(`[Sync] Background sync failed for ${provider}:`, error);
+          });
+        }
+      }
+    }
+  }, [getCurrentBundle, persistToLocalStorage, saveNotesBundle, status, integrations]);
 
   useEffect(() => {
     if (status === 'uninitialized') {

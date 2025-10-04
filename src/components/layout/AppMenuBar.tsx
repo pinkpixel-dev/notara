@@ -104,7 +104,12 @@ const AppMenuBar: React.FC = () => {
     }
 
     try {
-      const [fileHandle] = await (window as typeof window & { showOpenFilePicker: Function }).showOpenFilePicker({
+      const [fileHandle] = await (window as typeof window & { 
+        showOpenFilePicker: (options: {
+          multiple: boolean;
+          types: Array<{ description: string; accept: Record<string, string[]> }>;
+        }) => Promise<FileSystemFileHandle[]>;
+      }).showOpenFilePicker({
         multiple: false,
         types: [
           {

@@ -6,6 +6,28 @@ All notable changes to the Notara project will be documented in this file.
 
 ### ✨ Added
 
+- **Integration System (Phase 1 - Complete)**:
+  - Feature flag system for managing integration availability (global and per-provider toggles)
+  - Comprehensive TypeScript type definitions for adapters, sync results, conflicts, and metrics
+  - Secure token vault using Web Crypto API with AES-GCM encryption and IndexedDB storage
+  - IntegrationContext for managing integration state, OAuth flows, and sync triggers
+  - Reusable IntegrationCard UI components with status indicators and configuration panels
+  - SyncOrchestrator class for debounced queuing, exponential backoff retries, and batch sync
+  - Adapter stubs for GitHub, Google Drive, and Dropbox (Phase 2+ implementation pending)
+  - Automatic background sync triggered on note save/update when integrations are connected
+  - Comprehensive integration documentation in `docs/INTEGRATIONS.md`
+- **GitHub Integration (Phase 2 - In Progress)**:
+  - OAuth 2.0 flow with PKCE implementation for secure authorization
+  - Popup-based OAuth workflow with automatic callback handling
+  - GitHub OAuth callback page with status indicators and error handling
+  - OAuth helper utilities with state management and CSRF protection
+  - Token exchange proxy endpoints (Vite dev server + Cloudflare Functions)
+  - Secure token storage with automatic GitHub user info fetching
+  - Connect/disconnect flows with token revocation
+  - Configuration persistence in localStorage
+  - Comprehensive setup guide in `docs/GITHUB_OAUTH_SETUP.md`
+  - Updated `.env.example` with detailed GitHub OAuth setup instructions
+- Repository configuration UI in Settings → Integrations for entering GitHub owner, repository name, and branch
 - Manual save workflows: the editor's Save button and File ▸ Save Active Note now flush notes, tags, and markdown files immediately
 - Global keyboard shortcuts: `Ctrl/Cmd+S` saves the active note and `Ctrl/Cmd+Shift+S` runs Save All without opening the browser download dialog
 - Richer markdown preview rendering powered by `prism-react-renderer`, including VSCode-quality code themes, GitHub-flavoured tables, and lazy-loaded images
@@ -18,6 +40,8 @@ All notable changes to the Notara project will be documented in this file.
 - NotesContext now exposes `persistBundle` so user-triggered saves reuse the same filesystem pipeline as autosave
 - Markdown tables, links, and code blocks have refreshed styling for readability in both inline and full preview modes
 - Save notifications now reflect whether data wrote to the connected Notara folder or browser storage fallback
+- GitHub OAuth helper now stores authorization state in shared `localStorage`, keeping popup callbacks reliable across windows
+- Integration context pre-populates provider states from feature flags and mirrors adapter config/status updates so Connect buttons and repository details stay in sync
 - Calendar page layout improved with better responsive design and proper panel sizing
 - Calendar component styling updated to align with `react-day-picker@9` class names and keep day cells square
 - App header now highlights search, docs, and settings with gradient glass styling and icon tooltips
@@ -33,6 +57,7 @@ All notable changes to the Notara project will be documented in this file.
 - Removed deprecated cosmic-glow classes from calendar components
 - Restored calendar day grid proportions by retargeting custom CSS to the new DayPicker markup
 - Restored markdown image rendering by expanding the sanitizer allow-list for `img`, `span`, and highlight elements
+- Prevented GitHub sync from running before a repository is configured and disabled manual sync controls until repo details are saved
 
 ### 🗑️ Removed
 

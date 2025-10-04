@@ -8,11 +8,14 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { ExternalLink, Share2, Download, ArrowLeft, X, Plus, Trash2, Save } from 'lucide-react';
+import { Github, Cloud, Folder, Share2, Download, ArrowLeft, X, Plus, Trash2, Save, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/context/ThemeContext';
 import { useNotes } from '@/context/NotesContextTypes';
+import { useIntegrations } from '@/context/IntegrationContext';
+import { IntegrationCard } from '@/components/integrations/IntegrationCard';
 import type { NoteTag } from '@/types';
+import type { IntegrationProvider } from '@/lib/integrations/types';
 
 const SettingsPage: React.FC = () => {
   const [autoSave, setAutoSave] = useState(true);
@@ -20,15 +23,48 @@ const SettingsPage: React.FC = () => {
   const [exportFormat, setExportFormat] = useState('markdown');
   const { settings, setThemeMode, setAccentColor, setFontSize, setAnimations, resetToDefaults, availableThemes, availableAccentColors } = useTheme();
   const { tags, notes, addTag, updateTag, deleteTag } = useNotes();
+  const { 
+    connectIntegration, 
+    disconnectIntegration, 
+    getIntegrationState,
+    updateIntegrationConfig,
+    manualSync,
+    areIntegrationsEnabled 
+  } = useIntegrations();
   const navigate = useNavigate();
 
   const [draftTags, setDraftTags] = useState<NoteTag[]>(() => tags.map(tag => ({ ...tag })));
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#9b87f5');
+  const githubState = getIntegrationState('github');
+  const [githubRepoOwner, setGithubRepoOwner] = useState('');
+  const [githubRepoName, setGithubRepoName] = useState('');
+  const [githubRepoBranch, setGithubRepoBranch] = useState('main');
 
   useEffect(() => {
     setDraftTags(tags.map(tag => ({ ...tag })));
   }, [tags]);
+
+  useEffect(() => {
+    if (!githubState?.config) {
+      setGithubRepoOwner('');
+      setGithubRepoName('');
+      setGithubRepoBranch('main');
+      return;
+    }
+
+    const { repoOwner, repoName, branch, userName } = githubState.config;
+
+    setGithubRepoOwner(repoOwner ?? userName ?? '');
+    setGithubRepoName(repoName ?? '');
+    setGithubRepoBranch(branch ?? 'main');
+  }, [
+    githubState?.config?.repoOwner,
+    githubState?.config?.repoName,
+    githubState?.config?.branch,
+    githubState?.config?.userName,
+    githubState?.config,
+  ]);
 
   const notesPerTag = useMemo(() => {
     const usage = new Map<string, number>();
@@ -74,14 +110,108 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  const handleIntegrationPlaceholder = (service: string) => {
-    toast({
-      title: `${service} integration`,
-      description: 'Coming soon. Local-only mode is enabled for now.'
-    });
+  const handleConnectIntegration = async (provider: IntegrationProvider) => {
+    try {
+      const success = await connectIntegration(provider);
+      if (success) {
+        toast({
+          title: 'Integration connected',
+          description: `Successfully connected to ${provider}`,
+        });
+      } else {
+        toast({
+          title: 'Connection failed',
+          description: `Could not connect to ${provider}. Please try again.`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Integration connection error:', error);
+      toast({
+        title: 'Connection error',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDisconnectIntegration = async (provider: IntegrationProvider) => {
+    if (!window.confirm(`Disconnect from ${provider}? Your notes will remain in the local Notara folder.`)) {
+      return;
+    }
+    try {
+      await disconnectIntegration(provider);
+      toast({
+        title: 'Integration disconnected',
+        description: `Disconnected from ${provider}`,
+      });
+    } catch (error) {
+      console.error('Integration disconnection error:', error);
+      toast({
+        title: 'Disconnection error',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleManualSync = async (provider: IntegrationProvider) => {
+    try {
+      const result = await manualSync(provider);
+      if (result.success) {
+        toast({
+          title: 'Sync complete',
+          description: `Synced ${result.notessynced} notes to ${provider}`,
+        });
+      } else {
+        toast({
+          title: 'Sync had errors',
+          description: `Sync completed with ${result.errors.length} errors`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Manual sync error:', error);
+      toast({
+        title: 'Sync failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    }
   };
 
   const isValidHexColor = (value: string) => /^#([0-9a-fA-F]{6})$/.test(value);
+
+  const handleSaveGithubConfig = async () => {
+    if (!githubRepoOwner.trim() || !githubRepoName.trim()) {
+      toast({
+        title: 'Repository required',
+        description: 'Please provide both repository owner and name.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateIntegrationConfig('github', {
+        repoOwner: githubRepoOwner.trim(),
+        repoName: githubRepoName.trim(),
+        branch: githubRepoBranch.trim() || 'main',
+      });
+
+      toast({
+        title: 'Repository saved',
+        description: `${githubRepoOwner.trim()}/${githubRepoName.trim()} configured for GitHub sync.`,
+      });
+    } catch (error) {
+      console.error('GitHub config save error:', error);
+      toast({
+        title: 'Save failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleDraftChange = (id: string, field: 'name' | 'color', value: string) => {
     setDraftTags((prev) => prev.map((tag) => (tag.id === id ? { ...tag, [field]: value } : tag)));
@@ -450,55 +580,115 @@ const SettingsPage: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle>External Integrations</CardTitle>
-                <CardDescription>Integrations will arrive once shared workspaces are ready.</CardDescription>
+                <CardDescription>
+                  {areIntegrationsEnabled() 
+                    ? 'Connect Notara to external services to sync your notes automatically.' 
+                    : 'Integrations are currently disabled. Enable them in your .env file to connect external services.'}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">GitHub</h3>
-                      <p className="text-sm text-muted-foreground">Sync notes with repositories (planned)</p>
+                {/* GitHub Integration */}
+                <IntegrationCard
+                  provider="github"
+                  state={githubState}
+                  icon={<Github className="h-5 w-5" />}
+                  title="GitHub"
+                  description="Sync notes as markdown files to a GitHub repository"
+                  onConnect={() => handleConnectIntegration('github')}
+                  onDisconnect={() => handleDisconnectIntegration('github')}
+                  onManualSync={() => handleManualSync('github')}
+                />
+
+                {githubState?.isEnabled && (
+                  <div className="rounded-md border border-border/50 bg-card/40 p-4 space-y-4">
+                    <div className="space-y-1">
+                      <Label className="uppercase text-xs tracking-wide text-muted-foreground">
+                        Repository Settings
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose the GitHub repository where Notara should sync your notes.
+                        Ensure the connected account has write access.
+                      </p>
                     </div>
-                    <Button 
-                      onClick={() => handleIntegrationPlaceholder('GitHub')} 
-                      variant="outline" 
-                      className="flex items-center gap-2"
-                    >
-                      <ExternalLink size={16} />
-                      Coming Soon
-                    </Button>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="github-repo-owner">Owner</Label>
+                        <Input
+                          id="github-repo-owner"
+                          value={githubRepoOwner}
+                          onChange={(event) => setGithubRepoOwner(event.target.value)}
+                          placeholder={githubState?.config?.userName ?? 'github-username'}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="github-repo-name">Repository</Label>
+                        <Input
+                          id="github-repo-name"
+                          value={githubRepoName}
+                          onChange={(event) => setGithubRepoName(event.target.value)}
+                          placeholder="notara-notes"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="github-repo-branch">Branch</Label>
+                        <Input
+                          id="github-repo-branch"
+                          value={githubRepoBranch}
+                          onChange={(event) => setGithubRepoBranch(event.target.value)}
+                          placeholder="main"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        Notara will create commits in <span className="font-medium text-foreground">{githubRepoOwner || 'owner'}/{githubRepoName || 'repository'}</span>{' '}
+                        on branch <span className="font-medium text-foreground">{githubRepoBranch || 'main'}</span>.
+                      </p>
+                      <Button
+                        variant="secondary"
+                        onClick={handleSaveGithubConfig}
+                      >
+                        Save Repository
+                      </Button>
+                    </div>
+
+                    {githubState?.status === 'connected' && (!githubState.config?.repoOwner || !githubState.config?.repoName) && (
+                      <p className="text-xs text-amber-600">
+                        Connected to GitHub, but no repository is configured yet. Sync will remain disabled until you save a repository.
+                      </p>
+                    )}
                   </div>
-                </div>
+                )}
                 
                 <Separator />
                 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">Google Drive</h3>
-                      <p className="text-sm text-muted-foreground">Back up notes to Google Drive (planned)</p>
-                    </div>
-                    <Button onClick={() => handleIntegrationPlaceholder('Google Drive')} variant="outline" className="flex items-center gap-2">
-                      <ExternalLink size={16} />
-                      Coming Soon
-                    </Button>
-                  </div>
-                </div>
+                {/* Google Drive Integration */}
+                <IntegrationCard
+                  provider="google-drive"
+                  state={getIntegrationState('google-drive')}
+                  icon={<Cloud className="h-5 w-5" />}
+                  title="Google Drive"
+                  description="Back up notes to Google Drive automatically"
+                  onConnect={() => handleConnectIntegration('google-drive')}
+                  onDisconnect={() => handleDisconnectIntegration('google-drive')}
+                  onManualSync={() => handleManualSync('google-drive')}
+                />
                 
                 <Separator />
                 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">Dropbox</h3>
-                      <p className="text-sm text-muted-foreground">Sync notes with Dropbox (planned)</p>
-                    </div>
-                    <Button onClick={() => handleIntegrationPlaceholder('Dropbox')} variant="outline" className="flex items-center gap-2">
-                      <ExternalLink size={16} />
-                      Coming Soon
-                    </Button>
-                  </div>
-                </div>
+                {/* Dropbox Integration */}
+                <IntegrationCard
+                  provider="dropbox"
+                  state={getIntegrationState('dropbox')}
+                  icon={<Folder className="h-5 w-5" />}
+                  title="Dropbox"
+                  description="Sync notes with your Dropbox workspace"
+                  onConnect={() => handleConnectIntegration('dropbox')}
+                  onDisconnect={() => handleDisconnectIntegration('dropbox')}
+                  onManualSync={() => handleManualSync('dropbox')}
+                />
                 
                 <Separator />
                 

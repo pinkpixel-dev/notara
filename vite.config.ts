@@ -3,6 +3,233 @@ import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 
+const createGitHubOAuthProxyPlugin = (env: Record<string, string>): Plugin => {
+  return {
+    name: "notara-github-oauth-proxy",
+    configureServer(server) {
+      server.middlewares.use("/api/github/token", (req, res, next) => {
+        // Handle CORS preflight
+        if (req.method === "OPTIONS") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+          res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+
+        if (req.method !== "POST") {
+          next();
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+
+        req.on("data", (chunk) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+
+        req.on("end", async () => {
+          try {
+            const body = Buffer.concat(chunks).toString("utf8");
+            const payload = JSON.parse(body);
+            const { code, clientId, redirectUri } = payload;
+
+            // Validate required fields
+            if (!code || !clientId || !redirectUri) {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end(
+                JSON.stringify({
+                  error: "Missing required fields",
+                  required: ["code", "clientId", "redirectUri"],
+                })
+              );
+              return;
+            }
+
+            // Exchange code for token with GitHub
+            // Note: OAuth Apps require client_secret (PKCE only works with GitHub Apps)
+            const clientSecret = env.VITE_GITHUB_CLIENT_SECRET;
+            if (!clientSecret) {
+              res.statusCode = 500;
+              res.setHeader("Content-Type", "application/json");
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end(
+                JSON.stringify({
+                  error: "Server configuration error",
+                  message: "GitHub client secret not configured",
+                })
+              );
+              return;
+            }
+
+            const tokenPayload = {
+              client_id: clientId,
+              client_secret: clientSecret,
+              code,
+              redirect_uri: redirectUri,
+            };
+
+            const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(tokenPayload),
+            });
+
+            const tokenData = await tokenResponse.json();
+
+            res.statusCode = tokenResponse.status;
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.end(JSON.stringify(tokenData));
+          } catch (error) {
+            server.config.logger.error(`GitHub OAuth proxy error: ${error}`);
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.end(
+              JSON.stringify({
+                error: "Internal server error",
+                message: error instanceof Error ? error.message : "Unknown error",
+              })
+            );
+          }
+        });
+
+        req.on("error", (err) => {
+          server.config.logger.error(`GitHub OAuth proxy request error: ${err}`);
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.end(JSON.stringify({ error: "Request stream error" }));
+        });
+      });
+
+      // Add GitHub token revocation endpoint
+      server.middlewares.use("/api/github/revoke", (req, res, next) => {
+        // Handle CORS preflight
+        if (req.method === "OPTIONS") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+          res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+
+        if (req.method !== "POST") {
+          next();
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+
+        req.on("data", (chunk) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+
+        req.on("end", async () => {
+          try {
+            const body = Buffer.concat(chunks).toString("utf8");
+            const payload = JSON.parse(body);
+            const { access_token } = payload;
+
+            // Validate required fields
+            if (!access_token) {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end(JSON.stringify({ error: "Missing access_token" }));
+              return;
+            }
+
+            // Get credentials from environment
+            const clientId = env.VITE_GITHUB_OAUTH_CLIENT_ID;
+            const clientSecret = env.VITE_GITHUB_CLIENT_SECRET;
+
+            if (!clientId || !clientSecret) {
+              server.config.logger.error("GitHub revoke: Missing credentials in environment");
+              res.statusCode = 500;
+              res.setHeader("Content-Type", "application/json");
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end(
+                JSON.stringify({
+                  error: "Server configuration error",
+                  message: "GitHub credentials not configured",
+                })
+              );
+              return;
+            }
+
+            // Create Basic auth header
+            const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+            // Revoke token with GitHub
+            const revokeResponse = await fetch(
+              `https://api.github.com/applications/${clientId}/token`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Basic ${credentials}`,
+                  Accept: "application/vnd.github.v3+json",
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ access_token }),
+              }
+            );
+
+            // 204 = success, 404 = already revoked (also success)
+            if (revokeResponse.status === 204 || revokeResponse.status === 404) {
+              res.statusCode = 204;
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end();
+              return;
+            }
+
+            // Handle errors
+            const errorText = await revokeResponse.text();
+            server.config.logger.error(`GitHub revoke failed: ${revokeResponse.status} ${errorText}`);
+
+            res.statusCode = revokeResponse.status;
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.end(
+              JSON.stringify({
+                error: "Revocation failed",
+                details: errorText,
+              })
+            );
+          } catch (error) {
+            server.config.logger.error(`GitHub revoke proxy error: ${error}`);
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.end(
+              JSON.stringify({
+                error: "Internal server error",
+                message: error instanceof Error ? error.message : "Unknown error",
+              })
+            );
+          }
+        });
+
+        req.on("error", (err) => {
+          server.config.logger.error(`GitHub revoke proxy request error: ${err}`);
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.end(JSON.stringify({ error: "Request stream error" }));
+        });
+      });
+    },
+  };
+};
+
 const createPollinationsProxyPlugin = (env: Record<string, string>): Plugin => {
   return {
     name: "notara-pollinations-proxy",
@@ -198,6 +425,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      mode === "development" && createGitHubOAuthProxyPlugin(env),
       mode === "development" && createPollinationsProxyPlugin(env),
       // mode === 'development' && componentTagger(),
     ].filter(Boolean) as Plugin[],
