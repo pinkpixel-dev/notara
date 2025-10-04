@@ -122,9 +122,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
     content,
   ]);
 
-  const togglePin = () => {
-    setIsPinned(!isPinned);
-  };
+  const togglePin = useCallback(() => {
+    const nextPinned = !isPinned;
+    setIsPinned(nextPinned);
+
+    if (!isNew && note) {
+      updateNote(note.id, { isPinned: nextPinned });
+    }
+  }, [isNew, isPinned, note, updateNote]);
 
   const togglePreview = () => {
     setIsPreview(!isPreview);
