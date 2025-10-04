@@ -8,7 +8,7 @@ import TagSelector from './TagSelector';
 import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Maximize2 } from 'lucide-react';
+import { Maximize2, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface NoteEditorProps {
@@ -153,12 +153,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
         <div className="flex items-center gap-2">
           <button
             onClick={togglePin}
-            className={`p-2 rounded-md ${
-              isPinned ? 'text-primary' : 'text-muted-foreground'
+            className={`p-2 rounded-md transition-colors ${
+              isPinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             }`}
-            aria-label={isPinned ? 'Unpin note' : 'Pin note'}
+            aria-label={isPinned ? 'Unstar note' : 'Star note'}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={isPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className=""><path d="M12 3L10 14 14 14 12 21 12 21 14 11 10 11 12 3z" transform="rotate(45, 12, 12)"></path></svg>
+            <Star className={`h-5 w-5 ${isPinned ? 'fill-current' : 'fill-transparent'}`} />
           </button>
           <div className="flex gap-2">
             <Button

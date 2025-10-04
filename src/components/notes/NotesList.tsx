@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Note } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
 
 interface NotesListProps {
   notes: Note[];
@@ -78,7 +79,7 @@ const NotesList: React.FC<NotesListProps> = ({
           <h3 className="font-medium truncate mr-2">{title}</h3>
           <div className="flex items-center">
             {note.isPinned && (
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary mr-2"><path d="M12 3L10 14 14 14 12 21 12 21 14 11 10 11 12 3z" transform="rotate(45, 12, 12)"></path></svg>
+              <Star className="h-4 w-4 mr-2 text-primary fill-current" />
             )}
             <button 
               className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-secondary/50 transition-opacity"
