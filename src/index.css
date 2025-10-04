@@ -1,0 +1,657 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+
+/* Then include Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --primary: 258 90% 74%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 258 90% 74%;
+
+    --radius: 0.5rem;
+    
+    /* Cosmic Theme Colors */
+    --cosmos-stardust: 258 90% 74%;
+    --cosmos-nebula: 210 90% 45%;
+    --cosmos-aurora: 170 90% 45%;
+    --cosmos-solar: 35 90% 55%;
+    --cosmos-nova: 300 90% 60%;
+    
+    /* Accent Color System - Default Blue */
+    --accent-blue-50: 214 100% 97%;
+    --accent-blue-100: 214 95% 93%;
+    --accent-blue-500: 217 91% 60%;
+    --accent-blue-600: 221 83% 53%;
+    --accent-blue-900: 224 76% 48%;
+    
+    --accent-pink-50: 327 73% 97%;
+    --accent-pink-100: 326 78% 95%;
+    --accent-pink-500: 330 81% 60%;
+    --accent-pink-600: 333 71% 51%;
+    --accent-pink-900: 336 84% 17%;
+    
+    --accent-orange-50: 34 100% 97%;
+    --accent-orange-100: 32 98% 83%;
+    --accent-orange-500: 25 95% 53%;
+    --accent-orange-600: 21 90% 48%;
+    --accent-orange-900: 15 86% 30%;
+    
+    --accent-purple-50: 270 100% 98%;
+    --accent-purple-100: 269 100% 95%;
+    --accent-purple-500: 258 90% 66%;
+    --accent-purple-600: 262 83% 58%;
+    --accent-purple-900: 263 69% 42%;
+    
+    --accent-green-50: 138 76% 97%;
+    --accent-green-100: 140 84% 92%;
+    --accent-green-500: 142 76% 36%;
+    --accent-green-600: 142 72% 29%;
+    --accent-green-900: 140 100% 14%;
+  }
+
+  /* Cosmic Theme (Default) */
+  .theme-cosmic {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --primary: 258 90% 74%;
+    --ring: 258 90% 74%;
+    --cosmos-highlight: 258 90% 74%;
+  }
+  
+  /* Minimal Light Theme */
+  .theme-minimal-light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: hsl(var(--accent-blue-500));
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: hsl(var(--accent-blue-500));
+  }
+
+  /* Midnight Modern Theme */
+  .theme-midnight-modern {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: hsl(var(--accent-blue-500));
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: hsl(var(--accent-blue-500));
+  }
+  
+  /* Frosted Glass Theme */
+  .theme-frosted-glass {
+    color-scheme: dark;
+    --background: 220 35% 16%;
+    --foreground: 210 40% 96%;
+
+    --card: 220 32% 24%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 32% 28%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 258 90% 74%;
+    --primary-foreground: 220 35% 14%;
+
+    --secondary: 220 28% 30%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 220 24% 34%;
+    --muted-foreground: 220 10% 80%;
+
+    --accent: 220 26% 38%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 26% 46%;
+    --input: 220 26% 40%;
+
+    --ring: 258 90% 74%;
+
+    --sidebar-background: 220 32% 20%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 258 90% 74%;
+    --sidebar-primary-foreground: 220 35% 12%;
+    --sidebar-accent: 220 26% 32%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 220 24% 42%;
+    --sidebar-ring: 258 90% 74%;
+  }
+
+  body.theme-frosted-glass {
+    background-image:
+      radial-gradient(120% 120% at 15% 0%, hsl(258 90% 70% / 0.22) 0%, transparent 65%),
+      radial-gradient(110% 110% at 85% 10%, hsl(200 90% 60% / 0.16) 0%, transparent 70%),
+      linear-gradient(135deg, hsl(218 40% 12%), hsl(220 32% 18%));
+    background-attachment: fixed;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans overflow-hidden;
+    font-family: 'Inter', 'system-ui', '-apple-system', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Typography utilities */
+  .font-display {
+    font-family: 'Geist', 'Inter', 'system-ui', '-apple-system', sans-serif;
+  }
+  
+  .font-legacy {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  #root {
+    height: 100%;
+  }
+}
+
+.hover-glow:hover {
+  filter: drop-shadow(0 0 5px hsl(var(--primary)));
+}
+
+.cosmic-glow {
+  box-shadow: 0 0 15px 2px hsl(var(--primary) / 0.3);
+}
+
+.btn-glow {
+  box-shadow: 0 0 10px 1px hsl(var(--primary) / 0.3);
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 15px 3px hsl(var(--primary) / 0.4);
+}
+
+.nebula-glow {
+  box-shadow: 0 0 15px 2px hsl(var(--cosmos-nebula) / 0.3);
+}
+
+.nova-glow {
+  box-shadow: 0 0 15px 2px hsl(var(--cosmos-nova) / 0.3);
+}
+
+.solar-glow {
+  box-shadow: 0 0 15px 2px hsl(var(--cosmos-solar) / 0.3);
+}
+
+.star {
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.7;
+  position: absolute;
+}
+
+.star-small {
+  width: 1px;
+  height: 1px;
+}
+
+.star-medium {
+  width: 2px;
+  height: 2px;
+}
+
+.star-large {
+  width: 3px;
+  height: 3px;
+  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ===== NEW DESIGN SYSTEM UTILITIES ===== */
+
+/* Glass Effects */
+.glass-panel {
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  background: hsl(var(--card) / 0.72);
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow:
+    0 16px 40px hsl(var(--background) / 0.35),
+    inset 0 1px 0 hsl(0 0% 100% / 0.06);
+}
+
+.glass-subtle {
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  background: hsl(var(--card) / 0.55);
+  border: 1px solid hsl(var(--border) / 0.25);
+}
+
+/* Enhanced Glass Effects for Frosted Glass Theme */
+.theme-frosted-glass .glass-panel {
+  background-image: 
+    radial-gradient(circle at 20% 20%, hsla(258, 90%, 74%, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, hsla(210, 90%, 45%, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, hsla(300, 90%, 60%, 0.04) 0%, transparent 50%);
+}
+
+/* Frosted surface styling */
+.theme-frosted-glass .bg-card,
+.theme-frosted-glass .bg-card\/80,
+.theme-frosted-glass [class*='bg-card'],
+.theme-frosted-glass .bg-secondary,
+.theme-frosted-glass .bg-muted,
+.theme-frosted-glass .bg-background\/50 {
+  background: hsl(var(--card) / 0.72) !important;
+  border-color: hsl(var(--border) / 0.45) !important;
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+  box-shadow:
+    0 18px 42px hsl(var(--background) / 0.35),
+    inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+
+.theme-frosted-glass .bg-card.border-r {
+  border-right-color: hsl(var(--border) / 0.45) !important;
+}
+
+.theme-frosted-glass [data-panel],
+.theme-frosted-glass [data-panel-id] {
+  background: hsl(var(--card) / 0.68) !important;
+  border-color: hsl(var(--border) / 0.35) !important;
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+}
+
+.theme-frosted-glass [role="dialog"],
+.theme-frosted-glass [role="menu"],
+.theme-frosted-glass [role="listbox"] {
+  background: hsl(var(--card) / 0.82) !important;
+  border-color: hsl(var(--border) / 0.45) !important;
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: 0 24px 48px hsl(var(--background) / 0.4);
+}
+
+.theme-frosted-glass input,
+.theme-frosted-glass textarea,
+.theme-frosted-glass select {
+  background: hsl(var(--background) / 0.6) !important;
+  border-color: hsl(var(--border) / 0.4) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.theme-frosted-glass .hover\:bg-accent:hover,
+.theme-frosted-glass .hover\:bg-secondary:hover {
+  background: hsl(var(--accent) / 0.4) !important;
+  border-color: hsl(var(--border) / 0.45) !important;
+}
+
+.theme-frosted-glass .border,
+.theme-frosted-glass [class*='border-'] {
+  border-color: hsl(var(--border) / 0.45) !important;
+}
+
+.theme-frosted-glass .bg-red-900\/30 {
+  background: hsl(0 62% 40% / 0.35) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.theme-frosted-glass [style*="background-color: rgb(0, 0, 0)"],
+.theme-frosted-glass [style*="background: rgb(0, 0, 0)"],
+.theme-frosted-glass [style*="background-color: rgba(0, 0, 0"],
+.theme-frosted-glass .bg-black,
+.theme-frosted-glass [class*="bg-gray-900"],
+.theme-frosted-glass [class*="bg-slate-900"],
+.theme-frosted-glass [class*="bg-zinc-900"] {
+  background: hsl(var(--card) / 0.7) !important;
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+}
+
+/* Micro-interactions */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px hsl(var(--foreground) / 0.1);
+}
+
+.magnetic-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.magnetic-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+/* Accent Color Classes */
+.accent-blue { --primary: var(--accent-blue-500); --ring: var(--accent-blue-500); }
+.accent-pink { --primary: var(--accent-pink-500); --ring: var(--accent-pink-500); }
+.accent-orange { --primary: var(--accent-orange-500); --ring: var(--accent-orange-500); }
+.accent-purple { --primary: var(--accent-purple-500); --ring: var(--accent-purple-500); }
+.accent-green { --primary: var(--accent-green-500); --ring: var(--accent-green-500); }
+
+/* Pastel Tag Pills */
+.tag-pill {
+  @apply px-3 py-1 rounded-full text-xs font-medium transition-all duration-200;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+.tag-pill:hover {
+  background: hsl(var(--primary) / 0.2);
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Buttons */
+.btn-primary {
+  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+}
+
+.btn-ghost {
+  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+  background: transparent;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.btn-ghost:hover {
+  background: hsl(var(--accent) / 0.5);
+  border-color: hsl(var(--primary));
+  transform: translateY(-1px);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Markdown content styling */
+.markdown-content {
+  @apply text-foreground;
+}
+
+.markdown-content h1 {
+  @apply text-2xl font-bold mb-4;
+}
+
+.markdown-content h2 {
+  @apply text-xl font-bold mb-3;
+}
+
+.markdown-content h3 {
+  @apply text-lg font-bold mb-2;
+}
+
+.markdown-content p {
+  @apply mb-4;
+}
+
+.markdown-content ul {
+  @apply list-disc pl-5 mb-4;
+}
+
+.markdown-content ol {
+  @apply list-decimal pl-5 mb-4;
+}
+
+.markdown-content a {
+  @apply text-primary hover:underline;
+}
+
+.markdown-content blockquote {
+  @apply pl-4 border-l-4 border-primary/50 italic my-4;
+}
+
+.markdown-content pre {
+  @apply my-4 overflow-x-auto rounded-md border border-border/30;
+  background: #282c34;
+  padding: 1rem;
+}
+
+.markdown-code-block {
+  @apply my-4 overflow-x-auto rounded-md border border-border/30;
+}
+
+.markdown-content code {
+  @apply bg-muted px-1 py-0.5 rounded font-mono text-sm;
+}
+
+.markdown-table-wrapper {
+  @apply my-4 overflow-x-auto rounded-md border border-border/40;
+}
+
+.markdown-content table {
+  @apply w-full border-collapse text-sm;
+}
+
+.markdown-content th,
+.markdown-content td {
+  @apply border border-border/40 px-3 py-2 text-left align-top;
+}
+
+.markdown-content thead tr {
+  @apply bg-muted/60;
+}
+
+.markdown-content tbody tr:nth-child(even) {
+  @apply bg-muted/30;
+}
+
+.markdown-image {
+  @apply max-w-full h-auto rounded-md border border-border/40 my-4;
+}
+
+/* Custom button variant for cosmic theme */
+.btn-cosmic {
+  @apply bg-gradient-to-r from-primary to-primary/70 text-white hover:from-primary/90 hover:to-primary transition-all shadow-lg;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* Add this new component for cosmic button variant */
+@layer components {
+  .btn-variant-cosmic {
+    @apply bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary hover:to-primary/70 transition-all shadow-md hover:shadow-lg hover:shadow-primary/20;
+  }
+}
+
+/* Calendar customizations */
+.calendar-wrapper .rdp-root {
+  --rdp-accent-color: #9b87f5;
+  --rdp-accent-background-color: #2d2d2d30;
+  --rdp-day-height: 3rem;
+  --rdp-day-width: 3rem;
+  --rdp-day_button-height: 3rem;
+  --rdp-day_button-width: 3rem;
+  margin: 0;
+}
+
+.calendar-wrapper .rdp-day {
+  font-size: 1rem;
+}
+
+.calendar-wrapper .rdp-day_button:hover:not([disabled]):not([data-selected]) {
+  background-color: var(--rdp-accent-background-color);
+}
+
+.calendar-wrapper .rdp-months {
+  justify-content: center;
+}
+
+.calendar-wrapper .rdp-month_caption {
+  font-size: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.calendar-wrapper .rdp-weekday {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.calendar-wrapper .rdp-nav {
+  padding: 0 1rem;
+}
+
+.calendar-wrapper .rdp-button_previous,
+.calendar-wrapper .rdp-button_next {
+  width: 32px;
+  height: 32px;
+}
+
+.calendar-wrapper .rdp-chevron {
+  width: 18px;
+  height: 18px;
+}
