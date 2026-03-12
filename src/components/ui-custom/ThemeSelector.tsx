@@ -7,13 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Palette, 
-  Monitor, 
-  Sun, 
-  Moon, 
-  Sparkles, 
-  Network, 
+import {
+  Palette,
+  Monitor,
+  Sun,
+  Moon,
+  Sparkles,
+  Network,
   GitGraph,
   Zap,
   ZapOff,
@@ -31,14 +31,14 @@ interface ThemeSelectorProps {
   showAdvanced?: boolean;
 }
 
-const ThemeSelector: React.FC<ThemeSelectorProps> = ({ 
+const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   className,
-  showAdvanced = true 
+  showAdvanced = true
 }) => {
-  const { 
-    settings, 
-    setThemeMode, 
-    setAccentColor, 
+  const {
+    settings,
+    setThemeMode,
+    setAccentColor,
     setVisualizationMode,
     setAnimations,
     setFontSize,
@@ -46,7 +46,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     exportSettings,
     importSettings,
     availableThemes,
-    availableAccentColors 
+    availableAccentColors
   } = useTheme();
 
   const [previewMode, setPreviewMode] = useState<ThemeMode | null>(null);
@@ -68,9 +68,9 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   const getThemeIcon = (mode: ThemeMode) => {
     switch (mode) {
       case 'cosmic': return <Sparkles className="h-4 w-4" />;
-      case 'minimal-light': return <Sun className="h-4 w-4" />;
-      case 'midnight-modern': return <Moon className="h-4 w-4" />;
-      case 'frosted-glass': return <Monitor className="h-4 w-4" />;
+      case 'light': return <Sun className="h-4 w-4" />;
+      case 'midnight': return <Moon className="h-4 w-4" />;
+      case 'frost': return <Monitor className="h-4 w-4" />;
       default: return <Palette className="h-4 w-4" />;
     }
   };
@@ -113,8 +113,8 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         <TabsContent value="themes" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {availableThemes.map((theme) => (
-              <Card 
-                key={theme.mode} 
+              <Card
+                key={theme.mode}
                 className={cn(
                   "hover-lift cursor-pointer transition-all duration-200 relative",
                   settings.mode === theme.mode && "ring-2 ring-primary"
@@ -136,7 +136,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                   <CardDescription>{theme.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div 
+                  <div
                     className="h-20 rounded-lg border-2 border-border/50"
                     style={{ background: theme.preview }}
                   />
@@ -162,7 +162,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {availableAccentColors.map((color) => (
-              <Card 
+              <Card
                 key={color.color}
                 className={cn(
                   "hover-lift cursor-pointer transition-all duration-200",
@@ -171,7 +171,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 onClick={() => setAccentColor(color.color)}
               >
                 <CardContent className="p-4 text-center space-y-3">
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-full mx-auto shadow-lg"
                     style={{ backgroundColor: color.hexValue }}
                   />
@@ -197,7 +197,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card 
+            <Card
               className={cn(
                 "hover-lift cursor-pointer transition-all duration-200",
                 settings.visualizationMode === 'constellation' && "ring-2 ring-primary"
@@ -222,9 +222,9 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 <div className="h-16 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg border flex items-center justify-center">
                   <div className="flex space-x-2">
                     {[1, 2, 3, 4].map((i) => (
-                      <div 
-                        key={i} 
-                        className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" 
+                      <div
+                        key={i}
+                        className="w-3 h-3 rounded-full bg-purple-400 animate-pulse"
                         style={{ animationDelay: `${i * 0.2}s` }}
                       />
                     ))}
@@ -233,7 +233,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className={cn(
                 "hover-lift cursor-pointer transition-all duration-200",
                 settings.visualizationMode === 'graph' && "ring-2 ring-primary"
@@ -277,7 +277,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                       Enable smooth transitions and micro-interactions
                     </p>
                   </div>
-                  <Switch 
+                  <Switch
                     checked={settings.animations}
                     onCheckedChange={setAnimations}
                     className="data-[state=checked]:bg-primary"

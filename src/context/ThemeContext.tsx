@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { toast } from '@/hooks/use-toast';
 
 // Theme Types
-export type ThemeMode = 'cosmic' | 'minimal-light' | 'midnight-modern' | 'frosted-glass';
+export type ThemeMode = 'cosmic' | 'light' | 'midnight' | 'frost';
 export type AccentColor = 'blue' | 'pink' | 'orange' | 'purple' | 'green';
 export type VisualizationMode = 'constellation' | 'graph';
 
@@ -17,19 +17,19 @@ interface ThemeSettings {
 interface ThemeContextType {
   // Current theme settings
   settings: ThemeSettings;
-  
+
   // Theme management
   setThemeMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
   setVisualizationMode: (mode: VisualizationMode) => void;
   setAnimations: (enabled: boolean) => void;
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
-  
+
   // Convenience functions
   resetToDefaults: () => void;
   exportSettings: () => string;
   importSettings: (settings: string) => boolean;
-  
+
   // Theme metadata
   availableThemes: Array<{
     mode: ThemeMode;
@@ -63,20 +63,20 @@ const availableThemes = [
     preview: 'linear-gradient(135deg, #121624, #9b87f5)',
   },
   {
-    mode: 'minimal-light' as ThemeMode,
-    name: 'Minimal Light',
+    mode: 'light' as ThemeMode,
+    name: 'Light',
     description: 'Clean, crisp white backgrounds with subtle accents',
     preview: 'linear-gradient(135deg, #ffffff, #f8fafc)',
   },
   {
-    mode: 'midnight-modern' as ThemeMode,
-    name: 'Midnight Modern',
+    mode: 'midnight' as ThemeMode,
+    name: 'Midnight',
     description: 'Sleek dark theme with vibrant accent colors',
     preview: 'linear-gradient(135deg, #0f172a, #1e293b)',
   },
   {
-    mode: 'frosted-glass' as ThemeMode,
-    name: 'Frosted Glass',
+    mode: 'frost' as ThemeMode,
+    name: 'Frost',
     description: 'Frosted glass effect with translucent panels',
     preview: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6))',
   },
@@ -140,7 +140,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
       // Remove all theme classes
       body.classList.remove(
-        'theme-cosmic', 'theme-minimal-light', 'theme-midnight-modern', 'theme-frosted-glass'
+        'theme-cosmic', 'theme-light', 'theme-midnight', 'theme-frost'
       );
 
       // Remove all accent classes
@@ -153,14 +153,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         case 'cosmic':
           body.classList.add('theme-cosmic'); // Default cosmic theme
           break;
-        case 'minimal-light':
-          body.classList.add('theme-minimal-light');
+        case 'light':
+          body.classList.add('theme-light');
           break;
-        case 'midnight-modern':
-          body.classList.add('theme-midnight-modern');
+        case 'midnight':
+          body.classList.add('theme-midnight');
           break;
-        case 'frosted-glass':
-          body.classList.add('theme-frosted-glass');
+        case 'frost':
+          body.classList.add('theme-frost');
           break;
       }
 
@@ -261,7 +261,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const importSettings = (settingsString: string): boolean => {
     try {
       const imported = JSON.parse(settingsString);
-      
+
       // Validate the imported settings
       if (typeof imported === 'object' && imported !== null) {
         const validSettings: ThemeSettings = {
@@ -271,7 +271,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           animations: typeof imported.animations === 'boolean' ? imported.animations : defaultSettings.animations,
           fontSize: ['small', 'medium', 'large'].includes(imported.fontSize) ? imported.fontSize : defaultSettings.fontSize,
         };
-        
+
         setSettings(validSettings);
         toast({
           title: "Settings imported",
@@ -282,7 +282,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error importing settings:', error);
     }
-    
+
     toast({
       title: "Import failed",
       description: "Invalid settings format",

@@ -40,39 +40,39 @@
     --ring: 258 90% 74%;
 
     --radius: 0.5rem;
-    
+
     /* Cosmic Theme Colors */
     --cosmos-stardust: 258 90% 74%;
     --cosmos-nebula: 210 90% 45%;
     --cosmos-aurora: 170 90% 45%;
     --cosmos-solar: 35 90% 55%;
     --cosmos-nova: 300 90% 60%;
-    
+
     /* Accent Color System - Default Blue */
     --accent-blue-50: 214 100% 97%;
     --accent-blue-100: 214 95% 93%;
     --accent-blue-500: 217 91% 60%;
     --accent-blue-600: 221 83% 53%;
     --accent-blue-900: 224 76% 48%;
-    
+
     --accent-pink-50: 327 73% 97%;
     --accent-pink-100: 326 78% 95%;
     --accent-pink-500: 330 81% 60%;
     --accent-pink-600: 333 71% 51%;
     --accent-pink-900: 336 84% 17%;
-    
+
     --accent-orange-50: 34 100% 97%;
     --accent-orange-100: 32 98% 83%;
     --accent-orange-500: 25 95% 53%;
     --accent-orange-600: 21 90% 48%;
     --accent-orange-900: 15 86% 30%;
-    
+
     --accent-purple-50: 270 100% 98%;
     --accent-purple-100: 269 100% 95%;
     --accent-purple-500: 258 90% 66%;
     --accent-purple-600: 262 83% 58%;
     --accent-purple-900: 263 69% 42%;
-    
+
     --accent-green-50: 138 76% 97%;
     --accent-green-100: 140 84% 92%;
     --accent-green-500: 142 76% 36%;
@@ -88,9 +88,9 @@
     --ring: 258 90% 74%;
     --cosmos-highlight: 258 90% 74%;
   }
-  
+
   /* Minimal Light Theme */
-  .theme-minimal-light {
+  .theme-light {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
@@ -112,8 +112,8 @@
     --ring: hsl(var(--accent-blue-500));
   }
 
-  /* Midnight Modern Theme */
-  .theme-midnight-modern {
+  /* Midnight Theme */
+  .theme-midnight {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
@@ -134,9 +134,9 @@
     --input: 240 3.7% 15.9%;
     --ring: hsl(var(--accent-blue-500));
   }
-  
+
   /* Frosted Glass Theme */
-  .theme-frosted-glass {
+  .theme-frost {
     color-scheme: dark;
     --background: 220 35% 16%;
     --foreground: 210 40% 96%;
@@ -177,7 +177,7 @@
     --sidebar-ring: 258 90% 74%;
   }
 
-  body.theme-frosted-glass {
+  body.theme-frost {
     background-image:
       radial-gradient(120% 120% at 15% 0%, hsl(258 90% 70% / 0.22) 0%, transparent 65%),
       radial-gradient(110% 110% at 85% 10%, hsl(200 90% 60% / 0.16) 0%, transparent 70%),
@@ -190,27 +190,27 @@
   * {
     @apply border-border;
   }
-  
+
   html, body {
     height: 100%;
     overflow: hidden;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans overflow-hidden;
     font-family: 'Inter', 'system-ui', '-apple-system', sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
-  
+
   /* Typography utilities */
   .font-display {
     font-family: 'Geist', 'Inter', 'system-ui', '-apple-system', sans-serif;
   }
-  
+
   .font-legacy {
     font-family: 'Poppins', sans-serif;
   }
-  
+
   #root {
     height: 100%;
   }
@@ -308,20 +308,20 @@
 }
 
 /* Enhanced Glass Effects for Frosted Glass Theme */
-.theme-frosted-glass .glass-panel {
-  background-image: 
+.theme-frost .glass-panel {
+  background-image:
     radial-gradient(circle at 20% 20%, hsla(258, 90%, 74%, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, hsla(210, 90%, 45%, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 40% 80%, hsla(300, 90%, 60%, 0.04) 0%, transparent 50%);
 }
 
 /* Frosted surface styling */
-.theme-frosted-glass .bg-card,
-.theme-frosted-glass .bg-card\/80,
-.theme-frosted-glass [class*='bg-card'],
-.theme-frosted-glass .bg-secondary,
-.theme-frosted-glass .bg-muted,
-.theme-frosted-glass .bg-background\/50 {
+.theme-frost .bg-card,
+.theme-frost .bg-card\/80,
+.theme-frost [class*='bg-card'],
+.theme-frost .bg-secondary,
+.theme-frost .bg-muted,
+.theme-frost .bg-background\/50 {
   background: hsl(var(--card) / 0.72) !important;
   border-color: hsl(var(--border) / 0.45) !important;
   backdrop-filter: blur(22px) saturate(185%);
@@ -331,21 +331,21 @@
     inset 0 1px 0 hsl(0 0% 100% / 0.05);
 }
 
-.theme-frosted-glass .bg-card.border-r {
+.theme-frost .bg-card.border-r {
   border-right-color: hsl(var(--border) / 0.45) !important;
 }
 
-.theme-frosted-glass [data-panel],
-.theme-frosted-glass [data-panel-id] {
+.theme-frost [data-panel],
+.theme-frost [data-panel-id] {
   background: hsl(var(--card) / 0.68) !important;
   border-color: hsl(var(--border) / 0.35) !important;
   backdrop-filter: blur(22px) saturate(185%);
   -webkit-backdrop-filter: blur(22px) saturate(185%);
 }
 
-.theme-frosted-glass [role="dialog"],
-.theme-frosted-glass [role="menu"],
-.theme-frosted-glass [role="listbox"] {
+.theme-frost [role="dialog"],
+.theme-frost [role="menu"],
+.theme-frost [role="listbox"] {
   background: hsl(var(--card) / 0.82) !important;
   border-color: hsl(var(--border) / 0.45) !important;
   backdrop-filter: blur(28px) saturate(200%);
@@ -353,39 +353,39 @@
   box-shadow: 0 24px 48px hsl(var(--background) / 0.4);
 }
 
-.theme-frosted-glass input,
-.theme-frosted-glass textarea,
-.theme-frosted-glass select {
+.theme-frost input,
+.theme-frost textarea,
+.theme-frost select {
   background: hsl(var(--background) / 0.6) !important;
   border-color: hsl(var(--border) / 0.4) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
-.theme-frosted-glass .hover\:bg-accent:hover,
-.theme-frosted-glass .hover\:bg-secondary:hover {
+.theme-frost .hover\:bg-accent:hover,
+.theme-frost .hover\:bg-secondary:hover {
   background: hsl(var(--accent) / 0.4) !important;
   border-color: hsl(var(--border) / 0.45) !important;
 }
 
-.theme-frosted-glass .border,
-.theme-frosted-glass [class*='border-'] {
+.theme-frost .border,
+.theme-frost [class*='border-'] {
   border-color: hsl(var(--border) / 0.45) !important;
 }
 
-.theme-frosted-glass .bg-red-900\/30 {
+.theme-frost .bg-red-900\/30 {
   background: hsl(0 62% 40% / 0.35) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
-.theme-frosted-glass [style*="background-color: rgb(0, 0, 0)"],
-.theme-frosted-glass [style*="background: rgb(0, 0, 0)"],
-.theme-frosted-glass [style*="background-color: rgba(0, 0, 0"],
-.theme-frosted-glass .bg-black,
-.theme-frosted-glass [class*="bg-gray-900"],
-.theme-frosted-glass [class*="bg-slate-900"],
-.theme-frosted-glass [class*="bg-zinc-900"] {
+.theme-frost [style*="background-color: rgb(0, 0, 0)"],
+.theme-frost [style*="background: rgb(0, 0, 0)"],
+.theme-frost [style*="background-color: rgba(0, 0, 0"],
+.theme-frost .bg-black,
+.theme-frost [class*="bg-gray-900"],
+.theme-frost [class*="bg-slate-900"],
+.theme-frost [class*="bg-zinc-900"] {
   background: hsl(var(--card) / 0.7) !important;
   backdrop-filter: blur(22px) saturate(185%);
   -webkit-backdrop-filter: blur(22px) saturate(185%);
