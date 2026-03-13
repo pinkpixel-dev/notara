@@ -30,6 +30,7 @@ import { Slider } from '@/components/ui/slider';
 import { calculateNoteSimilarity } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { AiConversationSnapshot, AiMessage, Note } from '@/types';
+import { readPollinationsConfig } from '@/lib/pollinations';
 
 type Message = AiMessage;
 
@@ -84,17 +85,6 @@ const writeArchiveToLocalStorage = (archive: ConversationSnapshot[]): void => {
   } catch (error) {
     console.warn('Failed to persist AI conversation archive:', error);
   }
-};
-
-// Configuration for the Pollinations API
-const API_CONFIG = {
-  textModel: 'openai',
-  imageModel: 'flux',
-  private: true,
-  enhance: true,
-  noLogo: true,
-  safe: false,
-  referrer: 'notara'
 };
 
 const POLLINATIONS_TOKEN = import.meta.env.VITE_POLLINATIONS_API_TOKEN;
@@ -592,12 +582,17 @@ covered in the calendar data, please mention that.
       // Reset the content accumulator
       contentAccumulatorRef.current = '';
 
+      const pollinationsConfig = readPollinationsConfig();
+      const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
+
+      if (!pollinationsToken) {
+        throw new Error('Pollinations API key is required for text generation. Add one in Settings → Integrations.');
+      }
+
       const payload = {
-        model: API_CONFIG.textModel,
+        model: pollinationsConfig.textModel,
         messages: messages,
-        private: API_CONFIG.private,
         stream: true,
-        ...(API_CONFIG.referrer ? { referrer: API_CONFIG.referrer } : {}),
       };
 
       const headers: HeadersInit = {
@@ -605,9 +600,7 @@ covered in the calendar data, please mention that.
         Accept: "text/event-stream",
       };
 
-      if (POLLINATIONS_TOKEN) {
-        headers["Authorization"] = `Bearer ${POLLINATIONS_TOKEN}`;
-      }
+      headers["Authorization"] = `Bearer ${pollinationsToken}`;
 
       const response = await fetch("/api/pollinations/text", {
         method: "POST",
@@ -1350,14 +1343,17 @@ Focus on finding meaningful relationships and insights rather than just summariz
       const prompt = imagePrompt;
       const { width, height } = imageSize;
       const seed = Math.floor(Math.random() * 1000); // Random seed for each generation
+      const pollinationsConfig = readPollinationsConfig();
+      const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
+
+      if (!pollinationsToken) {
+        throw new Error('Pollinations API key is required for image generation. Add one in Settings → Integrations.');
+      }
 
       const headers: HeadersInit = {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${pollinationsToken}`,
       };
-
-      if (POLLINATIONS_TOKEN) {
-        headers["Authorization"] = `Bearer ${POLLINATIONS_TOKEN}`;
-      }
 
       const response = await fetch('/api/pollinations/image', {
         method: 'POST',
@@ -1367,9 +1363,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
           width,
           height,
           seed,
-          nologo: API_CONFIG.noLogo,
-          model: API_CONFIG.imageModel,
-          referrer: API_CONFIG.referrer,
+          model: pollinationsConfig.imageModel,
         })
       });
 

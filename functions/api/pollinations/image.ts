@@ -12,9 +12,10 @@ type ImageRequestPayload = {
   width?: number;
   height?: number;
   seed?: number;
-  nologo?: boolean;
   model?: string;
-  referrer?: string;
+  enhance?: boolean;
+  safe?: boolean;
+  quality?: 'low' | 'medium' | 'high' | 'hd';
 };
 
 export const onRequestPost = async ({ request, env }: PagesFunctionArgs<PollinationsEnv>) => {
@@ -41,18 +42,24 @@ export const onRequestPost = async ({ request, env }: PagesFunctionArgs<Pollinat
   const width = payload.width ?? 1024;
   const height = payload.height ?? 1024;
   const seed = payload.seed ?? Math.floor(Math.random() * 1000);
-  const nologo = payload.nologo ?? false;
   const model = payload.model ?? "flux";
-  const referrer = payload.referrer;
+  const enhance = payload.enhance;
+  const safe = payload.safe;
+  const quality = payload.quality;
 
-  const upstreamUrl = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
+  const upstreamUrl = new URL(`https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}`);
   upstreamUrl.searchParams.set("width", String(width));
   upstreamUrl.searchParams.set("height", String(height));
   upstreamUrl.searchParams.set("seed", String(seed));
-  upstreamUrl.searchParams.set("nologo", nologo ? "true" : "false");
   upstreamUrl.searchParams.set("model", model);
-  if (referrer) {
-    upstreamUrl.searchParams.set("referrer", referrer);
+  if (typeof enhance === 'boolean') {
+    upstreamUrl.searchParams.set("enhance", enhance ? "true" : "false");
+  }
+  if (typeof safe === 'boolean') {
+    upstreamUrl.searchParams.set("safe", safe ? "true" : "false");
+  }
+  if (quality) {
+    upstreamUrl.searchParams.set("quality", quality);
   }
 
   const incomingAuthorization = request.headers.get("authorization");
@@ -61,10 +68,23 @@ export const onRequestPost = async ({ request, env }: PagesFunctionArgs<Pollinat
   const tokenValue = incomingAuthorization
     ?? (envToken ? (envToken.startsWith("Bearer ") ? envToken : `Bearer ${envToken}`) : undefined);
 
-  const upstreamHeaders = new Headers();
-  if (tokenValue) {
-    upstreamHeaders.set("Authorization", tokenValue);
+  if (!tokenValue) {
+    return new Response(
+      JSON.stringify({
+        error: "Pollinations API key required",
+        message: "Provide an API key from https://enter.pollinations.ai in Settings → Integrations.",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      }
+    );
   }
+
+  const upstreamHeaders = new Headers();
+  upstreamHeaders.set("Authorization", tokenValue);
 
   try {
     const upstreamResponse = await fetch(upstreamUrl.toString(), {

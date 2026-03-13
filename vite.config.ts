@@ -266,12 +266,20 @@ const createPollinationsProxyPlugin = (env: Record<string, string>): Plugin => {
           const authHeaderValue = parsedIncoming
             ?? (envToken ? (envToken.startsWith("Bearer ") ? envToken : `Bearer ${envToken}`) : undefined);
 
-          if (authHeaderValue) {
-            upstreamHeaders["Authorization"] = authHeaderValue;
+          if (!authHeaderValue) {
+            res.statusCode = 401;
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.end(JSON.stringify({
+              error: "Pollinations API key required",
+              message: "Provide an API key from https://enter.pollinations.ai in Settings → Integrations.",
+            }));
+            return;
           }
 
+          upstreamHeaders["Authorization"] = authHeaderValue;
+
           try {
-            const upstreamResponse = await fetch("https://text.pollinations.ai/v1/chat/completions", {
+            const upstreamResponse = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
               method: "POST",
               headers: upstreamHeaders,
               body,
@@ -374,10 +382,19 @@ const createPollinationsProxyPlugin = (env: Record<string, string>): Plugin => {
             const authHeaderValue = parsedIncoming
               ?? (envToken ? (envToken.startsWith("Bearer ") ? envToken : `Bearer ${envToken}`) : undefined);
 
-            const upstreamHeaders: Record<string, string> = {};
-            if (authHeaderValue) {
-              upstreamHeaders["Authorization"] = authHeaderValue;
+            if (!authHeaderValue) {
+              res.statusCode = 401;
+              res.setHeader("Content-Type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({
+                error: "Pollinations API key required",
+                message: "Provide an API key from https://enter.pollinations.ai in Settings → Integrations.",
+              }));
+              return;
             }
+
+            const upstreamHeaders: Record<string, string> = {
+              Authorization: authHeaderValue,
+            };
 
             const upstreamResponse = await fetch(upstreamUrl.toString(), {
               method: "GET",

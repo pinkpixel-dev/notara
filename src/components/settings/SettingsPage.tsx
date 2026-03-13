@@ -17,6 +17,11 @@ import { useIntegrations } from '@/context/IntegrationContext';
 import { IntegrationCard } from '@/components/integrations/IntegrationCard';
 import type { NoteTag } from '@/types';
 import type { IntegrationProvider } from '@/lib/integrations/types';
+import {
+  POLLINATIONS_DEFAULT_CONFIG,
+  readPollinationsConfig,
+  savePollinationsConfig,
+} from '@/lib/pollinations';
 
 const SettingsPage: React.FC = () => {
   const [autoSave, setAutoSave] = useState(true);
@@ -41,6 +46,9 @@ const SettingsPage: React.FC = () => {
   const [githubRepoOwner, setGithubRepoOwner] = useState('');
   const [githubRepoName, setGithubRepoName] = useState('');
   const [githubRepoBranch, setGithubRepoBranch] = useState('main');
+  const [pollinationsApiKey, setPollinationsApiKey] = useState('');
+  const [pollinationsTextModel, setPollinationsTextModel] = useState(POLLINATIONS_DEFAULT_CONFIG.textModel);
+  const [pollinationsImageModel, setPollinationsImageModel] = useState(POLLINATIONS_DEFAULT_CONFIG.imageModel);
 
   useEffect(() => {
     setDraftTags(tags.map(tag => ({ ...tag })));
@@ -66,6 +74,13 @@ const SettingsPage: React.FC = () => {
     githubState?.config?.userName,
     githubState?.config,
   ]);
+
+  useEffect(() => {
+    const config = readPollinationsConfig();
+    setPollinationsApiKey(config.apiKey);
+    setPollinationsTextModel(config.textModel);
+    setPollinationsImageModel(config.imageModel);
+  }, []);
 
   const notesPerTag = useMemo(() => {
     const usage = new Map<string, number>();
@@ -291,8 +306,26 @@ const SettingsPage: React.FC = () => {
     });
   };
 
+  const handleSavePollinationsSettings = () => {
+    const saved = savePollinationsConfig({
+      apiKey: pollinationsApiKey,
+      textModel: pollinationsTextModel,
+      imageModel: pollinationsImageModel,
+    });
+
+    setPollinationsApiKey(saved.apiKey);
+    setPollinationsTextModel(saved.textModel);
+    setPollinationsImageModel(saved.imageModel);
+
+    toast({
+      title: 'AI settings saved',
+      description: `Text model: ${saved.textModel} · Image model: ${saved.imageModel}`,
+    });
+  };
+
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
+    <div className="h-full overflow-y-auto">
+      <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Button
@@ -712,6 +745,65 @@ const SettingsPage: React.FC = () => {
 
                 <Separator />
 
+                <div className="rounded-md border border-border/50 bg-card/40 p-4 space-y-4">
+                  <div className="space-y-1">
+                    <Label className="uppercase text-xs tracking-wide text-muted-foreground">
+                      AI Assistant (Pollinations)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Configure your Pollinations API key and model names for text and image generation.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="space-y-2 sm:col-span-3">
+                      <Label htmlFor="pollinations-api-key">API Key</Label>
+                      <Input
+                        id="pollinations-api-key"
+                        type="password"
+                        value={pollinationsApiKey}
+                        onChange={(event) => setPollinationsApiKey(event.target.value)}
+                        placeholder="sk_..."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Required for both text and image generation. Get keys from enter.pollinations.ai.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pollinations-text-model">Text Model</Label>
+                      <Input
+                        id="pollinations-text-model"
+                        value={pollinationsTextModel}
+                        onChange={(event) => setPollinationsTextModel(event.target.value)}
+                        placeholder={POLLINATIONS_DEFAULT_CONFIG.textModel}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pollinations-image-model">Image Model</Label>
+                      <Input
+                        id="pollinations-image-model"
+                        value={pollinationsImageModel}
+                        onChange={(event) => setPollinationsImageModel(event.target.value)}
+                        placeholder={POLLINATIONS_DEFAULT_CONFIG.imageModel}
+                      />
+                    </div>
+
+                    <div className="flex items-end">
+                      <Button
+                        variant="secondary"
+                        onClick={handleSavePollinationsSettings}
+                        className="w-full"
+                      >
+                        Save AI Settings
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="space-y-2">
                   <Label>Export Data</Label>
                   <div className="flex gap-2">
@@ -790,6 +882,7 @@ const SettingsPage: React.FC = () => {
           </TabsContent>
         </div>
       </Tabs>
+      </div>
     </div>
   );
 };

@@ -21,12 +21,25 @@ export const onRequestPost = async ({ request, env }: PagesFunctionArgs<Pollinat
   const tokenValue = incomingAuthorization
     ?? (envToken ? (envToken.startsWith("Bearer ") ? envToken : `Bearer ${envToken}`) : undefined);
 
-  if (tokenValue) {
-    upstreamHeaders.set("Authorization", tokenValue);
+  if (!tokenValue) {
+    return new Response(
+      JSON.stringify({
+        error: "Pollinations API key required",
+        message: "Provide an API key from https://enter.pollinations.ai in Settings → Integrations.",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      }
+    );
   }
 
+  upstreamHeaders.set("Authorization", tokenValue);
+
   try {
-    const upstreamResponse = await fetch("https://text.pollinations.ai/v1/chat/completions", {
+    const upstreamResponse = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
       method: "POST",
       headers: upstreamHeaders,
       body: requestBody,
