@@ -169,6 +169,23 @@ Pollinations routes. Mirror the optional token with:
 wrangler secret put POLLINATIONS_API_TOKEN
 ```
 
+## Docs website deployment
+
+The docs site under `website/` has its own Pages config in `website/wrangler.jsonc`, separate from
+the root app config.
+
+```bash
+cd website
+npx wrangler whoami
+npm run deploy
+```
+
+For local Pages-style testing:
+
+```bash
+npm run cf:dev
+```
+
 ## Environment variables you actually need
 
 | Variable | Required | Purpose |

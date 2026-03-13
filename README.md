@@ -222,6 +222,22 @@ Ensure the following secrets exist in your Cloudflare Pages project before deplo
 
 - `POLLINATIONS_API_TOKEN` _(optional but recommended if you rely on authenticated Pollinations requests)_
 
+### Deploy docs website to Cloudflare Pages
+
+The docs site in [`website/`](/home/sizzlebop/PINKPIXEL/PROJECTS/CURRENT/notara/website) now has its own Wrangler Pages config at [`website/wrangler.jsonc`](/home/sizzlebop/PINKPIXEL/PROJECTS/CURRENT/notara/website/wrangler.jsonc), so it can be built and deployed independently from the root app.
+
+```bash
+cd website
+npx wrangler whoami
+npm run deploy
+```
+
+Useful website-local commands:
+
+- `npm run cf:dev` builds the docs and serves the output through Cloudflare Pages locally
+- `npm run deploy` creates a Pages deployment for the `notara-docs` project
+- `npm run deploy:production` deploys the docs to the `main` production branch
+
 ## 🛠️ Technology Stack
 
 ### Frontend
