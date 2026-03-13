@@ -2,8 +2,6 @@ const DB_NAME = 'notara-filesystem';
 const STORE_NAME = 'handles';
 const KEY_ROOT = 'root-directory';
 
-type DirectoryHandle = FileSystemDirectoryHandle;
-
 const openDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
@@ -20,7 +18,9 @@ const openDatabase = (): Promise<IDBDatabase> => {
   });
 };
 
-export const persistDirectoryHandle = async (handle: DirectoryHandle): Promise<void> => {
+export const persistBrowserDirectoryHandle = async (
+  handle: FileSystemDirectoryHandle
+): Promise<void> => {
   const db = await openDatabase();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
@@ -33,7 +33,7 @@ export const persistDirectoryHandle = async (handle: DirectoryHandle): Promise<v
   });
 };
 
-export const retrieveDirectoryHandle = async (): Promise<DirectoryHandle | null> => {
+export const retrievePersistedBrowserDirectoryHandle = async (): Promise<FileSystemDirectoryHandle | null> => {
   const db = await openDatabase();
   const tx = db.transaction(STORE_NAME, 'readonly');
   const store = tx.objectStore(STORE_NAME);
@@ -41,13 +41,13 @@ export const retrieveDirectoryHandle = async (): Promise<DirectoryHandle | null>
 
   return new Promise((resolve, reject) => {
     request.onsuccess = () => {
-      resolve(request.result ?? null);
+      resolve((request.result as FileSystemDirectoryHandle | undefined) ?? null);
     };
     request.onerror = () => reject(request.error);
   });
 };
 
-export const clearPersistedDirectoryHandle = async (): Promise<void> => {
+export const clearPersistedBrowserDirectoryHandle = async (): Promise<void> => {
   const db = await openDatabase();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
@@ -59,4 +59,3 @@ export const clearPersistedDirectoryHandle = async (): Promise<void> => {
     tx.onabort = () => reject(tx.error);
   });
 };
-

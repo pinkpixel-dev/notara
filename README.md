@@ -231,7 +231,8 @@ npm run tauri:build:linux # Build .deb and AppImage bundles
 ### Desktop Notes
 
 - The Tauri desktop shell is configured and uses `public/icon.png` for installer icons.
-- Desktop packaging currently focuses on app distribution. Browser-only features that depend on the File System Access API or local `/api/*` proxy routes may still need follow-up native integration work for full parity outside the web deployment flow.
+- Desktop builds now support choosing and reconnecting a real local Notara folder through Tauri's native dialog and filesystem APIs.
+- The local `/api/*` proxy routes used for some web flows still need follow-up native integration work for full desktop parity.
 
 ## 📋 Roadmap
 

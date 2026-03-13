@@ -7,18 +7,16 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { NotesBundle } from '@/lib/filesystem';
+import type { NotesBundle, RootDirectoryHandle } from '@/lib/filesystem';
 import { fileSystemHelpers } from '@/lib/filesystem';
 import type { AiConversationSnapshot, Note, NoteTag, TodoList, VisionBoard } from '@/types';
-
-type ContextDirectoryHandle = FileSystemDirectoryHandle;
 
 type FileSystemStatus = import('@/lib/filesystem').FileSystemStatus;
 
 interface FileSystemContextValue {
   status: FileSystemStatus;
   isSupported: boolean;
-  rootHandle: ContextDirectoryHandle | null;
+  rootHandle: RootDirectoryHandle | null;
   lastError: string | null;
   selectDirectory: () => Promise<boolean>;
   reconnectToPersisted: () => Promise<boolean>;
@@ -35,11 +33,7 @@ interface FileSystemContextValue {
 
 const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
 
-const isFileSystemSupported = () =>
-  typeof window !== 'undefined' &&
-  'showDirectoryPicker' in window &&
-  'isSecureContext' in window &&
-  window.isSecureContext;
+const isFileSystemSupported = () => fileSystemHelpers.isSupported();
 
 const DATA_DIRECTORY = 'data';
 const NOTES_JSON_PATH = [DATA_DIRECTORY, 'notes', 'notes.json'] as const;
@@ -119,22 +113,24 @@ const buildNoteMarkdown = (note: Note): string => {
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supported = isFileSystemSupported();
   const [status, setStatus] = useState<FileSystemStatus>(supported ? 'uninitialized' : 'unsupported');
-  const [rootHandle, setRootHandle] = useState<ContextDirectoryHandle | null>(null);
-  const [persistedHandle, setPersistedHandle] = useState<ContextDirectoryHandle | null>(null);
+  const [rootHandle, setRootHandle] = useState<RootDirectoryHandle | null>(null);
+  const [persistedHandle, setPersistedHandle] = useState<RootDirectoryHandle | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const initializingRef = useRef(false);
   const aiArchiveCacheRef = useRef<AiConversationSnapshot[] | null>(null);
 
-  const ensureProjectStructure = useCallback(async (handle: ContextDirectoryHandle) => {
+  const ensureProjectStructure = useCallback(async (handle: RootDirectoryHandle) => {
     await fileSystemHelpers.ensureDataDirectory(handle);
     for (const path of REQUIRED_DIRECTORIES) {
       await fileSystemHelpers.ensurePath(handle, path);
     }
   }, []);
 
-  const prepareHandle = useCallback(async (handle: ContextDirectoryHandle) => {
+  const prepareHandle = useCallback(async (handle: RootDirectoryHandle) => {
     try {
-      await navigator.storage?.persist?.().catch(() => undefined);
+      if (!fileSystemHelpers.isTauriEnvironment()) {
+        await navigator.storage?.persist?.().catch(() => undefined);
+      }
       await ensureProjectStructure(handle);
       setRootHandle(handle);
       setStatus('ready');
@@ -159,7 +155,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return;
       }
       setPersistedHandle(savedHandle);
-      const permission = await savedHandle.queryPermission({ mode: 'readwrite' });
+      const permission = await fileSystemHelpers.requestReadWritePermission(savedHandle);
       if (permission === 'granted') {
         await prepareHandle(savedHandle);
       } else {
@@ -189,7 +185,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return false;
     }
     try {
-      const directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const directoryHandle = await fileSystemHelpers.selectDirectory();
+      if (!directoryHandle) {
+        return false;
+      }
       const permission = await fileSystemHelpers.requestReadWritePermission(directoryHandle);
       if (permission !== 'granted') {
         setStatus('needs-permission');
@@ -218,6 +217,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return false;
     }
     try {
+      const exists = await fileSystemHelpers.directoryExists(persistedHandle);
+      if (!exists) {
+        setPersistedHandle(null);
+        setRootHandle(null);
+        setStatus('no-directory');
+        setLastError('The previously selected Notara folder is no longer available.');
+        await fileSystemHelpers.clearPersistedDirectoryHandle();
+        return false;
+      }
+
       const permission = await fileSystemHelpers.requestReadWritePermission(persistedHandle);
       if (permission !== 'granted') {
         setStatus('needs-permission');

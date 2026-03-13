@@ -10,6 +10,7 @@ All notable changes to the Notara project will be documented in this file.
 - Linux packaging scripts for `.deb` and `AppImage` bundles.
 - Windows installer GitHub Actions workflow that builds an NSIS installer.
 - Desktop installer icon generation sourced from `public/icon.png`.
+- Native Tauri-backed folder selection and local file persistence for desktop builds, preserving Notara's linked-directory workflow outside the browser.
 
 ## [1.1.0] - 2026-03-13
 
