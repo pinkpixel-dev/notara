@@ -473,7 +473,7 @@ const ConstellationView: React.FC = () => {
       </div>
 
       <SimilarityControls />
-      
+
       {/* Instructions */}
       <div className="absolute bottom-4 left-4 right-4 sm:left-4 sm:right-auto sm:max-w-md">
         <div className="bg-card/90 backdrop-blur-sm p-3 rounded-lg border border-border/50 shadow-lg">
