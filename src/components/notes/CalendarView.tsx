@@ -217,17 +217,41 @@ const CalendarView: React.FC = () => {
           <CalendarIcon className="h-6 w-6 text-primary" />
           Calendar
         </h2>
-        <Button onClick={() => {
-          // Make sure we have a default time set
-          if (eventTime === '') {
-            setEventTime('12:00');
-          }
-          setIsAddingEvent(true);
-          console.log('Opening Add Event dialog for date:', date ? format(date, 'yyyy-MM-dd') : 'No date selected');
-        }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Event
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const today = new Date();
+              const selectedDate = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+                12,
+                0,
+                0
+              );
+              setDate(selectedDate);
+              setEventsTab('selected');
+            }}
+          >
+            Today
+          </Button>
+          <Button onClick={() => {
+            if (!date) {
+              const today = new Date();
+              setDate(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+              setEventsTab('selected');
+            }
+
+            if (eventTime === '') {
+              setEventTime('12:00');
+            }
+            setIsAddingEvent(true);
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Event
+          </Button>
+        </div>
       </div>
 
       <ResizablePanelGroup
