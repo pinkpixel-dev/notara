@@ -9,6 +9,11 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build:linux": "tauri build --bundles deb,appimage",
+    "tauri:icon": "tauri icon public/icon.png",
     "deploy": "npm run deploy:cloudflare",
     "deploy:cloudflare": "node deploy-cloudflare.js"
   },
@@ -74,6 +79,7 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
+    "@tauri-apps/cli": "^2.10.1",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",

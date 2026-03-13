@@ -4,6 +4,13 @@ All notable changes to the Notara project will be documented in this file.
 
 ## [Unreleased]
 
+### ✨ Added
+
+- Tauri desktop app scaffold targeting the existing Vite frontend.
+- Linux packaging scripts for `.deb` and `AppImage` bundles.
+- Windows installer GitHub Actions workflow that builds an NSIS installer.
+- Desktop installer icon generation sourced from `public/icon.png`.
+
 ## [1.1.0] - 2026-03-13
 
 ### ✨ Added

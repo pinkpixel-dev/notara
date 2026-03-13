@@ -68,6 +68,12 @@
 - **Node.js** 18+
 - **npm** or **yarn**
 - **Git**
+- **Rust** toolchain for desktop builds
+- Linux desktop build deps for Tauri on Debian/Ubuntu:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+  ```
 
 ### Installation
 
@@ -127,6 +133,39 @@ npm run build:dev
 npm run build
 ```
 
+### Desktop Development
+
+```bash
+npm run tauri:dev
+```
+
+### Linux Desktop Bundles
+
+Build Linux installers locally:
+
+```bash
+npm run tauri:build:linux
+```
+
+Artifacts are written to:
+
+- `src-tauri/target/release/bundle/deb/`
+- `src-tauri/target/release/bundle/appimage/`
+
+If you are building on a rolling-release Linux distro, AppImage packaging may fail because `linuxdeploy` can lag behind newer system linker formats. The included GitHub Actions workflow builds Linux bundles on `ubuntu-22.04`, which is the most reliable path for AppImage output.
+
+### Windows Installer via GitHub Actions
+
+This repository now includes a GitHub Actions workflow at `.github/workflows/windows-installer.yml`.
+
+- Trigger it manually from the Actions tab, or
+- Push a tag like `v1.1.0`
+
+The workflow builds an NSIS Windows installer and uploads it as both:
+
+- a GitHub Actions artifact
+- a draft GitHub release asset for tagged builds
+
 ### Deploy to Cloudflare
 
 ```bash
@@ -185,7 +224,14 @@ npm run dev        # Start development server
 npm run build      # Build for production
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
+npm run tauri:dev  # Run the Tauri desktop app in development
+npm run tauri:build:linux # Build .deb and AppImage bundles
 ```
+
+### Desktop Notes
+
+- The Tauri desktop shell is configured and uses `public/icon.png` for installer icons.
+- Desktop packaging currently focuses on app distribution. Browser-only features that depend on the File System Access API or local `/api/*` proxy routes may still need follow-up native integration work for full parity outside the web deployment flow.
 
 ## 📋 Roadmap
 
