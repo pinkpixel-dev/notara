@@ -7,9 +7,6 @@ import { toast } from '@/hooks/use-toast';
 
 const StorageStatusBadge: React.FC = () => {
   const { status, rootHandle, selectDirectory, reconnectToPersisted, lastError } = useFileSystem();
-  const isLinkedFolder =
-    rootHandle?.kind === 'browser' ||
-    (rootHandle?.kind === 'tauri' && rootHandle.source === 'linked');
   const storageLabel =
     rootHandle?.kind === 'tauri' && rootHandle.source === 'app-data'
       ? 'App storage'
@@ -20,7 +17,7 @@ const StorageStatusBadge: React.FC = () => {
     if (connected) {
       toast({
         title: 'Storage ready',
-        description: 'Notara will store data inside your linked folder.',
+        description: 'Notara storage is ready to use.',
       });
     }
   }, [selectDirectory]);
@@ -55,11 +52,7 @@ const StorageStatusBadge: React.FC = () => {
           <span className="max-w-[10rem] truncate">{storageLabel}</span>
         </TooltipTrigger>
         <TooltipContent>
-          <p>
-            {isLinkedFolder
-              ? `Connected to ${rootHandle?.name || 'your Notara folder'}.`
-              : 'Saving to Notara app storage. Use File -> Choose Notara Folder to link a custom folder.'}
-          </p>
+          <p>Saving to Notara app storage.</p>
         </TooltipContent>
       </Tooltip>
     );

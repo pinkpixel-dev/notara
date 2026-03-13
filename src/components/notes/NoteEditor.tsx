@@ -26,10 +26,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
     updateNote,
     persistBundle,
   } = useNotes();
-  const { status, rootHandle } = useFileSystem();
-  const isLinkedDirectory =
-    rootHandle?.kind === 'browser' ||
-    (rootHandle?.kind === 'tauri' && rootHandle.source === 'linked');
+  const { status } = useFileSystem();
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [selectedTags, setSelectedTags] = useState(note?.tags || []);
@@ -90,9 +87,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
         title: status === 'ready' ? 'Note saved' : 'Saved locally',
         description:
           status === 'ready'
-            ? isLinkedDirectory
-              ? 'Your changes were written to the linked Notara folder.'
-              : 'Your changes were written to Notara app storage.'
+            ? 'Your changes were written to Notara app storage.'
             : 'Storage is not ready yet, so the note was only saved in memory.',
       });
 
@@ -119,7 +114,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
     notes,
     onSave,
     persistBundle,
-    isLinkedDirectory,
     selectedTags,
     status,
     title,

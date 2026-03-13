@@ -85,9 +85,7 @@ const AppMenuBar: React.FC = () => {
       await flushCachedAiConversations();
       toast({
         title: 'All changes saved',
-        description: hasLinkedDirectory
-          ? 'Your notes and todos have been written to the linked Notara folder.'
-          : 'Your notes and todos have been written to Notara app storage.',
+        description: 'Your notes and todos have been written to Notara app storage.',
       });
     } catch (error) {
       console.error('Save all failed', error);
@@ -155,7 +153,7 @@ const AppMenuBar: React.FC = () => {
     if (connected) {
       toast({
         title: 'Storage ready',
-        description: 'Files will now sync to your linked Notara folder.',
+        description: 'Notara app storage is ready.',
       });
     }
   }, [selectDirectory]);
@@ -205,7 +203,7 @@ const AppMenuBar: React.FC = () => {
         <MenubarTrigger className="hover:bg-secondary/60">File</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onSelect={(event) => { event.preventDefault(); void handleConnectDirectory(); }}>
-            Choose Notara Folder...
+            Initialize Storage
           </MenubarItem>
           <MenubarItem
             disabled={status !== 'needs-permission'}
@@ -214,7 +212,7 @@ const AppMenuBar: React.FC = () => {
               void handleReconnectDirectory();
             }}
           >
-            Re-authorize Folder
+            Reconnect Storage
           </MenubarItem>
           <MenubarItem
             disabled={!hasLinkedDirectory}

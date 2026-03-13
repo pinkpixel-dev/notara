@@ -1,6 +1,6 @@
-import { appDataDir, homeDir, join } from '@tauri-apps/api/path';
-import { open } from '@tauri-apps/plugin-dialog';
+import { join } from '@tauri-apps/api/path';
 import {
+  BaseDirectory,
   exists as tauriExists,
   mkdir as tauriMkdir,
   readDir as tauriReadDir,
@@ -40,7 +40,8 @@ export interface TauriDirectoryReference {
   kind: 'tauri';
   name: string;
   path: string;
-  source: 'app-data' | 'linked';
+  baseDir: BaseDirectory;
+  source: 'app-data';
 }
 
 export type RootDirectoryHandle = BrowserDirectoryReference | TauriDirectoryReference;
@@ -52,7 +53,6 @@ interface PersistedTauriDirectoryRecord {
 }
 
 const DATA_DIRECTORY = 'data';
-const TAURI_DIRECTORY_STORAGE_KEY = 'notara-tauri-root-directory';
 const TAURI_DEFAULT_DIRECTORY_NAME = 'App storage';
 const TAURI_DEFAULT_DIRECTORY_SEGMENT = 'workspace';
 
@@ -68,72 +68,24 @@ const supportsBrowserFileSystem = () =>
   'isSecureContext' in window &&
   window.isSecureContext;
 
-const getDirectoryNameFromPath = (directoryPath: string): string => {
-  const normalizedPath = directoryPath.replace(/[\\/]+$/, '');
-  const parts = normalizedPath.split(/[\\/]/).filter(Boolean);
-  return parts.at(-1) || 'Notara';
-};
-
-const getPersistedTauriDirectory = (): PersistedTauriDirectoryRecord | null => {
-  if (!isBrowserEnvironment) {
-    return null;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(TAURI_DIRECTORY_STORAGE_KEY);
-    if (!stored) {
-      return null;
-    }
-
-    const parsed = JSON.parse(stored) as PersistedTauriDirectoryRecord;
-    if (parsed.kind !== 'tauri' || !parsed.path) {
-      return null;
-    }
-
-    return {
-      kind: 'tauri',
-      path: parsed.path,
-      name: parsed.name || getDirectoryNameFromPath(parsed.path),
-    };
-  } catch (error) {
-    console.error('Failed to parse persisted Tauri directory', error);
-    return null;
-  }
-};
-
 const getDefaultTauriDirectory = async (): Promise<TauriDirectoryReference> => {
-  const appDataPath = await appDataDir();
-  const workspacePath = await join(appDataPath, TAURI_DEFAULT_DIRECTORY_SEGMENT);
-
   return {
     kind: 'tauri',
     name: TAURI_DEFAULT_DIRECTORY_NAME,
-    path: workspacePath,
+    path: TAURI_DEFAULT_DIRECTORY_SEGMENT,
+    baseDir: BaseDirectory.AppData,
     source: 'app-data',
   };
 };
 
 const persistTauriDirectory = async (handle: TauriDirectoryReference): Promise<void> => {
-  if (!isBrowserEnvironment) {
-    return;
-  }
-
-  window.localStorage.setItem(
-    TAURI_DIRECTORY_STORAGE_KEY,
-    JSON.stringify({
-      kind: 'tauri',
-      path: handle.path,
-      name: handle.name,
-    } satisfies PersistedTauriDirectoryRecord)
-  );
+  void handle;
 };
 
 const clearPersistedTauriDirectory = async (): Promise<void> => {
   if (!isBrowserEnvironment) {
     return;
   }
-
-  window.localStorage.removeItem(TAURI_DIRECTORY_STORAGE_KEY);
 };
 
 const getBrowserDirectoryHandle = async (
@@ -168,9 +120,12 @@ const resolveTauriPath = async (rootPath: string, segments: string[]): Promise<s
   return join(rootPath, ...segments);
 };
 
-const ensureTauriPath = async (rootPath: string, segments: string[]): Promise<void> => {
-  const targetPath = await resolveTauriPath(rootPath, segments);
-  await tauriMkdir(targetPath, { recursive: true });
+const ensureTauriPath = async (
+  root: TauriDirectoryReference,
+  segments: string[]
+): Promise<void> => {
+  const targetPath = await resolveTauriPath(root.path, segments);
+  await tauriMkdir(targetPath, { recursive: true, baseDir: root.baseDir });
 };
 
 const writeBrowserJSON = async (
@@ -274,25 +229,7 @@ const selectBrowserDirectory = async (): Promise<BrowserDirectoryReference | nul
   };
 };
 
-const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> => {
-  const defaultPath = await homeDir().catch(() => undefined);
-  const selected = await open({
-    directory: true,
-    multiple: false,
-    defaultPath,
-  });
-
-  if (!selected || Array.isArray(selected)) {
-    return null;
-  }
-
-  return {
-    kind: 'tauri',
-    path: selected,
-    name: getDirectoryNameFromPath(selected),
-    source: 'linked',
-  };
-};
+const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> => getDefaultTauriDirectory();
 
 export const fileSystemHelpers = {
   isSupported: () => isTauriEnvironment() || supportsBrowserFileSystem(),
@@ -318,16 +255,6 @@ export const fileSystemHelpers = {
 
   retrieveDirectoryHandle: async (): Promise<RootDirectoryHandle | null> => {
     if (isTauriEnvironment()) {
-      const stored = getPersistedTauriDirectory();
-      if (stored) {
-        return {
-          kind: 'tauri',
-          path: stored.path,
-          name: stored.name,
-          source: 'linked',
-        };
-      }
-
       return getDefaultTauriDirectory();
     }
 
@@ -358,7 +285,7 @@ export const fileSystemHelpers = {
 
   ensurePath: async (root: RootDirectoryHandle, segments: string[]): Promise<void> => {
     if (root.kind === 'tauri') {
-      await ensureTauriPath(root.path, segments);
+      await ensureTauriPath(root, segments);
       return;
     }
 
@@ -368,8 +295,8 @@ export const fileSystemHelpers = {
   writeJSON: async (root: RootDirectoryHandle, segments: string[], data: unknown): Promise<void> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      await ensureTauriPath(root.path, segments.slice(0, -1));
-      await writeTextFile(targetPath, JSON.stringify(data, null, 2));
+      await ensureTauriPath(root, segments.slice(0, -1));
+      await writeTextFile(targetPath, JSON.stringify(data, null, 2), { baseDir: root.baseDir });
       return;
     }
 
@@ -379,8 +306,8 @@ export const fileSystemHelpers = {
   writeText: async (root: RootDirectoryHandle, segments: string[], contents: string): Promise<void> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      await ensureTauriPath(root.path, segments.slice(0, -1));
-      await writeTextFile(targetPath, contents);
+      await ensureTauriPath(root, segments.slice(0, -1));
+      await writeTextFile(targetPath, contents, { baseDir: root.baseDir });
       return;
     }
 
@@ -390,8 +317,8 @@ export const fileSystemHelpers = {
   writeBlob: async (root: RootDirectoryHandle, segments: string[], contents: Blob): Promise<void> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      await ensureTauriPath(root.path, segments.slice(0, -1));
-      await writeFile(targetPath, new Uint8Array(await contents.arrayBuffer()));
+      await ensureTauriPath(root, segments.slice(0, -1));
+      await writeFile(targetPath, new Uint8Array(await contents.arrayBuffer()), { baseDir: root.baseDir });
       return;
     }
 
@@ -401,12 +328,12 @@ export const fileSystemHelpers = {
   readJSON: async <T>(root: RootDirectoryHandle, segments: string[]): Promise<T | null> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const fileExists = await tauriExists(targetPath);
+      const fileExists = await tauriExists(targetPath, { baseDir: root.baseDir });
       if (!fileExists) {
         return null;
       }
 
-      const text = await readTextFile(targetPath);
+      const text = await readTextFile(targetPath, { baseDir: root.baseDir });
       return JSON.parse(text) as T;
     }
 
@@ -416,12 +343,12 @@ export const fileSystemHelpers = {
   listDirectoryEntries: async (root: RootDirectoryHandle, segments: string[]): Promise<string[]> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const directoryExists = await tauriExists(targetPath);
+      const directoryExists = await tauriExists(targetPath, { baseDir: root.baseDir });
       if (!directoryExists) {
         return [];
       }
 
-      const entries = await tauriReadDir(targetPath);
+      const entries = await tauriReadDir(targetPath, { baseDir: root.baseDir });
       return entries.map((entry) => entry.name).filter((name): name is string => Boolean(name));
     }
 
@@ -431,12 +358,12 @@ export const fileSystemHelpers = {
   deleteEntry: async (root: RootDirectoryHandle, segments: string[]): Promise<void> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const targetExists = await tauriExists(targetPath);
+      const targetExists = await tauriExists(targetPath, { baseDir: root.baseDir });
       if (!targetExists) {
         return;
       }
 
-      await tauriRemove(targetPath, { recursive: true });
+      await tauriRemove(targetPath, { recursive: true, baseDir: root.baseDir });
       return;
     }
 
@@ -459,7 +386,7 @@ export const fileSystemHelpers = {
 
   directoryExists: async (root: RootDirectoryHandle): Promise<boolean> => {
     if (root.kind === 'tauri') {
-      return tauriExists(root.path);
+      return tauriExists(root.path, { baseDir: root.baseDir });
     }
 
     try {
