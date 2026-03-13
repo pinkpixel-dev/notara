@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTodo } from '@/context/TodoContextTypes';
-import { format, parseISO, parse } from 'date-fns';
+import { format, isValid, parse, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Calendar as DateCalendar } from '@/components/ui/calendar';
 import { 
   Edit3, Trash2, ListChecks, ChevronDown, ChevronRight, 
   Plus, Calendar, Check, CheckCircle2, CircleDashed, Clock
@@ -15,6 +16,56 @@ import type { TodoItem, TodoList } from '@/types';
 import { ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+
+const getTodoDateValue = (value: string): Date => {
+  const parsed = parseISO(value);
+  return isValid(parsed) ? parsed : new Date();
+};
+
+interface TodoDateFieldProps {
+  id: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+}
+
+const TodoDateField: React.FC<TodoDateFieldProps> = ({ id, value, onChange }) => {
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const selectedDate = getTodoDateValue(value);
+
+  return (
+    <div className="space-y-3">
+      <Button
+        id={id}
+        type="button"
+        variant="outline"
+        className="w-full justify-between text-left font-normal"
+        onClick={() => setIsCalendarOpen((open) => !open)}
+        aria-expanded={isCalendarOpen}
+      >
+        <span>{format(selectedDate, 'MMMM d, yyyy')}</span>
+        <Calendar className="h-4 w-4 text-muted-foreground" />
+      </Button>
+
+      {isCalendarOpen ? (
+        <div className="rounded-lg border border-border/70 bg-card p-2">
+          <DateCalendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => {
+              if (!date) {
+                return;
+              }
+
+              onChange(format(date, 'yyyy-MM-dd'));
+              setIsCalendarOpen(false);
+            }}
+            className="w-full"
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 const TodoPage: React.FC = () => {
   const { todoLists, addTodoList, updateTodoList, deleteTodoList, addTodoItem, updateTodoItem, deleteTodoItem } = useTodo();
@@ -447,7 +498,7 @@ const TodoPage: React.FC = () => {
             </div>
             <div className="grid gap-2">
               <label htmlFor="list-date" className="text-sm font-medium">Date</label>
-              <Input id="list-date" type="date" value={newDate} onChange={e => setNewDate(e.target.value)} />
+              <TodoDateField id="list-date" value={newDate} onChange={setNewDate} />
             </div>
           </div>
           <DialogFooter>
@@ -483,7 +534,7 @@ const TodoPage: React.FC = () => {
             </div>
             <div className="grid gap-2">
               <label htmlFor="edit-list-date" className="text-sm font-medium">Date</label>
-              <Input id="edit-list-date" type="date" value={newDate} onChange={e => setNewDate(e.target.value)} />
+              <TodoDateField id="edit-list-date" value={newDate} onChange={setNewDate} />
             </div>
           </div>
           <DialogFooter>

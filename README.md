@@ -50,16 +50,16 @@
 
 ### 💾 **Local File Storage**
 
-- **Choose Your Folder**: Pick a Notara directory via the new File menu to sync data as readable JSON
+- **Automatic Desktop Storage**: Tauri builds now save into Notara's app-data workspace automatically, with no folder-picking required
 - **Automatic & Manual Backups**: Notes, tags, todos, and vision boards write through to disk as you work or whenever you press Save
-- **Graceful Fallbacks**: If permissions disappear, Notara switches back to in-browser storage until you reconnect
+- **Readable Local Files**: Desktop data is stored as JSON and markdown files inside Notara's local workspace
 
 ### 🔄 **Local-First Workspace**
 
-- **On-Disk Sync**: Choose a Notara folder and work against readable JSON files
+- **On-Disk Sync**: Desktop builds work against readable JSON files in Notara's local app-data workspace
 - **Cloud-Agnostic**: No external auth or Supabase project required—set `VITE_ENABLE_AUTH=true` only if you purposely want Supabase sign-in
-- **Graceful Fallbacks**: Automatically returns to browser storage if the folder disconnects
-- **Portable Data**: Copy the Notara directory anywhere to migrate your vault
+- **Browser Fallback**: Web builds still use browser storage when local files are unavailable
+- **Portable Data**: Copy the Notara workspace directory anywhere to migrate your vault
 
 ## 🚀 Quick Start
 
@@ -152,6 +152,12 @@ Artifacts are written to:
 - `src-tauri/target/release/bundle/deb/`
 - `src-tauri/target/release/bundle/appimage/`
 
+Desktop data is written to Notara's Tauri app-data folder. On Linux this is typically:
+
+- `~/.local/share/dev.pinkpixel.notara/workspace/`
+
+If `XDG_DATA_HOME` is set, Tauri will use that location instead of `~/.local/share`.
+
 If you are building on a rolling-release Linux distro, AppImage packaging may fail because `linuxdeploy` can lag behind newer system linker formats. The included GitHub Actions workflow builds Linux bundles on `ubuntu-22.04`, which is the most reliable path for AppImage output.
 
 Notara now sets `NO_STRIP=YES` for the Linux Tauri packaging script to work around `linuxdeploy` strip failures on newer distros such as Arch.
@@ -192,8 +198,8 @@ Ensure the following secrets exist in your Cloudflare Pages project before deplo
 
 ### Storage & Integrations
 
-- **Browser Storage API** - Local IndexedDB fallback when no folder is connected
-- **File System Access API** - Direct sync to a user-selected Notara folder
+- **Tauri AppData Storage** - Desktop persistence in Notara's local workspace directory
+- **Browser Storage API** - Local IndexedDB fallback for web builds
 - **Pollinations Proxy** - Chat and image generation helper
 
 ### State Management
@@ -233,8 +239,9 @@ npm run tauri:build:linux # Build .deb and AppImage bundles
 ### Desktop Notes
 
 - The Tauri desktop shell is configured and uses `public/icon.png` for installer icons.
-- Desktop builds now support choosing and reconnecting a real local Notara folder through Tauri's native dialog and filesystem APIs.
+- Desktop builds now persist data automatically in the Tauri app-data workspace at `~/.local/share/dev.pinkpixel.notara/workspace/` on Linux, or the equivalent `XDG_DATA_HOME` path.
 - Pollinations-backed AI text and image requests now use Tauri's native HTTP client in desktop builds, so the assistant is no longer blocked on the web proxy routes.
+- The to-do list dialogs use an in-app calendar picker in desktop builds to avoid native WebKit date-picker freezes.
 
 ## 📋 Roadmap
 

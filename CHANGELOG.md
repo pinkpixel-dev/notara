@@ -10,9 +10,15 @@ All notable changes to the Notara project will be documented in this file.
 - Linux packaging scripts for `.deb` and `AppImage` bundles.
 - Windows installer GitHub Actions workflow that builds an NSIS installer.
 - Desktop installer icon generation sourced from `public/icon.png`.
-- Native Tauri-backed folder selection and local file persistence for desktop builds, preserving Notara's linked-directory workflow outside the browser.
 - Native Pollinations transport for Tauri so AI text streaming and image generation no longer depend on browser-only `/api/pollinations/*` routes in desktop builds.
 - Linux packaging now sets `NO_STRIP=YES` to avoid AppImage `linuxdeploy` strip failures on newer systems.
+- Automatic Tauri desktop storage in the app-data workspace, which resolves to `~/.local/share/dev.pinkpixel.notara/workspace/` on Linux unless `XDG_DATA_HOME` overrides it.
+
+### 🐛 Fixed
+
+- Fixed desktop storage initialization by moving Tauri file persistence onto a scoped app-data workspace with explicit recursive write permissions.
+- Fixed Pollinations desktop requests by allowing Pollinations URLs in the Tauri HTTP scope and enabling `Authorization` headers.
+- Fixed the to-do list date picker freeze in Tauri/AppImage builds by replacing the native `input[type="date"]` control with an in-app calendar picker.
 
 ## [1.1.0] - 2026-03-13
 
