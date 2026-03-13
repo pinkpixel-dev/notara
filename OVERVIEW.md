@@ -1,8 +1,16 @@
 # 🏗️ Notara - Technical Overview
 
-> **Version 1.0.0+** - Complete technical architecture and implementation guide  
-> **Last Updated**: October 4, 2025 00:53 EDT
+> **Version 1.1.0** - Complete technical architecture and implementation guide
+> **Last Updated**: March 13, 2026 00:31 EDT
 > **Integration System**: Phase 1 Complete | Phase 2 (GitHub OAuth) 40% Complete
+
+## 🆕 Recent Release Highlights (v1.1.0)
+
+- Default app appearance now starts in **Midnight + Pink** with global glass styling and adjustable glass intensity.
+- Vision Boards now support **resize**, **inline text editing**, **item color coding**, and **persisted color filters**.
+- Calendar right-side panel now uses **Upcoming/Selected Date tabs** with a quick **Today** shortcut.
+- AI Assistant now supports configurable Pollinations key/model settings, stronger save workflows (chat archive + markdown note), and session chat continuity.
+- Constellation rendering now normalizes theme color values before canvas gradients, preventing runtime color parsing crashes.
 
 ## 📋 Project Summary
 
@@ -12,7 +20,7 @@
 
 - **Modern Note-Taking**: Rich markdown editing with real-time preview
 - **Visual Organization**: Multiple ways to organize and visualize content
-- **AI Integration**: Intelligent writing assistance and content generation  
+- **AI Integration**: Intelligent writing assistance and content generation
 - **Cross-Platform**: Web-first with responsive design
 - **Local-First Ownership**: File-based sync without external authentication
 
@@ -29,7 +37,7 @@ graph TB
         D[Components]
         E[Hooks]
     end
-    
+
     subgraph "State Management"
         F[FileSystemContext]
         G[NotesContext]
@@ -52,7 +60,7 @@ graph TB
     D --> E
     B --> F
     B --> G
-    B --> H  
+    B --> H
     B --> I
     B --> J
     D --> K
@@ -113,63 +121,69 @@ src/
 ### Core Entities
 
 #### Note
+
 ```typescript
 interface Note {
-  id: string;           // UUID
-  title: string;        // Note title
-  content: string;      // Markdown content
-  createdAt: string;    // ISO timestamp
-  updatedAt: string;    // ISO timestamp
-  tags: NoteTag[];      // Associated tags
-  isPinned: boolean;    // Starred/pinned status
+  id: string; // UUID
+  title: string; // Note title
+  content: string; // Markdown content
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  tags: NoteTag[]; // Associated tags
+  isPinned: boolean; // Starred/pinned status
 }
 ```
 
 #### NoteTag
+
 ```typescript
 interface NoteTag {
-  id: string;      // UUID
-  name: string;    // Tag name
-  color: string;   // Hex color code
+  id: string; // UUID
+  name: string; // Tag name
+  color: string; // Hex color code
 }
 ```
 
 #### TodoList
+
 ```typescript
 interface TodoList {
-  id: string;         // UUID
-  title: string;      // List title
-  date: string;       // Date (yyyy-MM-dd)
-  time: string;       // Time (HH:mm)
-  items: TodoItem[];  // Todo items
+  id: string; // UUID
+  title: string; // List title
+  date: string; // Date (yyyy-MM-dd)
+  time: string; // Time (HH:mm)
+  items: TodoItem[]; // Todo items
 }
 ```
 
 #### TodoItem
+
 ```typescript
 interface TodoItem {
-  id: string;              // UUID
-  content: string;         // Item text
-  checked: boolean;        // Completion status
-  time: string;           // HH:mm format
-  subItems?: TodoItem[];   // Nested sub-items
+  id: string; // UUID
+  content: string; // Item text
+  checked: boolean; // Completion status
+  time: string; // HH:mm format
+  subItems?: TodoItem[]; // Nested sub-items
 }
 ```
 
 #### VisionBoard
+
 ```typescript
 interface VisionBoard {
-  id: string;                    // UUID
-  name: string;                  // Board name
-  items: VisionBoardItem[];      // Board items
+  id: string; // UUID
+  name: string; // Board name
+  items: VisionBoardItem[]; // Board items
 }
 
 interface VisionBoardItem {
-  id: string;                           // UUID
-  type: 'image' | 'text';              // Item type
-  content: string;                      // Content/URL
-  position: { x: number; y: number };  // Canvas position
+  id: string; // UUID
+  type: "image" | "text"; // Item type
+  content: string; // Content/URL
+  position: { x: number; y: number }; // Canvas position
   size?: { width: number; height: number }; // Optional sizing
+  accentColor?: string; // Optional item color for grouping/filtering
 }
 ```
 
@@ -177,32 +191,32 @@ interface VisionBoardItem {
 
 ### Frontend Technologies
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **React** | 18.3.1 | UI framework with modern hooks |
-| **TypeScript** | 5.5.3 | Type safety and developer experience |
-| **Vite** | 6.3.4 | Fast build tool and dev server |
-| **React Router** | 6.26.2 | Client-side routing |
-| **TailwindCSS** | 3.4.17 | Utility-first styling |
-| **React Query** | 5.56.2 | Server state management |
+| Technology       | Version | Purpose                              |
+| ---------------- | ------- | ------------------------------------ |
+| **React**        | 18.3.1  | UI framework with modern hooks       |
+| **TypeScript**   | 5.5.3   | Type safety and developer experience |
+| **Vite**         | 6.3.4   | Fast build tool and dev server       |
+| **React Router** | 6.26.2  | Client-side routing                  |
+| **TailwindCSS**  | 3.4.17  | Utility-first styling                |
+| **React Query**  | 5.56.2  | Server state management              |
 
 ### UI Component Library
 
-| Package | Purpose |
-|---------|---------|
-| **@radix-ui/react-\*** | Accessible component primitives |
-| **shadcn/ui** | Pre-built component system |
-| **lucide-react** | Icon library |
-| **cmdk** | Command palette component |
+| Package                  | Purpose                             |
+| ------------------------ | ----------------------------------- |
+| **@radix-ui/react-\***   | Accessible component primitives     |
+| **shadcn/ui**            | Pre-built component system          |
+| **lucide-react**         | Icon library                        |
+| **cmdk**                 | Command palette component           |
 | **prism-react-renderer** | Syntax-highlighted markdown preview |
 
 ### Storage & Integrations
 
-| Service | Purpose |
-|---------|---------|
+| Service                    | Purpose                                                                   |
+| -------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | **File System Access API** | Writes JSON bundles and markdown files to the user-selected Notara folder |
-| **IndexedDB** | Local fallback when filesystem permissions are unavailable |
-|| **Pollinations Proxy** | `/api/pollinations/*` Cloudflare Pages functions that forward chat/image requests with optional API token |
+| **IndexedDB**              | Local fallback when filesystem permissions are unavailable                |
+|                            | **Pollinations Proxy**                                                    | `/api/pollinations/*` Cloudflare Pages functions that forward chat/image requests with optional API token |
 
 ## 🔄 Integration System
 
@@ -240,6 +254,7 @@ The **Integration System** provides a secure, extensible framework for syncing n
 ### Key Features
 
 #### 🔒 Secure Token Storage (TokenVault)
+
 - **Web Crypto API Encryption**: All OAuth tokens encrypted with AES-GCM (256-bit)
 - **Device Fingerprinting**: Encryption key derived from unique device characteristics
 - **IndexedDB Persistence**: Tokens stored client-side with zero backend dependency
@@ -247,6 +262,7 @@ The **Integration System** provides a secure, extensible framework for syncing n
 - **Secure Key Derivation**: PBKDF2 with 100,000 iterations for key stretching
 
 #### 🔄 Intelligent Sync Orchestration
+
 - **Debounced Syncing**: Prevents excessive API calls during rapid edits (2-second delay)
 - **Queue Management**: Manages concurrent sync operations safely
 - **Exponential Backoff**: Automatic retry with increasing delays (2s, 4s, 8s, 16s, 32s max)
@@ -255,12 +271,14 @@ The **Integration System** provides a secure, extensible framework for syncing n
 - **Batch Operations**: Groups multiple note changes into single API calls when possible
 
 #### 🎨 Rich UI Components
+
 - **IntegrationCard**: Displays connection status, sync metrics, and configuration options
 - **Status Indicators**: Real-time connection, syncing, error, and success states
 - **Error Handling**: Clear error messages with actionable recovery steps
 - **Metrics Dashboard**: Track sync success rates, last sync time, and note counts
 
 #### 🧩 Extensible Adapter Pattern
+
 - **Provider-Agnostic**: Easy to add new integration providers
 - **Common Interface**: Consistent API across all adapters (`connect()`, `disconnect()`, `sync()`, `getStatus()`)
 - **Async-First**: Built for modern async/await patterns
@@ -268,13 +286,14 @@ The **Integration System** provides a secure, extensible framework for syncing n
 
 ### Development Status
 
-| Provider      | Phase    | Status    | OAuth | Sync | Notes                          |
-|---------------|----------|-----------|-------|------|--------------------------------|
-| **GitHub**    | Phase 2  | 40% Done  | 🚧    | ❌   | OAuth flow complete, needs API |
-| Google Drive  | Phase 3  | Planned   | ❌    | ❌   | Stub adapter created           |
-| Dropbox       | Phase 3  | Planned   | ❌    | ❌   | Stub adapter created           |
+| Provider     | Phase   | Status   | OAuth | Sync | Notes                          |
+| ------------ | ------- | -------- | ----- | ---- | ------------------------------ |
+| **GitHub**   | Phase 2 | 40% Done | 🚧    | ❌   | OAuth flow complete, needs API |
+| Google Drive | Phase 3 | Planned  | ❌    | ❌   | Stub adapter created           |
+| Dropbox      | Phase 3 | Planned  | ❌    | ❌   | Stub adapter created           |
 
 #### Phase 1: Foundation (✅ Complete)
+
 - [x] Feature flag system (global + per-provider toggles)
 - [x] TypeScript type definitions for adapters, sync results, conflicts, metrics
 - [x] TokenVault with Web Crypto API encryption
@@ -285,6 +304,7 @@ The **Integration System** provides a secure, extensible framework for syncing n
 - [x] Comprehensive integration documentation
 
 #### Phase 2: GitHub OAuth (🚧 40% Complete)
+
 - [x] OAuth helper utilities with PKCE support
 - [x] Authorization URL builder with state/code_challenge
 - [x] Token exchange via proxy endpoints (CORS fix)
@@ -299,6 +319,7 @@ The **Integration System** provides a secure, extensible framework for syncing n
 - [ ] End-to-end testing and error handling
 
 #### Phase 3: Google Drive & Dropbox (⏳ Planned)
+
 - [ ] Google Drive OAuth flow
 - [ ] Drive API folder sync implementation
 - [ ] Dropbox OAuth flow
@@ -342,16 +363,21 @@ interface IntegrationContextType {
   // Connection Management
   connectIntegration: (provider: IntegrationProvider) => Promise<boolean>;
   disconnectIntegration: (provider: IntegrationProvider) => Promise<void>;
-  
+
   // Sync Operations
   syncIntegration: (provider: IntegrationProvider) => Promise<void>;
   syncAll: () => Promise<void>;
-  
+
   // Status & Config
   getIntegrationStatus: (provider: IntegrationProvider) => IntegrationStatus;
-  getIntegrationConfig: (provider: IntegrationProvider) => IntegrationConfig | null;
-  updateConfig: (provider: IntegrationProvider, config: Partial<IntegrationConfig>) => void;
-  
+  getIntegrationConfig: (
+    provider: IntegrationProvider,
+  ) => IntegrationConfig | null;
+  updateConfig: (
+    provider: IntegrationProvider,
+    config: Partial<IntegrationConfig>,
+  ) => void;
+
   // State
   integrations: Map<IntegrationProvider, IntegrationState>;
   syncInProgress: boolean;
@@ -363,21 +389,21 @@ interface IntegrationContextType {
 
 ```typescript
 // Connect to GitHub
-const success = await connectIntegration('github');
+const success = await connectIntegration("github");
 if (success) {
   // Configure repository
-  updateConfig('github', {
-    repository: 'username/my-notes',
-    branch: 'main',
-    folderPath: 'notes/'
+  updateConfig("github", {
+    repository: "username/my-notes",
+    branch: "main",
+    folderPath: "notes/",
   });
-  
+
   // Trigger manual sync
-  await syncIntegration('github');
+  await syncIntegration("github");
 }
 
 // Disconnect when done
-await disconnectIntegration('github');
+await disconnectIntegration("github");
 ```
 
 ## 🤖 AI Assistant Integration
@@ -404,6 +430,7 @@ The application features a sophisticated theming system with multiple themes:
 - **Glass Theme**: Frosted glass effects with backdrop blur
 
 #### Glass Theme Implementation
+
 ```css
 /* Custom CSS variables for glass effects */
 :root {
@@ -436,10 +463,10 @@ graph TD
     D --> E[Resizable Panel Group]
     E --> F[Left Panel - Notes List]
     E --> G[Right Panel - Editor]
-    
+
     F --> H[NotesList Component]
     G --> I[NoteEditor Component]
-    
+
     H --> J[Individual Note Items]
     I --> K[Markdown Editor]
     I --> L[Live Preview]
@@ -502,17 +529,20 @@ sequenceDiagram
 The application uses React Context for global state management:
 
 #### NotesContext
+
 - **Purpose**: Manages notes CRUD operations
 - **State**: Notes array, active note, filters
 - **Actions**: Create, read, update, delete, pin/unpin notes
 - **Persistence**: Exposes `persistBundle()` so manual saves reuse the same filesystem pipeline as autosave
 
-#### TodoContext  
+#### TodoContext
+
 - **Purpose**: Manages todo lists and items
 - **State**: Todo lists, active list
 - **Actions**: CRUD operations for lists and items
 
 #### ThemeContext
+
 - **Purpose**: Manages UI theming
 - **State**: Current theme, theme preferences
 - **Actions**: Switch themes, save preferences
@@ -520,6 +550,7 @@ The application uses React Context for global state management:
 ### React Query Integration
 
 Used for server state management:
+
 - **Caching**: Automatic caching of API responses
 - **Synchronization**: Background refetching
 - **Optimistic Updates**: Immediate UI updates
@@ -537,7 +568,7 @@ graph LR
     E --> F[File System Access API]
     F --> G[Disk Write Success]
     G --> H[Sync State & Toast]
-    
+
     E --> I[Permission Error]
     I --> J[Fallback to IndexedDB]
     J --> H
@@ -552,7 +583,7 @@ graph LR
 
 ### Filesystem Save Pipeline
 
-1. **User Trigger**: Clicking Save, choosing *File ▸ Save Active Note*, or pressing `Ctrl/Cmd+S`
+1. **User Trigger**: Clicking Save, choosing _File ▸ Save Active Note_, or pressing `Ctrl/Cmd+S`
 2. **Editor Dispatch**: `NoteEditor` assembles the current bundle and calls `persistBundle()` from `NotesContext`
 3. **Filesystem Context**: `persistBundle()` routes through the File System Access API to write JSON bundles and per-note markdown files
 4. **Fallback Handling**: If the Notara folder is unavailable, the bundle mirrors into browser storage and a toast explains the fallback
@@ -561,15 +592,18 @@ graph LR
 ## 🚀 Performance Optimizations
 
 ### Code Splitting
+
 - **Route-based splitting**: Each page is lazy-loaded
 - **Component splitting**: Large components are split
 
 ### React Optimizations
+
 - **React.memo**: Prevents unnecessary re-renders
 - **useMemo/useCallback**: Memoizes expensive computations
 - **Virtualization**: For large lists (future enhancement)
 
 ### Bundle Optimization
+
 - **Tree Shaking**: Removes unused code
 - **Asset Optimization**: Image and font optimization
 - **Chunk Splitting**: Optimal bundle sizes
@@ -608,11 +642,11 @@ npm run dev
 
 ```json
 {
-  "dev": "vite",                    // Development server
-  "build": "vite build",           // Production build
+  "dev": "vite", // Development server
+  "build": "vite build", // Production build
   "build:dev": "vite build --mode development", // Dev build
-  "lint": "eslint .",              // Code linting
-  "preview": "vite preview",       // Preview build
+  "lint": "eslint .", // Code linting
+  "preview": "vite preview", // Preview build
   "deploy": "npm run deploy:cloudflare" // Deploy to Cloudflare
 }
 ```
@@ -681,7 +715,16 @@ npm run dev
 
 ## 📊 Version History
 
-### Version 1.0.0+ (Current - October 2025)
+### Version 1.1.0 (Current - March 2026)
+
+- **Visual Theming Refresh**: Midnight + Pink defaults, Aurora mode, and app-wide glass with adjustable intensity.
+- **Vision Board Expansion**: Resize handles, inline note editing, richer color palette, color picker modal, and per-board persisted color filters.
+- **Calendar UX Upgrade**: Upcoming-first event panel with dynamic Selected Date tab and Today quick jump.
+- **AI Workflow Improvements**: Pollinations settings for API key/model selection, better chat persistence, save-chat markdown archival, and improved generated image save paths.
+- **Stability Improvements**: Tooltip layering fixes, global search focus wiring, and canvas gradient color normalization in Constellation.
+
+### Version 1.0.0+ (October 2025)
+
 - **Integration System Phase 1 (Complete)**: Secure token vault with Web Crypto API, SyncOrchestrator with exponential backoff, IntegrationContext state management, IntegrationCard UI, adapter pattern for GitHub/Drive/Dropbox
 - **Integration System Phase 2 (40% Complete)**: GitHub OAuth flow with PKCE, popup-based authentication, proxy endpoints for CORS handling, callback page with status UI, token storage and revocation
 - **Local File Storage**: FileSystemContext integration with File System Access API
@@ -694,6 +737,7 @@ npm run dev
 - **Pollinations AI Proxy**: Development and production endpoints for chat and image generation with optional API token support
 
 ### Version 1.0.0 (2025-09-26)
+
 - **Major Overhaul**: Complete modernization from cosmic theme
 - **UI Improvements**: Glass theme implementation and layout fixes
 - **New Features**: Starred notes page and enhanced navigation
@@ -701,6 +745,7 @@ npm run dev
 - **Bug Fixes**: Context API improvements and layout issues
 
 ### Previous Versions
+
 - **Pre-1.0**: Cosmic-themed prototype versions (deprecated)
 
 ---

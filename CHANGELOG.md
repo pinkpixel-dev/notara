@@ -4,6 +4,43 @@ All notable changes to the Notara project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-13
+
+### ✨ Added
+
+- App-wide glass theming controls with a new transparency-to-frost slider in Settings.
+- New `aurora` theme mode (replacing legacy `frost`) with migration for older saved settings.
+- Pollinations settings panel for API key, text model, and image model configuration.
+- AI image actions for saving generated images directly to Vision Boards.
+- Local media persistence for generated and imported images through the connected Notara folder (`data/media`).
+- Vision Board enhancements:
+  - Item resizing for image and text cards.
+  - Inline note editing and save/cancel controls.
+  - Color-coded items with expanded multi-color palette.
+  - Popup color picker per item.
+  - Color-filter modal with per-board filter persistence and quick reset.
+- Calendar right panel tabs with default `Upcoming` view (next 5 events) and conditional `Selected Date` tab.
+- Calendar quick `Today` button for fast date jump and event context.
+
+### 🔄 Changed
+
+- Default theme now starts in `midnight` with `pink` accent.
+- Top menu bar now uses glass styling to match the updated visual system.
+- Calendar event side panel now defaults to a narrower footprint and tabbed navigation.
+- AI chat save now archives conversations more reliably and can store chat transcripts as markdown notes.
+- AI conversation state now persists while navigating within the current browser session.
+- Pollinations request flow fully aligned to `gen.pollinations.ai` routes in dev proxy and Cloudflare functions.
+- Pollinations key handling tightened so authenticated keys are consistently used for both text and image generation.
+
+### 🐛 Fixed
+
+- Fixed header search button behavior and keyboard shortcut flow (`Ctrl/Cmd+K`) to focus note search reliably.
+- Fixed tooltip layering so tooltips render above page content.
+- Fixed Constellation page crash caused by invalid canvas color parsing from CSS theme variables.
+- Fixed save-chat edge cases where archives could be overwritten during async hydration.
+- Fixed Vision Board color interactions so color selection does not conflict with drag behavior.
+- Fixed date-panel usability in Calendar by separating upcoming vs selected-day workflows.
+
 ### ✨ Added
 
 - **Integration System (Phase 1 - Complete)**:
@@ -74,7 +111,7 @@ All notable changes to the Notara project will be documented in this file.
 
 ### 🔄 Changed
 
-- **UI Layout Overhaul**: 
+- **UI Layout Overhaul**:
   - Removed nested ResizablePanelGroup components from HomePage and TodoPage
   - Established clean 50/50 split between left and right panels
   - Improved layout consistency across the application
