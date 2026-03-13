@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, BookOpen, Settings, Menu, Tag } from 'lucide-react';
+import { Search, BookOpen, Settings, Menu, Tag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const isOnTagsPage = location.pathname.startsWith('/tags');
+  const isOnStarredPage = location.pathname.startsWith('/starred');
 
   return (
     <div className="h-screen flex overflow-hidden font-poppins">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      
+
       <main className={cn(
         "flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300",
         isSidebarOpen ? "ml-64" : "ml-0"
@@ -29,7 +30,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <header className="px-4 py-3 flex justify-between items-center border-b border-border/30 bg-gradient-to-r from-card/90 via-background/70 to-card/90 backdrop-blur-xl shadow-sm">
           <div className="flex items-center gap-3">
             {!isSidebarOpen && (
-              <Button 
+              <Button
                 onClick={() => setIsSidebarOpen(true)}
                 variant="ghost"
                 size="icon"
@@ -39,6 +40,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               </Button>
             )}
             <AppMenuBar />
+            <StorageStatusBadge />
+
+          </div>
+
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -58,10 +64,27 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               </TooltipTrigger>
               <TooltipContent>Tags</TooltipContent>
             </Tooltip>
-            <StorageStatusBadge />
-          </div>
-          
-          <div className="flex items-center gap-2">
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "rounded-full hover:bg-secondary/50 transition-all hover:scale-105",
+                    isOnStarredPage && "bg-secondary/60 text-primary"
+                  )}
+                  aria-label="Open starred notes"
+                >
+                  <Link to="/starred">
+                    <Star className="h-5 w-5" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Starred Notes</TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -114,10 +137,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             </Tooltip>
           </div>
         </header>
-        
+
         <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup 
-            direction="horizontal" 
+          <ResizablePanelGroup
+            direction="horizontal"
             className="h-full animate-fade-in"
           >
             {children}
