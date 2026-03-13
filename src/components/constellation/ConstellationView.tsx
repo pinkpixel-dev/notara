@@ -172,10 +172,55 @@ const ConstellationView: React.FC = () => {
     window.addEventListener('resize', resizeCanvas);
 
     // Get current theme colors from CSS variables
+    const normalizeHslComponents = (rawValue: string) => {
+      const cleaned = rawValue
+        .replace(/^hsl\(/i, '')
+        .replace(/^hsla\(/i, '')
+        .replace(/\)$/g, '')
+        .trim();
+
+      if (cleaned.includes(',')) {
+        return cleaned;
+      }
+
+      const parts = cleaned.split(/\s+/).filter(Boolean);
+      if (parts.length >= 3) {
+        return `${parts[0]}, ${parts[1]}, ${parts[2]}`;
+      }
+
+      return cleaned;
+    };
+
     const getThemeColor = (cssVar: string, opacity: number = 1) => {
       const root = document.documentElement;
       const hslValue = getComputedStyle(root).getPropertyValue(cssVar).trim();
-      return `hsla(${hslValue}, ${opacity})`;
+
+      if (!hslValue) {
+        return `rgba(148, 163, 184, ${opacity})`;
+      }
+
+      if (hslValue.startsWith('#') || hslValue.startsWith('rgb(') || hslValue.startsWith('rgba(')) {
+        return hslValue;
+      }
+
+      const normalized = normalizeHslComponents(hslValue);
+      return `hsla(${normalized}, ${opacity})`;
+    };
+
+    const getThemeSolidColor = (cssVar: string) => {
+      const root = document.documentElement;
+      const hslValue = getComputedStyle(root).getPropertyValue(cssVar).trim();
+
+      if (!hslValue) {
+        return 'rgb(148, 163, 184)';
+      }
+
+      if (hslValue.startsWith('#') || hslValue.startsWith('rgb(') || hslValue.startsWith('rgba(')) {
+        return hslValue;
+      }
+
+      const normalized = normalizeHslComponents(hslValue);
+      return `hsl(${normalized})`;
     };
 
     // Animation function
@@ -236,7 +281,7 @@ const ConstellationView: React.FC = () => {
 
         if (node.type === 'tag') {
           // Draw tag as a star
-          const color = node.color || getThemeColor('--primary', 1).replace(/hsla?\(([^)]+)\)/, 'hsl($1)');
+          const color = node.color || getThemeSolidColor('--primary');
           const glow = isHovered || isSelected ? 20 : 10;
 
           ctx.shadowBlur = glow;
@@ -277,7 +322,7 @@ const ConstellationView: React.FC = () => {
           ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
 
           if (isHovered || isSelected) {
-            const primaryColor = getThemeColor('--primary', 1).replace(/hsla?\(([^)]+)\)/, 'hsl($1)');
+            const primaryColor = getThemeSolidColor('--primary');
             ctx.fillStyle = primaryColor;
             ctx.shadowBlur = 15;
             ctx.shadowColor = primaryColor;

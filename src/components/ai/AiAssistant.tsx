@@ -142,6 +142,33 @@ const writeSessionMessages = (messages: Message[]): void => {
 
 const POLLINATIONS_TOKEN = import.meta.env.VITE_POLLINATIONS_API_TOKEN;
 
+const formatConversationMarkdown = (title: string, messages: Message[]): string => {
+  const timestamp = new Date().toISOString();
+  const lines = [
+    `# ${title}`,
+    '',
+    `- Saved: ${timestamp}`,
+    `- Messages: ${messages.length}`,
+    '',
+    '---',
+    '',
+  ];
+
+  messages.forEach((message) => {
+    const heading = message.sender === 'user' ? 'User' : 'Assistant';
+    lines.push(`## ${heading} • ${new Date(message.timestamp).toLocaleString()}`);
+    lines.push('');
+    lines.push(message.content || '(empty)');
+    if (message.imageUrl) {
+      lines.push('');
+      lines.push(`![Generated image](${message.imageUrl})`);
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+};
+
 // System prompt for the AI assistant
 const SYSTEM_PROMPT = `You are Notara's AI assistant, designed to help users with their notes and writing.
 You can:
@@ -310,7 +337,10 @@ const AiAssistant: React.FC = () => {
     }
   }, [conversationArchive, isArchiveLoaded, saveAiConversations, storageStatus]);
 
-  const hasUserMessages = useMemo(() => messages.some(message => message.sender === 'user'), [messages]);
+  const hasSavableMessages = useMemo(
+    () => messages.some(message => message.content.trim().length > 0 && message.content !== welcomeMessageText),
+    [messages, welcomeMessageText]
+  );
 
   const resetConversation = () => {
     setMessages([createWelcomeMessage()]);
@@ -321,35 +351,51 @@ const AiAssistant: React.FC = () => {
     setIsProcessing(false);
   };
 
-  const handleSaveConversation = (options?: { silent?: boolean }) => {
-    if (!hasUserMessages) {
+  const handleSaveConversation = (options?: { silent?: boolean; saveAsNote?: boolean }) => {
+    if (!hasSavableMessages) {
       if (!options?.silent) {
         toast({
           title: 'Nothing to save yet',
-          description: 'Ask or answer something first, then save the chat.',
+          description: 'Generate or send at least one message, then save the chat.',
           variant: 'destructive'
         });
       }
       return false;
     }
 
-    const firstUserMessage = messages.find(message => message.sender === 'user');
-    const preview = firstUserMessage ? firstUserMessage.content.replace(/\s+/g, ' ').trim() : 'Conversation';
+    const meaningfulMessages = messages.filter(
+      message => message.content.trim().length > 0 && message.content !== welcomeMessageText
+    );
+
+    const firstMeaningfulMessage = meaningfulMessages[0];
+    const preview = firstMeaningfulMessage
+      ? firstMeaningfulMessage.content.replace(/\s+/g, ' ').trim()
+      : 'Conversation';
     const title = preview.length > 48 ? `${preview.slice(0, 45)}…` : preview || `Session ${new Date().toLocaleTimeString()}`;
 
     const snapshot: ConversationSnapshot = {
       id: uuidv4(),
       title,
       createdAt: new Date().toISOString(),
-      messages: messages.map(message => ({ ...message }))
+      messages: meaningfulMessages.map(message => ({ ...message }))
     };
 
     setConversationArchive(prev => mergeConversationArchives([snapshot], prev));
 
+    if (options?.saveAsNote !== false) {
+      const markdown = formatConversationMarkdown(title, snapshot.messages);
+      addNote({
+        title: `AI Chat • ${title}`,
+        content: markdown,
+      });
+    }
+
     if (!options?.silent) {
       toast({
         title: 'Conversation saved',
-        description: 'Find it in the sidebar history panel.'
+        description: options?.saveAsNote === false
+          ? 'Find it in the sidebar history panel.'
+          : 'Saved to chat history and your notes.'
       });
     }
 
@@ -381,7 +427,7 @@ const AiAssistant: React.FC = () => {
   };
 
   const handleStartNewConversation = () => {
-    const wasSaved = hasUserMessages ? handleSaveConversation({ silent: true }) : false;
+    const wasSaved = hasSavableMessages ? handleSaveConversation({ silent: true, saveAsNote: false }) : false;
     resetConversation();
 
     if (wasSaved) {
@@ -748,6 +794,29 @@ covered in the calendar data, please mention that.
     setIsProcessing(true);
 
     try {
+      const inspirationMotifs = [
+        'a forgotten observatory',
+        'a midnight train platform',
+        'a city rooftop during rain',
+        'an underwater archive',
+        'a mountain radio station',
+        'a drifting library in the clouds'
+      ];
+      const styleConstraints = [
+        'Make the prompt concrete and sensory, with a strong first sentence.',
+        'Make it emotional but grounded in a real-world moment.',
+        'Make it slightly surreal while still actionable for writing.',
+        'Make it practical and focused on momentum over perfection.'
+      ];
+      const randomMotif = inspirationMotifs[Math.floor(Math.random() * inspirationMotifs.length)];
+      const randomConstraint = styleConstraints[Math.floor(Math.random() * styleConstraints.length)];
+      const recentContext = notes
+        .slice(0, 5)
+        .map(note => note.title)
+        .filter(Boolean)
+        .join(', ');
+      const nonce = `${Date.now()}-${uuidv4().slice(0, 6)}`;
+
       // Initialize response message with empty content
       setMessages(prev => [
         ...prev,
@@ -762,7 +831,16 @@ covered in the calendar data, please mention that.
       await streamChatCompletion(
         [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: "Generate a creative writing prompt to help me focus and get past writer's block. Make it thoughtful and inspiring." }
+          {
+            role: "user",
+            content:
+              `Generate one original writing focus prompt to help with writer's block. ` +
+              `Use this motif: ${randomMotif}. ${randomConstraint} ` +
+              `Avoid using seed or glowing seed imagery unless explicitly requested. ` +
+              `If useful, draw lightly from these note topics: ${recentContext || 'general creativity'}. ` +
+              `Keep it to 3-5 sentences and start with \"Focus Prompt:\". ` +
+              `Uniqueness nonce: ${nonce}.`
+          }
         ],
         handleStreamChunk
       );
@@ -1963,9 +2041,9 @@ Focus on finding meaningful relationships and insights rather than just summariz
                 variant="outline"
                 size="sm"
                 onClick={() => handleSaveConversation()}
-                disabled={!hasUserMessages}
+                disabled={!hasSavableMessages}
                 className="gap-2"
-                title={hasUserMessages ? 'Save this conversation to the sidebar' : 'Start chatting to enable saving'}
+                title={hasSavableMessages ? 'Save this conversation to the sidebar and notes' : 'Generate or send content to enable saving'}
               >
                 <Save className="h-4 w-4" />
                 <span className="hidden md:inline">Save chat</span>
@@ -2299,7 +2377,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
                   size="sm"
                   className="w-full gap-2"
                   onClick={() => handleSaveConversation()}
-                  disabled={!hasUserMessages}
+                  disabled={!hasSavableMessages}
                 >
                   <Save className="h-4 w-4" />
                   Archive current chat

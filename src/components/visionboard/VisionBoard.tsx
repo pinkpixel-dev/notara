@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { VisionBoardItem } from '@/types';
@@ -11,17 +11,48 @@ interface VisionBoardProps {
 }
 
 const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
-  const { visionBoards, updateVisionBoard } = useNotes();
+  const { visionBoards, updateVisionBoard, tags } = useNotes();
   const { status: fileSystemStatus, saveGeneratedImage } = useFileSystem();
   const visionBoard = visionBoards.find(vb => vb.id === id);
 
+  const getReadableColorName = (hex: string, index: number) => {
+    const normalized = hex.toLowerCase();
+    const presetNames: Record<string, string> = {
+      '#9b87f5': 'Purple',
+      '#0ea5e9': 'Sky',
+      '#10b981': 'Green',
+      '#f97316': 'Orange',
+      '#ec4899': 'Pink',
+      '#6366f1': 'Indigo',
+    };
+
+    return presetNames[normalized] || `Color ${index + 1}`;
+  };
+
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizedItem, setResizedItem] = useState<{
+    id: string;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+  } | null>(null);
   const [isAddingText, setIsAddingText] = useState(false);
   const [newTextContent, setNewTextContent] = useState('');
   const [isAddingImage, setIsAddingImage] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingTextContent, setEditingTextContent] = useState('');
+
+  const colorOptions = useMemo(() => {
+    const uniqueTagColors = Array.from(new Set(tags.map(tag => tag.color).filter(Boolean)));
+    if (uniqueTagColors.length > 0) {
+      return uniqueTagColors.slice(0, 10);
+    }
+    return ['#9b87f5', '#0EA5E9', '#10B981', '#F97316', '#EC4899', '#6366F1'];
+  }, [tags]);
 
   if (!visionBoard) {
     return (
@@ -31,7 +62,23 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
     );
   }
 
+  const getDefaultItemSize = (itemType: VisionBoardItem['type']) => {
+    if (itemType === 'image') {
+      return { width: 250, height: 150 };
+    }
+    return { width: 280, height: 180 };
+  };
+
+  const updateBoardItem = (itemId: string, updater: (item: VisionBoardItem) => VisionBoardItem) => {
+    const updatedItems = visionBoard.items.map(item => (item.id === itemId ? updater(item) : item));
+    updateVisionBoard(visionBoard.id, { items: updatedItems });
+  };
+
   const handleDragStart = (e: React.MouseEvent, itemId: string, position: { x: number, y: number }) => {
+    if (resizedItem || editingItemId === itemId) {
+      return;
+    }
+
     e.preventDefault(); // Prevent default drag behavior
     setDraggedItem(itemId);
 
@@ -52,27 +99,68 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
     const container = e.currentTarget as HTMLElement;
     const containerRect = container.getBoundingClientRect();
 
-    const newItems = visionBoard.items.map(item => {
-      if (item.id === draggedItem) {
-        return {
-          ...item,
-          position: {
-            x: e.clientX - containerRect.left - dragOffset.x,
-            y: e.clientY - containerRect.top - dragOffset.y
-          }
-        };
+    updateBoardItem(draggedItem, item => ({
+      ...item,
+      position: {
+        x: e.clientX - containerRect.left - dragOffset.x,
+        y: e.clientY - containerRect.top - dragOffset.y
       }
-      return item;
-    });
+    }));
+  };
 
-    updateVisionBoard(visionBoard.id, { items: newItems });
+  const handleResizeStart = (e: React.MouseEvent, item: VisionBoardItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const defaultSize = getDefaultItemSize(item.type);
+    setResizedItem({
+      id: item.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: item.size?.width ?? defaultSize.width,
+      startHeight: item.size?.height ?? defaultSize.height,
+    });
+  };
+
+  const handleResize = (e: React.MouseEvent) => {
+    if (!resizedItem) {
+      return;
+    }
+
+    const minWidth = 120;
+    const minHeight = 90;
+    const maxWidth = 1400;
+    const maxHeight = 1400;
+
+    const nextWidth = Math.min(
+      maxWidth,
+      Math.max(minWidth, resizedItem.startWidth + (e.clientX - resizedItem.startX))
+    );
+    const nextHeight = Math.min(
+      maxHeight,
+      Math.max(minHeight, resizedItem.startHeight + (e.clientY - resizedItem.startY))
+    );
+
+    updateBoardItem(resizedItem.id, item => ({
+      ...item,
+      size: {
+        width: nextWidth,
+        height: nextHeight,
+      }
+    }));
   };
 
   const handleDragEnd = () => {
     setDraggedItem(null);
+    setResizedItem(null);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (resizedItem) {
+      handleResize(e);
+      return;
+    }
+
     if (draggedItem) {
       handleDrag(e);
     }
@@ -85,7 +173,9 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       id: uuidv4(),
       type: 'text',
       content: newTextContent,
-      position: { x: 100, y: 100 }
+      position: { x: 100, y: 100 },
+      size: { width: 280, height: 180 },
+      accentColor: colorOptions[0],
     };
 
     updateVisionBoard(visionBoard.id, {
@@ -124,7 +214,8 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       type: 'image',
       content: newImageUrl,
       position: { x: 200, y: 100 },
-      size: { width: 250, height: 150 }
+      size: { width: 250, height: 150 },
+      accentColor: colorOptions[0],
     };
 
     updateVisionBoard(visionBoard.id, {
@@ -158,6 +249,40 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
     updateVisionBoard(visionBoard.id, {
       items: visionBoard.items.filter(item => item.id !== itemId)
     });
+  };
+
+  const startEditingTextItem = (item: VisionBoardItem) => {
+    if (item.type !== 'text') {
+      return;
+    }
+
+    setEditingItemId(item.id);
+    setEditingTextContent(item.content);
+  };
+
+  const saveEditedTextItem = (itemId: string) => {
+    const trimmedContent = editingTextContent.trim();
+    if (!trimmedContent) {
+      toast({
+        title: 'Note cannot be empty',
+        description: 'Please enter some text before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    updateBoardItem(itemId, item => ({ ...item, content: trimmedContent }));
+    setEditingItemId(null);
+    setEditingTextContent('');
+  };
+
+  const cancelEditingTextItem = () => {
+    setEditingItemId(null);
+    setEditingTextContent('');
+  };
+
+  const setItemAccentColor = (itemId: string, accentColor: string) => {
+    updateBoardItem(itemId, item => ({ ...item, accentColor }));
   };
 
   return (
@@ -221,42 +346,329 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
               top: `${item.position.y}px`,
               userSelect: 'none',
               transform: draggedItem === item.id ? 'scale(1.05)' : 'scale(1)',
-              transition: draggedItem === item.id ? 'none' : 'all 0.2s ease-out'
+              transition: draggedItem === item.id ? 'none' : 'all 0.2s ease-out',
             }}
             onMouseDown={(e) => handleDragStart(e, item.id, item.position)}
           >
             {item.type === 'text' ? (
-              <div className="bg-card/80 backdrop-blur-sm p-4 rounded-lg shadow-md border border-border min-w-[200px] max-w-[400px]">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="w-4" />
-                  <button
-                    className="p-1 rounded-full hover:bg-secondary/50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteItem(item.id);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
+              <div
+                className="relative bg-card/80 backdrop-blur-sm p-3 rounded-lg shadow-md border"
+                style={{
+                  width: item.size?.width ?? 280,
+                  height: item.size?.height ?? 180,
+                  borderColor: item.accentColor ?? 'hsl(var(--border))',
+                  boxShadow: item.accentColor
+                    ? `0 0 0 2px ${item.accentColor}40, 0 8px 20px -12px ${item.accentColor}`
+                    : undefined,
+                }}
+              >
+                <div className="flex justify-between items-center mb-2 gap-2">
+                  <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
+                    {colorOptions.map((color, index) => (
+                      <button
+                        key={`${item.id}-${color}`}
+                        type="button"
+                        className="h-4 w-4 rounded-full border transition-transform hover:scale-110"
+                        style={{ backgroundColor: color }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setItemAccentColor(item.id, color);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        title={`Set color: ${getReadableColorName(color, index)}`}
+                        aria-label={`Set color ${getReadableColorName(color, index)}`}
+                        aria-pressed={(item.accentColor ?? colorOptions[0]) === color}
+                      >
+                        {(item.accentColor ?? colorOptions[0]) === color && (
+                          <span className="block h-full w-full rounded-full ring-2 ring-foreground/60 ring-offset-1 ring-offset-background" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground min-w-[56px] text-right">
+                    {getReadableColorName(item.accentColor ?? colorOptions[0], 0)}
+                  </div>
+                  <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
+                    <button
+                      className="p-1 rounded-full hover:bg-secondary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (editingItemId === item.id) {
+                          saveEditedTextItem(item.id);
+                        } else {
+                          startEditingTextItem(item);
+                        }
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      title={editingItemId === item.id ? 'Save note' : 'Edit note'}
+                    >
+                      {editingItemId === item.id ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      )}
+                    </button>
+                    {editingItemId === item.id && (
+                      <button
+                        className="p-1 rounded-full hover:bg-secondary/50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEditingTextItem();
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        title="Cancel editing"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    )}
+                    <button
+                      className="p-1 rounded-full hover:bg-secondary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteItem(item.id);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      title="Delete item"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
                 </div>
-                <p className="whitespace-pre-wrap">{item.content}</p>
+
+                {editingItemId === item.id ? (
+                  <textarea
+                    value={editingTextContent}
+                    onChange={e => setEditingTextContent(e.target.value)}
+                    className="w-full h-[calc(100%-2.25rem)] p-2 rounded bg-background/60 border border-border/40 resize-none"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  />
+                ) : (
+                  <p
+                    className="whitespace-pre-wrap overflow-auto h-[calc(100%-2.25rem)]"
+                    onDoubleClick={() => startEditingTextItem(item)}
+                  >
+                    {item.content}
+                  </p>
+                )}
+
+                <div
+                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm bg-background/70 border border-border/50"
+                  onMouseDown={(e) => handleResizeStart(e, item)}
+                  title="Resize"
+                />
               </div>
             ) : (
-              <div className="relative">
+              <div
+                className="relative rounded-lg overflow-hidden border"
+                style={{
+                  width: item.size?.width ?? 250,
+                  height: item.size?.height ?? 150,
+                  borderColor: item.accentColor ?? 'hsl(var(--border))',
+                  boxShadow: item.accentColor
+                    ? `0 0 0 2px ${item.accentColor}40, 0 10px 24px -14px ${item.accentColor}`
+                    : undefined,
+                }}
+              >
                 <img
                   src={item.content}
                   alt=""
                   style={{
-                    width: item.size?.width ?? 200,
-                    height: item.size?.height ?? 'auto'
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
                   }}
-                  className="rounded-lg shadow-lg"
+                  className="shadow-lg"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://via.placeholder.com/200x150?text=Image+Error';
                   }}
                 />
+
+                <div className="absolute top-1 left-1 flex items-center gap-1 rounded-full bg-card/80 px-1.5 py-1" onMouseDown={(e) => e.stopPropagation()}>
+                  {colorOptions.map((color, index) => (
+                    <button
+                      key={`${item.id}-${color}`}
+                      type="button"
+                      className="h-3.5 w-3.5 rounded-full border border-white/40"
+                      style={{ backgroundColor: color }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setItemAccentColor(item.id, color);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      title={`Set color: ${getReadableColorName(color, index)}`}
+                      aria-label={`Set color ${getReadableColorName(color, index)}`}
+                      aria-pressed={(item.accentColor ?? colorOptions[0]) === color}
+                    >
+                      {(item.accentColor ?? colorOptions[0]) === color && (
+                        <span className="block h-full w-full rounded-full ring-2 ring-foreground/70 ring-offset-1 ring-offset-card" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div
+                  className="absolute left-2 bottom-2 rounded px-1.5 py-0.5 text-[10px] bg-card/80 text-foreground/80"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  {getReadableColorName(item.accentColor ?? colorOptions[0], 0)}
+                </div>
+
+                <button
+                  className="absolute top-1 right-1 p-1 rounded-full bg-card/80 hover:bg-secondary/50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteItem(item.id);
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+
+                <div
+                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm bg-card/80 border border-border/50"
+                  onMouseDown={(e) => handleResizeStart(e, item)}
+                  title="Resize"
+                />
+              </div>
+            )}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
+                    <button
+                      className="p-1 rounded-full hover:bg-secondary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (editingItemId === item.id) {
+                          saveEditedTextItem(item.id);
+                        } else {
+                          startEditingTextItem(item);
+                        }
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      title={editingItemId === item.id ? 'Save note' : 'Edit note'}
+                    >
+                      {editingItemId === item.id ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      )}
+                    </button>
+                    {editingItemId === item.id && (
+                      <button
+                        className="p-1 rounded-full hover:bg-secondary/50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEditingTextItem();
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        title="Cancel editing"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    )}
+                    <button
+                      className="p-1 rounded-full hover:bg-secondary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteItem(item.id);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      title="Delete item"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {editingItemId === item.id ? (
+                  <textarea
+                    value={editingTextContent}
+                    onChange={e => setEditingTextContent(e.target.value)}
+                    className="w-full h-[calc(100%-2.25rem)] p-2 rounded bg-background/60 border border-border/40 resize-none"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <p
+                    className="whitespace-pre-wrap overflow-auto h-[calc(100%-2.25rem)]"
+                    onDoubleClick={() => startEditingTextItem(item)}
+                  >
+                    {item.content}
+                  </p>
+                )}
+
+                <div
+                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm bg-background/70 border border-border/50"
+                  onMouseDown={(e) => handleResizeStart(e, item)}
+                  title="Resize"
+                />
+              </div>
+            ) : (
+              <div
+                className="relative rounded-lg overflow-hidden border"
+                style={{
+                  width: item.size?.width ?? 250,
+                  height: item.size?.height ?? 150,
+                  borderColor: item.accentColor ?? 'hsl(var(--border))',
+                }}
+              >
+                <img
+                  src={item.content}
+                  alt=""
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  className="shadow-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://via.placeholder.com/200x150?text=Image+Error';
+                  }}
+                />
+
+                <div className="absolute top-1 left-1 flex items-center gap-1 rounded-full bg-card/80 px-1.5 py-1" onMouseDown={(e) => e.stopPropagation()}>
+                  {colorOptions.map(color => (
+                    <button
+                      key={`${item.id}-${color}`}
+                      type="button"
+                      className="h-3 w-3 rounded-full border border-white/40"
+                      style={{ backgroundColor: color }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setItemAccentColor(item.id, color);
+                      }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      title="Set item color"
+                    />
+                  ))}
+                </div>
+
                 <button
                   className="absolute top-1 right-1 p-1 rounded-full bg-card/80 hover:bg-secondary/50"
                   onClick={(e) => {
@@ -267,6 +679,12 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
+
+                <div
+                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm bg-card/80 border border-border/50"
+                  onMouseDown={(e) => handleResizeStart(e, item)}
+                  title="Resize"
+                />
               </div>
             )}
           </div>

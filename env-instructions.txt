@@ -11,7 +11,7 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_GITHUB_CLIENT_ID=your-github-client-id
 
 # Other Configuration
-VITE_APP_URL=http://localhost:8080
+VITE_APP_URL=http://localhost:3489
 VITE_POLLINATIONS_API_TOKEN=optional-pollinations-api-token
 ```
 
@@ -28,7 +28,7 @@ Replace the placeholder values with your actual Supabase, GitHub credentials, an
    - Go to GitHub Developer Settings: https://github.com/settings/developers
    - Create a new OAuth App or select an existing one
    - Copy the Client ID to VITE_GITHUB_CLIENT_ID
-   - Set the Authorization callback URL to http://localhost:8080/auth/callback 
+   - Set the Authorization callback URL to http://localhost:3489/auth/callback
 
 3. For Pollinations (optional but recommended if you want authenticated requests and guaranteed watermark-free images):
    - Generate or retrieve your Pollinations API token

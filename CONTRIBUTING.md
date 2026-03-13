@@ -7,7 +7,7 @@ Thank you for your interest in contributing to **Notara**! We welcome contributi
 There are many ways you can contribute to Notara:
 
 - 🐛 **Report bugs** - Help us identify and fix issues
-- 💡 **Suggest features** - Share ideas for new functionality  
+- 💡 **Suggest features** - Share ideas for new functionality
 - 📝 **Improve documentation** - Help make our docs clearer
 - 🎨 **Design improvements** - Enhance the user interface
 - 🔧 **Code contributions** - Fix bugs and implement features
@@ -50,7 +50,7 @@ Before contributing, ensure you have:
    ```bash
    cp .env.example .env
    ```
-   
+
    Configure your `.env` file with Supabase credentials for testing.
 
 6. **Start the development server**:
@@ -58,7 +58,7 @@ Before contributing, ensure you have:
    npm run dev
    ```
 
-7. **Verify setup** by visiting `http://localhost:8080`
+7. **Verify setup** by visiting `http://localhost:3489`
 
 ## 🏗️ Project Structure
 
@@ -68,7 +68,7 @@ Understanding the project structure will help you contribute effectively:
 src/
 ├── components/          # Reusable UI components
 │   ├── layout/         # Layout components
-│   ├── notes/          # Note-related components  
+│   ├── notes/          # Note-related components
 │   ├── todos/          # Todo management
 │   └── ui/             # Base UI components (shadcn/ui)
 ├── context/            # React Context providers
@@ -194,23 +194,23 @@ interface ComponentProps {
   onSave: (data: SomeType) => void;
 }
 
-export const MyComponent: React.FC<ComponentProps> = ({ 
-  title, 
-  onSave 
+export const MyComponent: React.FC<ComponentProps> = ({
+  title,
+  onSave
 }) => {
   // Hooks at the top
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Event handlers
   const handleSave = () => {
     // Implementation
   };
-  
+
   // Early returns
   if (!title) {
     return null;
   }
-  
+
   // Main render
   return (
     <div>
@@ -274,15 +274,15 @@ import { NoteEditor } from '@/components/notes/NoteEditor';
 describe('NoteEditor', () => {
   it('should render note title input', () => {
     render(<NoteEditor />);
-    
+
     const titleInput = screen.getByPlaceholderText(/note title/i);
     expect(titleInput).toBeInTheDocument();
   });
-  
+
   it('should call onSave when save button is clicked', () => {
     const mockOnSave = jest.fn();
     render(<NoteEditor onSave={mockOnSave} />);
-    
+
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(mockOnSave).toHaveBeenCalled();
   });

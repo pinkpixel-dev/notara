@@ -17,7 +17,7 @@
 - **Formatting Toolbar**: One-click headings, lists, quotes, code blocks, inline styles, colour accents, and highlights without leaving the keyboard
 - **Enhanced Preview**: GitHub-flavoured tables, syntax-highlighted code, clickable links, and embedded images right beside the editor
 - **One-Click Saves**: Save button and File menu write notes instantly, with `Ctrl/Cmd+S` for active note and `Ctrl/Cmd+Shift+S` for Save All
-- **Tag Organization**: Color-coded tags plus a Settings ▸ Tags hub for adding, renaming, recolouring, and deleting tags with usage counts  
+- **Tag Organization**: Color-coded tags plus a Settings ▸ Tags hub for adding, renaming, recolouring, and deleting tags with usage counts
 - **Pinned Notes**: Star your most important notes for quick access right from the editor header or note list
 - **Search & Filter**: Find notes instantly with powerful search
 
@@ -38,7 +38,7 @@
 - **Writing Support**: AI-powered content generation and editing
 - **Generate Images**: AI-generated images on demand for your notes, documents, and boards
 - **Seamless Pollinations Proxy**: Requests route through `/api/pollinations/*` so the browser avoids CORS issues and can optionally attach your Pollinations API token for watermark-free results
-- **Note Summaries**: Automatic summarization of long notes  
+- **Note Summaries**: Automatic summarization of long notes
 - **Creative Prompts**: Generate ideas and writing inspiration
 - **Context Awareness**: AI understands your existing content
 
@@ -57,7 +57,7 @@
 
 ### Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 18+
 - **npm** or **yarn**
 - **Git**
 
@@ -97,8 +97,8 @@
    ```
 
 5. **Open your browser**
-   
-   Navigate to `http://localhost:8080`
+
+   Navigate to `http://localhost:3489`
 
 ## 🏗️ Build & Deploy
 
@@ -107,7 +107,7 @@
 npm run build:dev
 ```
 
-### Production Build  
+### Production Build
 ```bash
 npm run build
 ```
@@ -147,7 +147,7 @@ Ensure the following secrets exist in your Cloudflare Pages project before deplo
 ## 📱 UI/UX Features
 
 - **🌙 Glass Theme**: Beautiful frosted glass effects
-- **📱 Responsive Design**: Works perfectly on all devices  
+- **📱 Responsive Design**: Works perfectly on all devices
 - **⚡ Fast Performance**: Optimized for speed and efficiency
 - **🎯 Intuitive Interface**: Clean and focused user experience
 - **🔍 Smart Search**: Instant search across all content
@@ -161,7 +161,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development setup and guidel
 ### Key Scripts
 ```bash
 npm run dev        # Start development server
-npm run build      # Build for production  
+npm run build      # Build for production
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
 ```
@@ -169,7 +169,7 @@ npm run preview    # Preview production build
 ## 📋 Roadmap
 
 - [ ] **Offline Support**: PWA capabilities with offline editing
-- [ ] **Export Options**: PDF, HTML, and other format exports  
+- [ ] **Export Options**: PDF, HTML, and other format exports
 - [ ] **Collaboration**: Share notes and collaborate in real-time
 - [ ] **Plugin System**: Extensible plugin architecture
 - [ ] **Mobile App**: Native iOS and Android applications
@@ -201,7 +201,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 **Made with ❤️ by Pink Pixel**
 
-Pink Pixel specializes in creating beautiful, modern applications that enhance productivity and creativity. 
+Pink Pixel specializes in creating beautiful, modern applications that enhance productivity and creativity.
 
 - 🌐 **Website**: [pinkpixel.dev](https://pinkpixel.dev)
 - 💜 **GitHub**: [github.com/pinkpixel-dev](https://github.com/pinkpixel-dev)
