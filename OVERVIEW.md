@@ -1,8 +1,8 @@
 # 🏗️ Notara - Technical Overview
 
-> **Version 1.1.0** - Complete technical architecture and implementation guide
-> **Last Updated**: March 13, 2026 00:31 EDT
-> **Integration System**: Phase 1 Complete | Phase 2 (GitHub OAuth) 40% Complete
+> **Version 1.1.0** - Current architecture and implementation guide
+> **Last Updated**: March 13, 2026
+> **Runtime Targets**: Web, Tauri desktop, Docker
 
 ## 🆕 Recent Release Highlights (v1.1.0)
 
@@ -10,19 +10,27 @@
 - Vision Boards now support **resize**, **inline text editing**, **item color coding**, and **persisted color filters**.
 - Calendar right-side panel now uses **Upcoming/Selected Date tabs** with a quick **Today** shortcut.
 - AI Assistant now supports configurable Pollinations key/model settings, stronger save workflows (chat archive + markdown note), and session chat continuity.
-- Constellation rendering now normalizes theme color values before canvas gradients, preventing runtime color parsing crashes.
+- Tauri desktop builds now package for Linux (`.deb`, `.rpm`, `AppImage`) and Windows (NSIS installer workflow).
+- Desktop storage now persists automatically inside the Tauri app-data workspace.
+- Docker delivery now serves the production SPA plus Pollinations proxy routes from a small Node runtime.
 
 ## 📋 Project Summary
 
-**Notara** is a modern, feature-rich note-taking and personal knowledge management application built with React, TypeScript, and a local-first storage pipeline powered by the File System Access API. This document provides a comprehensive technical overview of the application's architecture, components, and implementation details.
+**Notara** is a local-first note-taking and personal knowledge workspace built with React, TypeScript, and Vite. The app can run as:
+
+- a browser-based SPA
+- a Tauri desktop app for Linux and Windows
+- a Dockerized self-hosted web runtime
+
+The product centers on markdown notes, todos, vision boards, calendar organization, and Pollinations-powered AI workflows, with readable local storage and no required cloud account.
 
 ### 🎯 Project Goals
 
 - **Modern Note-Taking**: Rich markdown editing with real-time preview
 - **Visual Organization**: Multiple ways to organize and visualize content
 - **AI Integration**: Intelligent writing assistance and content generation
-- **Cross-Platform**: Web-first with responsive design
-- **Local-First Ownership**: File-based sync without external authentication
+- **Cross-Platform**: Web, desktop, and container delivery
+- **Local-First Ownership**: File-based sync without mandatory external services
 
 ## 🏛️ Architecture Overview
 
@@ -30,34 +38,41 @@
 
 ```mermaid
 graph TB
-    subgraph "Frontend (React SPA)"
+    subgraph "Shared React SPA"
         A[App Component]
         B[Context Providers]
-        C[Pages/Routes]
-        D[Components]
-        E[Hooks]
+        C[Pages and Routes]
+        D[Feature Components]
     end
 
-    subgraph "State Management"
+    subgraph "Runtime Targets"
+        R1[Browser]
+        R2[Tauri Desktop]
+        R3[Docker Runtime]
+    end
+
+    subgraph "State and Domain"
         F[FileSystemContext]
         G[NotesContext]
         H[TodoContext]
         I[ThemeContext]
         J[IntegrationContext]
-        K[React Query]
+        K[Pollinations Helpers]
     end
 
-    subgraph "Storage & Integrations"
-        L[File System Access API]
-        M[IndexedDB Fallback]
+    subgraph "Persistence and Services"
+        L[Tauri AppData Workspace]
+        M[Browser localStorage and optional File System Access]
         N[Pollinations API]
-        O[Integration System]
+        O[Optional Legacy Integrations]
     end
 
+    R1 --> A
+    R2 --> A
+    R3 --> A
     A --> B
     B --> C
     C --> D
-    D --> E
     B --> F
     B --> G
     B --> H
@@ -66,55 +81,43 @@ graph TB
     D --> K
     F --> L
     F --> M
-    D --> N
+    K --> N
     J --> O
 ```
 
 ### 📁 Project Structure
 
-```
+```text
 src/
-├── components/           # Reusable UI components
-│   ├── integrations/    # Integration system UI
-│   │   └── IntegrationCard.tsx
-│   ├── layout/          # Layout components (AppLayout, Navigation)
-│   ├── notes/           # Note-related components
-│   ├── todos/           # Todo management components
-│   └── ui/              # shadcn/ui base components
-├── context/             # React Context providers
-│   ├── AuthContext.tsx         # Optional Supabase auth (disabled unless VITE_ENABLE_AUTH=true)
-│   ├── FileSystemContext.tsx   # Local file system integration
-│   ├── IntegrationContext.tsx  # Integration system state & orchestration
-│   ├── NotesContext.tsx        # Notes management
-│   ├── TodoContext.tsx         # Todo management
-│   └── ThemeContext.tsx        # UI theming
-├── hooks/               # Custom React hooks
-│   ├── use-mobile.tsx   # Mobile detection
-│   └── use-toast.ts     # Toast notifications
-├── lib/                 # Utility libraries
-│   ├── integrations/    # Integration system core
-│   │   ├── adapters/    # Provider adapters
-│   │   │   ├── GitHubAdapter.ts
-│   │   │   ├── GoogleDriveAdapter.ts
-│   │   │   ├── DropboxAdapter.ts
-│   │   │   └── index.ts
-│   │   ├── oauth/       # OAuth helpers
-│   │   │   └── github.ts
-│   │   ├── index.ts
-│   │   ├── syncOrchestrator.ts  # Sync queue & retry logic
-│   │   ├── tokenVault.ts        # Encrypted token storage
-│   │   └── types.ts             # Integration type definitions
-│   ├── supabase.ts      # Legacy Supabase helpers (kept for backward compatibility)
-│   └── utils.ts         # General utilities
-├── pages/               # Route components
-│   ├── GitHubOAuthCallback.tsx # GitHub OAuth callback handler
-│   ├── HomePage.tsx     # Main note editing interface
-│   ├── TodoPage.tsx     # Todo management
-│   ├── AuthPage.tsx     # Authentication
-│   └── [other pages]
-└── types/               # TypeScript type definitions
-    └── index.ts         # Core data models
+├── components/            # UI components, including AI, layout, notes, and shared primitives
+├── context/               # React context providers for storage, notes, todos, theme, integrations
+├── hooks/                 # Shared React hooks
+├── lib/
+│   ├── filesystem/        # Browser/Tauri storage abstraction layer
+│   ├── integrations/      # Optional legacy integration subsystem
+│   ├── pollinations.ts    # Runtime-aware AI transport and config helpers
+│   ├── supabase.ts        # Legacy opt-in auth helpers
+│   └── utils.ts           # Shared utilities
+├── pages/                 # Route-level views
+├── types/                 # Core data models
+docker/
+└── server.mjs             # Node runtime for Docker deployment
+functions/
+└── api/pollinations/      # Cloudflare Pages proxy endpoints
+src-tauri/
+├── capabilities/          # Tauri permission scopes
+├── icons/                 # Desktop bundle icons
+├── src/                   # Rust bootstrap
+└── tauri.conf.json        # Desktop bundle configuration
 ```
+
+### Delivery Targets
+
+| Target | Runtime | Purpose |
+| ------ | ------- | ------- |
+| **Web** | Vite / Cloudflare Pages | Browser-first use and hosted deployment |
+| **Tauri Desktop** | Tauri 2 + WebView | Linux and Windows installable desktop builds |
+| **Docker** | Node 20 | Self-hosted containerized web runtime |
 
 ## 🗄️ Data Models
 
@@ -191,14 +194,24 @@ interface VisionBoardItem {
 
 ### Frontend Technologies
 
-| Technology       | Version | Purpose                              |
-| ---------------- | ------- | ------------------------------------ |
-| **React**        | 18.3.1  | UI framework with modern hooks       |
-| **TypeScript**   | 5.5.3   | Type safety and developer experience |
-| **Vite**         | 6.3.4   | Fast build tool and dev server       |
-| **React Router** | 6.26.2  | Client-side routing                  |
-| **TailwindCSS**  | 3.4.17  | Utility-first styling                |
-| **React Query**  | 5.56.2  | Server state management              |
+| Technology | Version | Purpose |
+| ---------- | ------- | ------- |
+| **React** | 19.1.1 | UI framework with modern hooks |
+| **TypeScript** | 5.5.3 | Type safety and developer experience |
+| **Vite** | 7.3.1 | Fast build tool and dev server |
+| **React Router** | 7.9.2 | Client-side routing |
+| **TailwindCSS** | 3.4.17 | Utility-first styling |
+| **TanStack Query** | 5.56.2 | Server state management |
+
+### Desktop / Deployment Technologies
+
+| Technology | Version | Purpose |
+| ---------- | ------- | ------- |
+| **Tauri** | 2.10.x | Desktop shell and bundle pipeline |
+| **Tauri FS Plugin** | 2.4.x | Desktop-scoped filesystem access |
+| **Tauri HTTP Plugin** | 2.5.x | Native desktop HTTP for Pollinations |
+| **Docker** | Node 20 runtime | Self-hosted web runtime |
+| **Cloudflare Pages Functions** | Current | Hosted proxy endpoints for the web app |
 
 ### UI Component Library
 
@@ -212,17 +225,19 @@ interface VisionBoardItem {
 
 ### Storage & Integrations
 
-| Service                    | Purpose                                                                   |
-| -------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **File System Access API** | Writes JSON bundles and markdown files to the user-selected Notara folder |
-| **IndexedDB**              | Local fallback when filesystem permissions are unavailable                |
-|                            | **Pollinations Proxy**                                                    | `/api/pollinations/*` Cloudflare Pages functions that forward chat/image requests with optional API token |
+| Service | Purpose |
+| ------- | ------- |
+| **Tauri AppData Workspace** | Desktop persistence in the app-scoped local workspace |
+| **Browser localStorage** | Web fallback persistence for notes, todos, and settings |
+| **File System Access API** | Optional browser folder access in supported secure contexts |
+| **Pollinations API** | Text and image generation backend |
+| **Legacy Integrations** | Optional adapter framework for future/legacy sync providers |
 
 ## 🔄 Integration System
 
 ### Overview
 
-The **Integration System** provides a secure, extensible framework for syncing notes with external platforms like GitHub, Google Drive, and Dropbox. Built with a modular adapter pattern, it enables automatic background synchronization while maintaining local-first data ownership.
+The **Integration System** is now an optional legacy subsystem for syncing notes with external platforms like GitHub, Google Drive, and Dropbox. It remains in the repository, but the primary v1.1.0 product flow is local-first and does not depend on it.
 
 ### Architecture Components
 
@@ -408,16 +423,27 @@ await disconnectIntegration("github");
 
 ## 🤖 AI Assistant Integration
 
+### Runtime Request Paths
+
+| Runtime | Transport |
+| ------- | --------- |
+| **Tauri desktop** | Native `@tauri-apps/plugin-http` requests directly to `gen.pollinations.ai` |
+| **Web development** | Vite `/api/pollinations/*` middleware proxy |
+| **Cloudflare Pages** | `functions/api/pollinations/*` proxy endpoints |
+| **Docker** | `docker/server.mjs` proxy endpoints |
+
 ### Pollinations Request Flow
 
-```
-User ➜ React AI Assistant ➜ /api/pollinations/text|image ➜ Cloudflare Pages Function ➜ Pollinations API
+```text
+Desktop:  AI Assistant -> Tauri HTTP plugin -> gen.pollinations.ai
+Web:      AI Assistant -> /api/pollinations/* -> proxy -> gen.pollinations.ai
+Docker:   AI Assistant -> /api/pollinations/* -> docker/server.mjs -> gen.pollinations.ai
 ```
 
-- **Local Development**: Vite registers a middleware that mirrors the `/api/pollinations/*` routes. The middleware forwards requests to Pollinations, preserves streaming responses for chat completions, and injects an `Authorization` header when `VITE_POLLINATIONS_API_TOKEN` is present.
-- **Production (Cloudflare Pages)**: Matching functions live at `functions/api/pollinations/text.ts` and `functions/api/pollinations/image.ts`. They accept either the caller's `Authorization` header or the `POLLINATIONS_API_TOKEN` secret configured via `wrangler secret put`.
-- **Watermark Control**: The assistant always sets `referrer=notara` and forwards the `noLogo` flag. Supplying a Pollinations token is optional but recommended to guarantee watermark-free image generation.
-- **Error Handling**: Both proxies return upstream status codes and plain-text messages so the UI can surface actionable toasts when Pollinations rejects a request.
+- Desktop requests use the Tauri HTTP plugin with explicit URL allow-listing and `Authorization` header support.
+- Web and Docker runtimes preserve the browser-friendly `/api/pollinations/*` contract so the SPA can share one API surface.
+- Pollinations configuration is user-editable in Settings and includes API key, text model, and image model preferences.
+- Errors are surfaced as upstream status/text so the UI can show actionable failure messages.
 
 ## 🎨 UI/UX Architecture
 
@@ -497,9 +523,11 @@ graph TD
 
 ### Current Storage Layers
 
-1. **File System Access API** — Primary persistence to user-selected Notara directory (notes, tags, todos, AI cache).
-2. **IndexedDB Fallback** — Automatic browser storage when filesystem permissions are missing or revoked.
-3. **Runtime Memory** — React contexts manage in-session state and coordinate save pipelines.
+1. **Tauri AppData Workspace** — Desktop persistence to the app-scoped local workspace.
+2. **Browser localStorage** — Web fallback persistence for notes, todos, AI settings, and UI state.
+3. **IndexedDB** — Browser storage for persisted directory-handle metadata when File System Access is available.
+4. **Optional File System Access API** — Browser-only folder access in secure contexts.
+5. **Runtime Memory** — React contexts coordinate in-session state and save flows.
 
 ### Permission & Save Flow
 
@@ -507,20 +535,35 @@ graph TD
 sequenceDiagram
     participant U as User
     participant A as App
-    participant F as File System Access API
-    participant I as IndexedDB
+    participant T as Tauri AppData
+    participant B as Browser Storage
 
-    U->>A: Choose Notara Folder
-    A->>F: Request Permissions
-    alt Granted
-        F-->>A: Directory Handle
-        A->>F: Write JSON/Markdown Bundles
-        F-->>A: Success
-    else Denied
-        A->>I: Persist Bundle to IndexedDB
-        I-->>A: Success (Fallback)
+    alt Desktop runtime
+        A->>T: Ensure workspace directories
+        A->>T: Write JSON/Markdown/media files
+        T-->>A: Success
+    else Web runtime
+        A->>B: Persist notes/todos/settings locally
+        B-->>A: Success
     end
 ```
+
+### Desktop Workspace Layout
+
+On Linux, the default Tauri storage location is:
+
+- `~/.local/share/dev.pinkpixel.notara/workspace/`
+
+If `XDG_DATA_HOME` is present, Tauri resolves the workspace relative to that directory instead.
+
+Typical files written under the workspace include:
+
+- `data/notes/notes.json`
+- `data/notes/tags.json`
+- `data/notes/markdown/*.md`
+- `data/todos/todos.json`
+- `data/ai/conversations.json`
+- `data/media/*`
 
 ## 💾 State Management
 
@@ -549,7 +592,7 @@ The application uses React Context for global state management:
 
 ### React Query Integration
 
-Used for server state management:
+Used sparingly for async/server-adjacent state:
 
 - **Caching**: Automatic caching of API responses
 - **Synchronization**: Background refetching
@@ -565,12 +608,12 @@ graph LR
     B --> C[Optimistic Update]
     C --> D[UI Update]
     B --> E[FileSystemContext Persist]
-    E --> F[File System Access API]
-    F --> G[Disk Write Success]
+    E --> F[Tauri AppData or Browser Storage]
+    F --> G[Disk or Local Save Success]
     G --> H[Sync State & Toast]
 
-    E --> I[Permission Error]
-    I --> J[Fallback to IndexedDB]
+    E --> I[Storage Error]
+    I --> J[Fallback to Browser Storage]
     J --> H
 ```
 
@@ -585,9 +628,10 @@ graph LR
 
 1. **User Trigger**: Clicking Save, choosing _File ▸ Save Active Note_, or pressing `Ctrl/Cmd+S`
 2. **Editor Dispatch**: `NoteEditor` assembles the current bundle and calls `persistBundle()` from `NotesContext`
-3. **Filesystem Context**: `persistBundle()` routes through the File System Access API to write JSON bundles and per-note markdown files
-4. **Fallback Handling**: If the Notara folder is unavailable, the bundle mirrors into browser storage and a toast explains the fallback
-5. **Save All Shortcut**: `Ctrl/Cmd+Shift+S` runs the same pipeline for notes, todos, and cached AI history
+3. **Filesystem Context**: `persistBundle()` routes through the runtime-aware storage layer to write JSON bundles and per-note markdown files
+4. **Desktop Path**: In Tauri, writes land in the app-data workspace and media files are saved into `data/media`
+5. **Web Path**: In browsers, the app falls back to local storage and optional File System Access behavior where supported
+6. **Save All Shortcut**: `Ctrl/Cmd+Shift+S` runs the same pipeline for notes, todos, and cached AI history
 
 ## 🚀 Performance Optimizations
 
@@ -633,23 +677,34 @@ npm run dev
 
 ### Deployment Options
 
-1. **Cloudflare Pages**: Primary deployment target
-2. **Netlify**: Alternative static hosting
-3. **Vercel**: Another deployment option
-4. **Self-hosted**: Docker containerization ready
+1. **Tauri Desktop**: Linux packages and Windows installer workflow
+2. **Cloudflare Pages**: Primary hosted web deployment target
+3. **Self-hosted Docker**: Containerized web runtime with Pollinations proxy support
+4. **Static SPA Hosting**: Possible for the frontend, but AI proxy routes need a matching backend/proxy layer
 
 ### Build Scripts
 
 ```json
 {
-  "dev": "vite", // Development server
-  "build": "vite build", // Production build
-  "build:dev": "vite build --mode development", // Dev build
-  "lint": "eslint .", // Code linting
-  "preview": "vite preview", // Preview build
-  "deploy": "npm run deploy:cloudflare" // Deploy to Cloudflare
+  "dev": "vite",
+  "build": "vite build",
+  "build:dev": "vite build --mode development",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "tauri:dev": "tauri dev",
+  "tauri:build:linux": "NO_STRIP=YES tauri build --bundles deb,appimage",
+  "deploy": "npm run deploy:cloudflare"
 }
 ```
+
+### Release Artifacts
+
+Current packaged outputs for `v1.1.0`:
+
+- `Notara_1.1.0_amd64.deb`
+- `Notara-1.1.0-1.x86_64.rpm`
+- `Notara_1.1.0_amd64.AppImage`
+- `Notara_1.1.0_x64-setup.exe`
 
 ## 🔮 Future Enhancements
 

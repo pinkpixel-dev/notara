@@ -6,6 +6,12 @@ All notable changes to the Notara project will be documented in this file.
 
 ### ✨ Added
 
+- Release install options for:
+  - Linux `.deb`
+  - Linux `.rpm`
+  - Linux `AppImage`
+  - Windows NSIS installer
+  - Dockerized web runtime
 - Tauri desktop app scaffold targeting the existing Vite frontend.
 - Linux packaging scripts for `.deb` and `AppImage` bundles.
 - Windows installer GitHub Actions workflow that builds an NSIS installer.

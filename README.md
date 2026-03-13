@@ -119,6 +119,22 @@
 
    Navigate to `http://localhost:3489`
 
+## 📦 Downloads
+
+Direct download links for `v1.1.0`:
+
+- [Linux `.deb`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb)
+- [Linux `.rpm`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm)
+- [Linux `AppImage`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage)
+- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe)
+
+Available installation options:
+
+- Tauri Linux packages: `.deb`, `.rpm`, and `AppImage`
+- Windows NSIS installer
+- Docker container for the web runtime
+- Cloudflare Pages deployment for hosted web installs
+
 ## 🏗️ Build & Deploy
 
 ### Development Build
@@ -210,9 +226,10 @@ Ensure the following secrets exist in your Cloudflare Pages project before deplo
 
 ### Frontend
 
-- **React** 18.3.1 - Modern React with hooks
+- **React** 19.1.1 - Modern React with hooks
 - **TypeScript** - Type safety and developer experience
 - **Vite** - Fast build tool and dev server
+- **React Router** 7.9.2 - Client-side routing
 - **TailwindCSS** - Utility-first CSS framework
 - **shadcn/ui** - High-quality React components
 - **Radix UI** - Accessible component primitives
