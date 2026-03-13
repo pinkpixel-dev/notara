@@ -47,8 +47,8 @@ interface ThemeContextType {
 
 // Default theme settings
 const defaultSettings: ThemeSettings = {
-  mode: 'cosmic',
-  accentColor: 'blue',
+  mode: 'midnight',
+  accentColor: 'pink',
   visualizationMode: 'constellation',
   animations: true,
   fontSize: 'medium',
