@@ -162,6 +162,28 @@ If you are building on a rolling-release Linux distro, AppImage packaging may fa
 
 Notara now sets `NO_STRIP=YES` for the Linux Tauri packaging script to work around `linuxdeploy` strip failures on newer distros such as Arch.
 
+### Docker
+
+Build a Docker image:
+
+```bash
+docker build -t notara:latest .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 3489:3489 \
+  -e POLLINATIONS_API_TOKEN=your_optional_pollinations_token \
+  notara:latest
+```
+
+Then open:
+
+- `http://localhost:3489`
+
+The Docker image serves the built SPA and also provides `/api/pollinations/text` and `/api/pollinations/image`, so the web app keeps its AI functionality inside the container. If you do not pass `POLLINATIONS_API_TOKEN`, users can still provide their own Pollinations key in Settings.
+
 ### Windows Installer via GitHub Actions
 
 This repository now includes a GitHub Actions workflow at `.github/workflows/windows-installer.yml`.
@@ -242,6 +264,12 @@ npm run tauri:build:linux # Build .deb and AppImage bundles
 - Desktop builds now persist data automatically in the Tauri app-data workspace at `~/.local/share/dev.pinkpixel.notara/workspace/` on Linux, or the equivalent `XDG_DATA_HOME` path.
 - Pollinations-backed AI text and image requests now use Tauri's native HTTP client in desktop builds, so the assistant is no longer blocked on the web proxy routes.
 - The to-do list dialogs use an in-app calendar picker in desktop builds to avoid native WebKit date-picker freezes.
+
+### Docker Notes
+
+- The Docker runtime serves the prebuilt frontend from `dist/`.
+- A small Node server in `docker/server.mjs` handles SPA routing and the Pollinations proxy endpoints.
+- Docker does not provide the Tauri desktop filesystem features; use the Tauri builds when you want local desktop app storage under `~/.local/share/dev.pinkpixel.notara/workspace/`.
 
 ## 📋 Roadmap
 

@@ -13,6 +13,7 @@ All notable changes to the Notara project will be documented in this file.
 - Native Pollinations transport for Tauri so AI text streaming and image generation no longer depend on browser-only `/api/pollinations/*` routes in desktop builds.
 - Linux packaging now sets `NO_STRIP=YES` to avoid AppImage `linuxdeploy` strip failures on newer systems.
 - Automatic Tauri desktop storage in the app-data workspace, which resolves to `~/.local/share/dev.pinkpixel.notara/workspace/` on Linux unless `XDG_DATA_HOME` overrides it.
+- Docker build support with a multi-stage `Dockerfile`, `.dockerignore`, and a small Node runtime that serves the app plus Pollinations proxy endpoints.
 
 ### 🐛 Fixed
 

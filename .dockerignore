@@ -1,0 +1,13 @@
+.git
+.github
+.wrangler
+.codex
+node_modules
+dist
+dist-ssr
+src-tauri/target
+logs
+*.log
+.env
+Tauri-Fixes
+reference-gumdrop-studio
