@@ -214,16 +214,25 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const reconnectToPersisted = useCallback(async (): Promise<boolean> => {
     if (!persistedHandle) {
       await initialiseFromPersisted();
-      return false;
+      return fileSystemHelpers.isTauriEnvironment();
     }
     try {
       const exists = await fileSystemHelpers.directoryExists(persistedHandle);
       if (!exists) {
+        await fileSystemHelpers.clearPersistedDirectoryHandle();
+        const fallbackHandle = await fileSystemHelpers.retrieveDirectoryHandle();
+
+        if (fallbackHandle) {
+          setPersistedHandle(fallbackHandle);
+          await prepareHandle(fallbackHandle);
+          setLastError('The previously selected Notara folder is no longer available. Notara switched to app storage.');
+          return true;
+        }
+
         setPersistedHandle(null);
         setRootHandle(null);
         setStatus('no-directory');
         setLastError('The previously selected Notara folder is no longer available.');
-        await fileSystemHelpers.clearPersistedDirectoryHandle();
         return false;
       }
 
@@ -244,11 +253,20 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [initialiseFromPersisted, persistedHandle, prepareHandle]);
 
   const forgetDirectory = useCallback(async () => {
+    await fileSystemHelpers.clearPersistedDirectoryHandle();
+    if (fileSystemHelpers.isTauriEnvironment()) {
+      const fallbackHandle = await fileSystemHelpers.retrieveDirectoryHandle();
+      if (fallbackHandle) {
+        setPersistedHandle(fallbackHandle);
+        await prepareHandle(fallbackHandle);
+        return;
+      }
+    }
+
     setRootHandle(null);
     setPersistedHandle(null);
     setStatus('no-directory');
-    await fileSystemHelpers.clearPersistedDirectoryHandle();
-  }, []);
+  }, [prepareHandle]);
 
   const syncNoteMarkdownFiles = useCallback(async (notes: Note[]) => {
     if (!rootHandle) {

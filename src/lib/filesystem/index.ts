@@ -1,4 +1,4 @@
-import { homeDir, join } from '@tauri-apps/api/path';
+import { appDataDir, homeDir, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   exists as tauriExists,
@@ -40,6 +40,7 @@ export interface TauriDirectoryReference {
   kind: 'tauri';
   name: string;
   path: string;
+  source: 'app-data' | 'linked';
 }
 
 export type RootDirectoryHandle = BrowserDirectoryReference | TauriDirectoryReference;
@@ -52,11 +53,14 @@ interface PersistedTauriDirectoryRecord {
 
 const DATA_DIRECTORY = 'data';
 const TAURI_DIRECTORY_STORAGE_KEY = 'notara-tauri-root-directory';
+const TAURI_DEFAULT_DIRECTORY_NAME = 'App storage';
+const TAURI_DEFAULT_DIRECTORY_SEGMENT = 'workspace';
 
 const isBrowserEnvironment = typeof window !== 'undefined';
 
 const isTauriEnvironment = () =>
-  isBrowserEnvironment && '__TAURI_INTERNALS__' in (window as Window & Record<string, unknown>);
+  isBrowserEnvironment &&
+  '__TAURI_INTERNALS__' in (window as unknown as Record<string, unknown>);
 
 const supportsBrowserFileSystem = () =>
   isBrowserEnvironment &&
@@ -95,6 +99,18 @@ const getPersistedTauriDirectory = (): PersistedTauriDirectoryRecord | null => {
     console.error('Failed to parse persisted Tauri directory', error);
     return null;
   }
+};
+
+const getDefaultTauriDirectory = async (): Promise<TauriDirectoryReference> => {
+  const appDataPath = await appDataDir();
+  const workspacePath = await join(appDataPath, TAURI_DEFAULT_DIRECTORY_SEGMENT);
+
+  return {
+    kind: 'tauri',
+    name: TAURI_DEFAULT_DIRECTORY_NAME,
+    path: workspacePath,
+    source: 'app-data',
+  };
 };
 
 const persistTauriDirectory = async (handle: TauriDirectoryReference): Promise<void> => {
@@ -274,6 +290,7 @@ const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> =
     kind: 'tauri',
     path: selected,
     name: getDirectoryNameFromPath(selected),
+    source: 'linked',
   };
 };
 
@@ -302,15 +319,16 @@ export const fileSystemHelpers = {
   retrieveDirectoryHandle: async (): Promise<RootDirectoryHandle | null> => {
     if (isTauriEnvironment()) {
       const stored = getPersistedTauriDirectory();
-      if (!stored) {
-        return null;
+      if (stored) {
+        return {
+          kind: 'tauri',
+          path: stored.path,
+          name: stored.name,
+          source: 'linked',
+        };
       }
 
-      return {
-        kind: 'tauri',
-        path: stored.path,
-        name: stored.name,
-      };
+      return getDefaultTauriDirectory();
     }
 
     const browserHandle = await retrievePersistedBrowserDirectoryHandle();

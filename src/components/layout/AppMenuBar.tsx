@@ -53,6 +53,7 @@ const AppMenuBar: React.FC = () => {
   const { todoLists } = useTodo();
   const {
     status,
+    rootHandle,
     selectDirectory,
     reconnectToPersisted,
     forgetDirectory,
@@ -61,6 +62,9 @@ const AppMenuBar: React.FC = () => {
     flushCachedAiConversations,
   } = useFileSystem();
   const { settings, setFontSize } = useTheme();
+  const hasLinkedDirectory =
+    rootHandle?.kind === 'browser' ||
+    (rootHandle?.kind === 'tauri' && rootHandle.source === 'linked');
 
   const handleSaveActiveNote = useCallback(() => {
     dispatchEditorEvent('notara:save-active-note');
@@ -70,7 +74,7 @@ const AppMenuBar: React.FC = () => {
     if (status !== 'ready') {
       toast({
         title: 'Saved locally',
-        description: 'Data is stored in your browser because a Notara folder is not connected yet.',
+        description: 'Data is stored locally because desktop storage is not ready yet.',
       });
       return;
     }
@@ -81,7 +85,9 @@ const AppMenuBar: React.FC = () => {
       await flushCachedAiConversations();
       toast({
         title: 'All changes saved',
-        description: 'Your notes and todos have been written to the Notara folder.',
+        description: hasLinkedDirectory
+          ? 'Your notes and todos have been written to the linked Notara folder.'
+          : 'Your notes and todos have been written to Notara app storage.',
       });
     } catch (error) {
       console.error('Save all failed', error);
@@ -91,7 +97,7 @@ const AppMenuBar: React.FC = () => {
         variant: 'destructive',
       });
     }
-  }, [flushCachedAiConversations, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
+  }, [flushCachedAiConversations, hasLinkedDirectory, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
 
   const handleOpenMarkdown = useCallback(async () => {
     if (typeof window === 'undefined' || !('showOpenFilePicker' in window)) {
@@ -149,7 +155,7 @@ const AppMenuBar: React.FC = () => {
     if (connected) {
       toast({
         title: 'Storage ready',
-        description: 'Files will now sync to your Notara folder.',
+        description: 'Files will now sync to your linked Notara folder.',
       });
     }
   }, [selectDirectory]);
@@ -167,8 +173,8 @@ const AppMenuBar: React.FC = () => {
   const handleForgetDirectory = useCallback(async () => {
     await forgetDirectory();
     toast({
-      title: 'Storage disconnected',
-      description: 'Notara will fall back to browser storage until you choose a new folder.',
+      title: 'Folder disconnected',
+      description: 'Notara switched back to app storage.',
     });
   }, [forgetDirectory]);
 
@@ -211,7 +217,7 @@ const AppMenuBar: React.FC = () => {
             Re-authorize Folder
           </MenubarItem>
           <MenubarItem
-            disabled={status !== 'ready'}
+            disabled={!hasLinkedDirectory}
             onSelect={(event) => {
               event.preventDefault();
               void handleForgetDirectory();

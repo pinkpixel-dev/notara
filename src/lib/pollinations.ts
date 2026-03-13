@@ -40,6 +40,14 @@ export const isTauriDesktopRuntime = (): boolean =>
   typeof window !== 'undefined' &&
   '__TAURI_INTERNALS__' in (window as unknown as Record<string, unknown>);
 
+const normalizeBearerToken = (token: string): string => {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  return trimmed.startsWith('Bearer ') ? trimmed : `Bearer ${trimmed}`;
+};
+
 const getPollinationsFetch = () => (isTauriDesktopRuntime() ? tauriFetch : fetch);
 
 const getPollinationsTextUrl = (): string =>
@@ -119,15 +127,24 @@ export const requestPollinationsText = async (
   bearerToken: string
 ): Promise<Response> => {
   const pollinationsFetch = getPollinationsFetch();
+  const isDesktopRuntime = isTauriDesktopRuntime();
+  const authHeader = normalizeBearerToken(bearerToken);
+  const requestPayload = isDesktopRuntime
+    ? {
+        ...payload,
+        stream: false,
+      }
+    : payload;
 
   return pollinationsFetch(getPollinationsTextUrl(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
-      Authorization: bearerToken,
+      Accept: isDesktopRuntime ? 'application/json' : 'text/event-stream',
+      Authorization: authHeader,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(requestPayload),
+    connectTimeout: 60_000,
   });
 };
 
@@ -136,13 +153,15 @@ export const requestPollinationsImage = async (
   bearerToken: string
 ): Promise<Response> => {
   const pollinationsFetch = getPollinationsFetch();
+  const authHeader = normalizeBearerToken(bearerToken);
 
   if (isTauriDesktopRuntime()) {
     return pollinationsFetch(getPollinationsImageUrl(payload), {
       method: 'GET',
       headers: {
-        Authorization: bearerToken,
+        Authorization: authHeader,
       },
+      connectTimeout: 60_000,
     });
   }
 
@@ -150,8 +169,9 @@ export const requestPollinationsImage = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: bearerToken,
+      Authorization: authHeader,
     },
     body: JSON.stringify(payload),
+    connectTimeout: 60_000,
   });
 };
