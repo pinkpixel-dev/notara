@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
+import { useFileSystem } from '@/context/FileSystemContext';
 import { VisionBoardItem } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface VisionBoardProps {
   id: string;
@@ -10,15 +12,17 @@ interface VisionBoardProps {
 
 const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
   const { visionBoards, updateVisionBoard } = useNotes();
+  const { status: fileSystemStatus, saveGeneratedImage } = useFileSystem();
   const visionBoard = visionBoards.find(vb => vb.id === id);
-  
+
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isAddingText, setIsAddingText] = useState(false);
   const [newTextContent, setNewTextContent] = useState('');
   const [isAddingImage, setIsAddingImage] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
-  
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+
   if (!visionBoard) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -26,28 +30,28 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       </div>
     );
   }
-  
+
   const handleDragStart = (e: React.MouseEvent, itemId: string, position: { x: number, y: number }) => {
     e.preventDefault(); // Prevent default drag behavior
     setDraggedItem(itemId);
-    
+
     // Calculate the offset from the pointer to the item's top-left corner
     const itemElement = e.currentTarget as HTMLElement;
     const itemRect = itemElement.getBoundingClientRect();
-    
+
     setDragOffset({
       x: e.clientX - itemRect.left,
       y: e.clientY - itemRect.top
     });
   };
-  
+
   const handleDrag = (e: React.MouseEvent) => {
     if (!draggedItem) return;
-    
+
     // Get the container's position to calculate relative coordinates
     const container = e.currentTarget as HTMLElement;
     const containerRect = container.getBoundingClientRect();
-    
+
     const newItems = visionBoard.items.map(item => {
       if (item.id === draggedItem) {
         return {
@@ -60,41 +64,61 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       }
       return item;
     });
-    
+
     updateVisionBoard(visionBoard.id, { items: newItems });
   };
-  
+
   const handleDragEnd = () => {
     setDraggedItem(null);
   };
-  
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (draggedItem) {
       handleDrag(e);
     }
   };
-  
+
   const addTextItem = () => {
     if (!newTextContent.trim()) return;
-    
+
     const newItem: VisionBoardItem = {
       id: uuidv4(),
       type: 'text',
       content: newTextContent,
       position: { x: 100, y: 100 }
     };
-    
-    updateVisionBoard(visionBoard.id, { 
+
+    updateVisionBoard(visionBoard.id, {
       items: [...visionBoard.items, newItem]
     });
-    
+
     setNewTextContent('');
     setIsAddingText(false);
   };
-  
-  const addImageItem = () => {
+
+  const addImageItem = async () => {
     if (!newImageUrl.trim()) return;
-    
+
+    if (newImageFile && fileSystemStatus === 'ready') {
+      const safePrefix = (newImageFile.name || 'vision-board-image')
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'vision-board-image';
+
+      const savedPath = await saveGeneratedImage(newImageFile, {
+        fileNamePrefix: safePrefix,
+        mimeType: newImageFile.type,
+      });
+
+      if (savedPath) {
+        toast({
+          title: 'Image saved to folder',
+          description: `Stored at ${savedPath}`,
+        });
+      }
+    }
+
     const newItem: VisionBoardItem = {
       id: uuidv4(),
       type: 'image',
@@ -102,29 +126,48 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       position: { x: 200, y: 100 },
       size: { width: 250, height: 150 }
     };
-    
-    updateVisionBoard(visionBoard.id, { 
+
+    updateVisionBoard(visionBoard.id, {
       items: [...visionBoard.items, newItem]
     });
-    
+
     setNewImageUrl('');
+    setNewImageFile(null);
     setIsAddingImage(false);
   };
-  
+
+  const handleImageFileSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setNewImageFile(file);
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+    setNewImageUrl(dataUrl);
+  };
+
   const deleteItem = (itemId: string) => {
     updateVisionBoard(visionBoard.id, {
       items: visionBoard.items.filter(item => item.id !== itemId)
     });
   };
-  
+
   return (
-    <div 
+    <div
       className="h-full w-full relative overflow-auto bg-background"
       onMouseMove={handleMouseMove}
       onMouseUp={handleDragEnd}
       onMouseLeave={handleDragEnd}
-      style={{ 
-        minHeight: '600px', 
+      style={{
+        minHeight: '600px',
         minWidth: '100%',
         backgroundImage: `
           radial-gradient(circle at 20px 20px, hsl(var(--muted)) 1px, transparent 0),
@@ -138,12 +181,12 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
     >
       {/* Content container with min-width to ensure space for items */}
       <div className="relative" style={{ minWidth: '100%', minHeight: '100%' }}>
-        
+
         {/* Board title */}
         <div className="absolute top-4 left-4 z-10">
           <h2 className="text-2xl font-bold">{visionBoard.name}</h2>
         </div>
-        
+
         {/* Control panel */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           <Button
@@ -163,14 +206,14 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
             Add Image
           </Button>
         </div>
-        
+
         {/* Vision board items */}
         {visionBoard.items.map(item => (
           <div
             key={item.id}
             className={`absolute transition-none ${
-              draggedItem === item.id 
-                ? 'z-10 cursor-grabbing opacity-90 scale-105' 
+              draggedItem === item.id
+                ? 'z-10 cursor-grabbing opacity-90 scale-105'
                 : 'z-0 cursor-grab hover:shadow-lg'
             }`}
             style={{
@@ -186,7 +229,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
               <div className="bg-card/80 backdrop-blur-sm p-4 rounded-lg shadow-md border border-border min-w-[200px] max-w-[400px]">
                 <div className="flex justify-between items-center mb-2">
                   <div className="w-4" />
-                  <button 
+                  <button
                     className="p-1 rounded-full hover:bg-secondary/50"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -214,7 +257,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
                     target.src = 'https://via.placeholder.com/200x150?text=Image+Error';
                   }}
                 />
-                <button 
+                <button
                   className="absolute top-1 right-1 p-1 rounded-full bg-card/80 hover:bg-secondary/50"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -229,7 +272,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
           </div>
         ))}
       </div>
-      
+
       {/* Modal for adding text */}
       {isAddingText && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
@@ -252,12 +295,22 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
           </div>
         </div>
       )}
-      
+
       {/* Modal for adding image */}
       {isAddingImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
           <div className="bg-card p-6 rounded-lg w-96 max-w-full">
             <h3 className="text-lg font-medium mb-4">Add Image</h3>
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground block mb-2">Choose local image file</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageFileSelection}
+                className="w-full text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Or paste an image URL below.</p>
+            </div>
             <input
               type="text"
               value={newImageUrl}
@@ -279,10 +332,13 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddingImage(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsAddingImage(false);
+                setNewImageFile(null);
+              }}>
                 Cancel
               </Button>
-              <Button onClick={addImageItem}>
+              <Button onClick={() => void addImageItem()}>
                 Add
               </Button>
             </div>

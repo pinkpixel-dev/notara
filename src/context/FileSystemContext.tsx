@@ -30,6 +30,7 @@ interface FileSystemContextValue {
   saveAiConversations: (conversations: AiConversationSnapshot[]) => Promise<void>;
   loadAiConversations: () => Promise<AiConversationSnapshot[] | null>;
   flushCachedAiConversations: () => Promise<void>;
+  saveGeneratedImage: (blob: Blob, options?: { fileNamePrefix?: string; mimeType?: string }) => Promise<string | null>;
 }
 
 const FileSystemContext = createContext<FileSystemContextValue | undefined>(undefined);
@@ -48,6 +49,32 @@ const LEGACY_NOTES_BUNDLE_PATH = [DATA_DIRECTORY, 'notes-bundle.json'] as const;
 const NOTE_MARKDOWN_DIRECTORY = [DATA_DIRECTORY, 'notes', 'markdown'] as const;
 const TODOS_JSON_PATH = [DATA_DIRECTORY, 'todos', 'todos.json'] as const;
 const AI_CONVERSATIONS_JSON_PATH = [DATA_DIRECTORY, 'ai', 'conversations.json'] as const;
+const MEDIA_DIRECTORY_PATH = [DATA_DIRECTORY, 'media'] as const;
+
+const inferFileExtension = (mimeType?: string): string => {
+  switch (mimeType) {
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/png':
+      return 'png';
+    case 'image/webp':
+      return 'webp';
+    case 'image/gif':
+      return 'gif';
+    default:
+      return 'png';
+  }
+};
+
+const sanitizeFileSegment = (value: string): string => {
+  const sanitized = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return sanitized || 'image';
+};
 
 const REQUIRED_DIRECTORIES: string[][] = [
   [DATA_DIRECTORY],
@@ -371,6 +398,33 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await saveAiConversations(aiArchiveCacheRef.current);
   }, [rootHandle, saveAiConversations]);
 
+  const saveGeneratedImage = useCallback(
+    async (
+      blob: Blob,
+      options?: { fileNamePrefix?: string; mimeType?: string }
+    ): Promise<string | null> => {
+      if (!rootHandle) {
+        return null;
+      }
+
+      try {
+        await fileSystemHelpers.ensurePath(rootHandle, MEDIA_DIRECTORY_PATH as unknown as string[]);
+
+        const filePrefix = sanitizeFileSegment(options?.fileNamePrefix ?? 'ai-image');
+        const extension = inferFileExtension(options?.mimeType ?? blob.type);
+        const fileName = `${filePrefix}-${Date.now()}.${extension}`;
+
+        await fileSystemHelpers.writeBlob(rootHandle, [...MEDIA_DIRECTORY_PATH, fileName], blob);
+        return `data/media/${fileName}`;
+      } catch (error) {
+        console.error('Failed to save generated image', error);
+        setLastError((error as Error).message ?? 'Failed to save generated image');
+        return null;
+      }
+    },
+    [rootHandle]
+  );
+
   const value = useMemo<FileSystemContextValue>(
     () => ({
       status,
@@ -387,6 +441,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       saveAiConversations,
       loadAiConversations,
       flushCachedAiConversations,
+      saveGeneratedImage,
     }),
     [
       forgetDirectory,
@@ -403,6 +458,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       status,
       supported,
       reconnectToPersisted,
+      saveGeneratedImage,
     ]
   );
 

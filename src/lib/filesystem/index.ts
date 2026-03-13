@@ -71,6 +71,17 @@ const writeText = async (
   await writable.close();
 };
 
+const writeBlob = async (
+  root: FileSystemDirectoryHandle,
+  segments: string[],
+  contents: Blob
+): Promise<void> => {
+  const fileHandle = await getFileHandle(root, segments, true);
+  const writable = await fileHandle.createWritable();
+  await writable.write(contents);
+  await writable.close();
+};
+
 const readJSON = async <T>(
   root: FileSystemDirectoryHandle,
   segments: string[]
@@ -149,6 +160,7 @@ export const fileSystemHelpers = {
   ensurePath,
   writeJSON,
   writeText,
+  writeBlob,
   readJSON,
   listDirectoryEntries,
   deleteEntry,

@@ -58,6 +58,7 @@ interface NoteSelection {
 type ConversationSnapshot = AiConversationSnapshot;
 
 const LOCAL_AI_ARCHIVE_KEY = 'notara-ai-conversation-archive';
+const SESSION_AI_MESSAGES_KEY = 'notara-ai-session-messages';
 
 const readArchiveFromLocalStorage = (): ConversationSnapshot[] => {
   if (typeof window === 'undefined') {
@@ -87,6 +88,58 @@ const writeArchiveToLocalStorage = (archive: ConversationSnapshot[]): void => {
   }
 };
 
+const mergeConversationArchives = (
+  ...archives: ConversationSnapshot[][]
+): ConversationSnapshot[] => {
+  const seenIds = new Set<string>();
+  const merged: ConversationSnapshot[] = [];
+
+  for (const archive of archives) {
+    for (const snapshot of archive) {
+      if (!snapshot?.id || seenIds.has(snapshot.id)) {
+        continue;
+      }
+      seenIds.add(snapshot.id);
+      merged.push(snapshot);
+    }
+  }
+
+  return merged
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 20);
+};
+
+const readSessionMessages = (): Message[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const stored = window.sessionStorage.getItem(SESSION_AI_MESSAGES_KEY);
+    if (!stored) {
+      return [];
+    }
+
+    const parsed = JSON.parse(stored) as Message[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Failed to load AI session messages:', error);
+    return [];
+  }
+};
+
+const writeSessionMessages = (messages: Message[]): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(SESSION_AI_MESSAGES_KEY, JSON.stringify(messages));
+  } catch (error) {
+    console.warn('Failed to save AI session messages:', error);
+  }
+};
+
 const POLLINATIONS_TOKEN = import.meta.env.VITE_POLLINATIONS_API_TOKEN;
 
 // System prompt for the AI assistant
@@ -102,11 +155,12 @@ Be concise, helpful, and creative. When generating content, focus on quality and
 If asked to create images, describe what you would generate but don't attempt to create the image yourself - the user will use the image generation button.`;
 
 const AiAssistant: React.FC = () => {
-  const { notes, tags, visionBoards, addNote } = useNotes();
+  const { notes, tags, visionBoards, addNote, addVisionBoard, updateVisionBoard } = useNotes();
   const {
     status: storageStatus,
     loadAiConversations,
     saveAiConversations,
+    saveGeneratedImage,
   } = useFileSystem();
 
   const welcomeMessageText = "Hello! I'm your AI assistant for Notara. I can help you with your notes, generate ideas, or answer questions. I can also analyze your Vision Boards and Constellation View. How can I help you today?";
@@ -118,7 +172,13 @@ const AiAssistant: React.FC = () => {
     timestamp: new Date().toISOString()
   });
 
-  const [messages, setMessages] = useState<Message[]>(() => [createWelcomeMessage()]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const persistedSession = readSessionMessages();
+    if (persistedSession.length > 0) {
+      return persistedSession;
+    }
+    return [createWelcomeMessage()];
+  });
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -187,6 +247,10 @@ const AiAssistant: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
+    writeSessionMessages(messages);
+  }, [messages]);
+
+  useEffect(() => {
     if (storageStatus === 'uninitialized') {
       return;
     }
@@ -201,20 +265,22 @@ const AiAssistant: React.FC = () => {
             return;
           }
           if (stored && stored.length) {
-            setConversationArchive(stored.slice(0, 20));
+            setConversationArchive((previous) => mergeConversationArchives(previous, stored));
           } else {
-            setConversationArchive(readArchiveFromLocalStorage());
+            const localArchive = readArchiveFromLocalStorage();
+            setConversationArchive((previous) => mergeConversationArchives(previous, localArchive));
           }
         } catch (error) {
           console.error('Failed to load AI archive from filesystem', error);
           if (!cancelled) {
-            setConversationArchive(readArchiveFromLocalStorage());
+            const localArchive = readArchiveFromLocalStorage();
+            setConversationArchive((previous) => mergeConversationArchives(previous, localArchive));
           }
         }
       } else {
         const localArchive = readArchiveFromLocalStorage();
         if (!cancelled) {
-          setConversationArchive(localArchive);
+          setConversationArchive((previous) => mergeConversationArchives(previous, localArchive));
         }
       }
 
@@ -278,10 +344,7 @@ const AiAssistant: React.FC = () => {
       messages: messages.map(message => ({ ...message }))
     };
 
-    setConversationArchive(prev => {
-      const updated = [snapshot, ...prev];
-      return updated.slice(0, 20);
-    });
+    setConversationArchive(prev => mergeConversationArchives([snapshot], prev));
 
     if (!options?.silent) {
       toast({
@@ -1060,6 +1123,36 @@ ${constellationContent}
     return newNote;
   };
 
+  const handleSaveImageToVisionBoard = (message: Message) => {
+    if (!message.imageUrl) {
+      return;
+    }
+
+    const targetBoard = visionBoards[0] ?? addVisionBoard({ name: 'AI Generated Images' });
+    const existingItems = targetBoard.items ?? [];
+    const imageCount = existingItems.filter(item => item.type === 'image').length;
+
+    const newImageItem = {
+      id: uuidv4(),
+      type: 'image' as const,
+      content: message.imageUrl,
+      position: {
+        x: 80 + (imageCount % 4) * 60,
+        y: 100 + Math.floor(imageCount / 4) * 60,
+      },
+      size: { width: 320, height: 320 },
+    };
+
+    updateVisionBoard(targetBoard.id, {
+      items: [...existingItems, newImageItem],
+    });
+
+    toast({
+      title: 'Saved to Vision Board',
+      description: `Image added to "${targetBoard.name}".`,
+    });
+  };
+
   // Format Vision Board data for AI context
   const formatVisionBoardData = (visionBoardIds: string[] = []) => {
     // If no specific vision boards are selected, use all vision boards
@@ -1373,6 +1466,19 @@ Focus on finding meaningful relationships and insights rather than just summariz
       }
 
       const blob = await response.blob();
+      const safePromptPrefix = prompt
+        .slice(0, 32)
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/^-+|-+$/g, '') || 'ai-image';
+
+      let savedPath: string | null = null;
+      if (storageStatus === 'ready') {
+        savedPath = await saveGeneratedImage(blob, {
+          fileNamePrefix: safePromptPrefix,
+          mimeType: blob.type,
+        });
+      }
+
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
@@ -1383,7 +1489,9 @@ Focus on finding meaningful relationships and insights rather than just summariz
       // Add image message
       const imageMessage: Message = {
         id: uuidv4(),
-        content: `Generated image for prompt: "${prompt}"`,
+        content: savedPath
+          ? `Generated image for prompt: "${prompt}"\nSaved to local folder: ${savedPath}`
+          : `Generated image for prompt: "${prompt}"`,
         sender: 'ai',
         timestamp: new Date().toISOString(),
         imageUrl: dataUrl
@@ -1928,6 +2036,14 @@ Focus on finding meaningful relationships and insights rather than just summariz
                       >
                         <FileText className="w-3 h-3" /> Save as note
                       </button>
+                      {message.imageUrl && (
+                        <button
+                          onClick={() => handleSaveImageToVisionBoard(message)}
+                          className="text-xs text-primary/70 hover:text-primary flex items-center gap-1 transition-colors"
+                        >
+                          <ImageIcon className="w-3 h-3" /> Save to vision board
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
