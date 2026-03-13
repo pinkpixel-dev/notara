@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { VisionBoardItem } from '@/types';
@@ -10,24 +10,12 @@ interface VisionBoardProps {
   id: string;
 }
 
+const VISION_BOARD_COLOR_FILTERS_KEY = 'notara-visionboard-color-filters';
+
 const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
   const { visionBoards, updateVisionBoard, tags } = useNotes();
   const { status: fileSystemStatus, saveGeneratedImage } = useFileSystem();
   const visionBoard = visionBoards.find(vb => vb.id === id);
-
-  const getReadableColorName = (hex: string, index: number) => {
-    const normalized = hex.toLowerCase();
-    const presetNames: Record<string, string> = {
-      '#9b87f5': 'Purple',
-      '#0ea5e9': 'Sky',
-      '#10b981': 'Green',
-      '#f97316': 'Orange',
-      '#ec4899': 'Pink',
-      '#6366f1': 'Indigo',
-    };
-
-    return presetNames[normalized] || `Color ${index + 1}`;
-  };
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -45,13 +33,21 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingTextContent, setEditingTextContent] = useState('');
+  const [colorPickerItemId, setColorPickerItemId] = useState<string | null>(null);
+  const [isColorFilterOpen, setIsColorFilterOpen] = useState(false);
+  const [activeColorFilters, setActiveColorFilters] = useState<string[]>([]);
 
   const colorOptions = useMemo(() => {
+    const basePalette = [
+      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
+      '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+      '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#78716c',
+      '#6b7280', '#111827'
+    ];
+
     const uniqueTagColors = Array.from(new Set(tags.map(tag => tag.color).filter(Boolean)));
-    if (uniqueTagColors.length > 0) {
-      return uniqueTagColors.slice(0, 10);
-    }
-    return ['#9b87f5', '#0EA5E9', '#10B981', '#F97316', '#EC4899', '#6366F1'];
+    const merged = [...basePalette, ...uniqueTagColors].map(color => color.toLowerCase());
+    return Array.from(new Set(merged));
   }, [tags]);
 
   if (!visionBoard) {
@@ -61,6 +57,46 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       </div>
     );
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(VISION_BOARD_COLOR_FILTERS_KEY);
+      if (!raw) {
+        setActiveColorFilters([]);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as Record<string, string[]>;
+      const boardFilters = Array.isArray(parsed?.[visionBoard.id])
+        ? parsed[visionBoard.id].map(color => color.toLowerCase())
+        : [];
+
+      setActiveColorFilters(boardFilters);
+    } catch (error) {
+      console.warn('Failed to load Vision Board color filters', error);
+      setActiveColorFilters([]);
+    }
+  }, [visionBoard.id]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(VISION_BOARD_COLOR_FILTERS_KEY);
+      const parsed = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+
+      parsed[visionBoard.id] = activeColorFilters;
+      window.localStorage.setItem(VISION_BOARD_COLOR_FILTERS_KEY, JSON.stringify(parsed));
+    } catch (error) {
+      console.warn('Failed to persist Vision Board color filters', error);
+    }
+  }, [activeColorFilters, visionBoard.id]);
 
   const getDefaultItemSize = (itemType: VisionBoardItem['type']) => {
     if (itemType === 'image') {
@@ -285,6 +321,21 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
     updateBoardItem(itemId, item => ({ ...item, accentColor }));
   };
 
+  const toggleColorFilter = (color: string) => {
+    setActiveColorFilters(prev =>
+      prev.includes(color) ? prev.filter(item => item !== color) : [...prev, color]
+    );
+  };
+
+  const visibleItems = visionBoard.items.filter(item => {
+    if (!activeColorFilters.length) {
+      return true;
+    }
+
+    const itemColor = (item.accentColor ?? colorOptions[0]).toLowerCase();
+    return activeColorFilters.includes(itemColor);
+  });
+
   return (
     <div
       className="h-full w-full relative overflow-auto bg-background"
@@ -316,6 +367,16 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           <Button
             size="sm"
+            variant="outline"
+            onClick={() => setIsColorFilterOpen(true)}
+            className="gap-2"
+            title="Filter by color"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="13.5" r="2.5"/><circle cx="12.5" cy="17.5" r="2.5"/></svg>
+            Filter
+          </Button>
+          <Button
+            size="sm"
             onClick={() => setIsAddingText(true)}
             className="gap-2"
           >
@@ -333,7 +394,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
         </div>
 
         {/* Vision board items */}
-        {visionBoard.items.map(item => (
+        {visibleItems.map(item => (
           <div
             key={item.id}
             className={`absolute transition-none ${
@@ -364,34 +425,23 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
               >
                 <div className="flex justify-between items-center mb-2 gap-2">
                   <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
-                    {colorOptions.map((color, index) => (
-                      <button
-                        key={`${item.id}-${color}`}
-                        type="button"
-                        className="h-4 w-4 rounded-full border transition-transform hover:scale-110"
-                        style={{ backgroundColor: color }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setItemAccentColor(item.id, color);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        title={`Set color: ${getReadableColorName(color, index)}`}
-                        aria-label={`Set color ${getReadableColorName(color, index)}`}
-                        aria-pressed={(item.accentColor ?? colorOptions[0]) === color}
-                      >
-                        {(item.accentColor ?? colorOptions[0]) === color && (
-                          <span className="block h-full w-full rounded-full ring-2 ring-foreground/60 ring-offset-1 ring-offset-background" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground min-w-[56px] text-right">
-                    {getReadableColorName(item.accentColor ?? colorOptions[0], 0)}
-                  </div>
-                  <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
+                    <button
+                      className="p-1 rounded-full hover:bg-secondary/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setColorPickerItemId(item.id);
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      title="Set color"
+                    >
+                      <span
+                        className="block h-3 w-3 rounded-full border border-white/50"
+                        style={{ backgroundColor: item.accentColor ?? colorOptions[0] }}
+                      />
+                    </button>
                     <button
                       className="p-1 rounded-full hover:bg-secondary/50"
                       onClick={(e) => {
@@ -499,41 +549,23 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
                   }}
                 />
 
-                <div className="absolute top-1 left-1 flex items-center gap-1 rounded-full bg-card/80 px-1.5 py-1" onMouseDown={(e) => e.stopPropagation()}>
-                  {colorOptions.map((color, index) => (
-                    <button
-                      key={`${item.id}-${color}`}
-                      type="button"
-                      className="h-3.5 w-3.5 rounded-full border border-white/40"
-                      style={{ backgroundColor: color }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setItemAccentColor(item.id, color);
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      title={`Set color: ${getReadableColorName(color, index)}`}
-                      aria-label={`Set color ${getReadableColorName(color, index)}`}
-                      aria-pressed={(item.accentColor ?? colorOptions[0]) === color}
-                    >
-                      {(item.accentColor ?? colorOptions[0]) === color && (
-                        <span className="block h-full w-full rounded-full ring-2 ring-foreground/70 ring-offset-1 ring-offset-card" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <div
-                  className="absolute left-2 bottom-2 rounded px-1.5 py-0.5 text-[10px] bg-card/80 text-foreground/80"
+                <button
+                  className="absolute top-1 left-1 p-1 rounded-full bg-card/80 hover:bg-secondary/50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setColorPickerItemId(item.id);
+                  }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                   }}
+                  title="Set color"
                 >
-                  {getReadableColorName(item.accentColor ?? colorOptions[0], 0)}
-                </div>
+                  <span
+                    className="block h-3.5 w-3.5 rounded-full border border-white/50"
+                    style={{ backgroundColor: item.accentColor ?? colorOptions[0] }}
+                  />
+                </button>
 
                 <button
                   className="absolute top-1 right-1 p-1 rounded-full bg-card/80 hover:bg-secondary/50"
@@ -627,6 +659,75 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
               </Button>
               <Button onClick={() => void addImageItem()}>
                 Add
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {colorPickerItemId && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-30">
+          <div className="bg-card p-6 rounded-lg w-[28rem] max-w-[calc(100%-2rem)]">
+            <div className="grid grid-cols-10 gap-2">
+              {colorOptions.map((color) => {
+                const active =
+                  (visionBoard.items.find(item => item.id === colorPickerItemId)?.accentColor ?? colorOptions[0]).toLowerCase() === color;
+
+                return (
+                  <button
+                    key={`picker-${color}`}
+                    type="button"
+                    className="h-7 w-7 rounded-full border border-white/40 transition-transform hover:scale-105"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      setItemAccentColor(colorPickerItemId, color);
+                    }}
+                    title="Set color"
+                  >
+                    {active && <span className="block h-full w-full rounded-full ring-2 ring-foreground ring-offset-1 ring-offset-card" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="outline" onClick={() => setColorPickerItemId(null)}>
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isColorFilterOpen && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-30">
+          <div className="bg-card p-6 rounded-lg w-[32rem] max-w-[calc(100%-2rem)]">
+            <div className="grid grid-cols-10 gap-2">
+              {colorOptions.map((color) => {
+                const active = activeColorFilters.includes(color);
+
+                return (
+                  <button
+                    key={`filter-${color}`}
+                    type="button"
+                    className="h-7 w-7 rounded-full border border-white/40 transition-transform hover:scale-105"
+                    style={{ backgroundColor: color }}
+                    onClick={() => toggleColorFilter(color)}
+                    title="Toggle color filter"
+                  >
+                    {active && <span className="block h-full w-full rounded-full ring-2 ring-foreground ring-offset-1 ring-offset-card" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-between gap-2 mt-5">
+              <Button
+                variant="outline"
+                onClick={() => setActiveColorFilters([])}
+              >
+                Show All
+              </Button>
+              <Button onClick={() => setIsColorFilterOpen(false)}>
+                Done
               </Button>
             </div>
           </div>
