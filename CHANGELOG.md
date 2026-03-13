@@ -2,7 +2,7 @@
 
 All notable changes to the Notara project will be documented in this file.
 
-## [Unreleased]
+## Initial Release [1.1.0]
 
 ### ✨ Added
 
@@ -66,41 +66,24 @@ All notable changes to the Notara project will be documented in this file.
   - IntegrationContext for managing integration state, OAuth flows, and sync triggers
   - Reusable IntegrationCard UI components with status indicators and configuration panels
   - SyncOrchestrator class for debounced queuing, exponential backoff retries, and batch sync
-  - Adapter stubs for GitHub, Google Drive, and Dropbox (Phase 2+ implementation pending)
-  - Automatic background sync triggered on note save/update when integrations are connected
-  - Comprehensive integration documentation in `docs/INTEGRATIONS.md`
-- **GitHub Integration (Phase 2 - In Progress)**:
-  - OAuth 2.0 flow with PKCE implementation for secure authorization
-  - Popup-based OAuth workflow with automatic callback handling
-  - GitHub OAuth callback page with status indicators and error handling
-  - OAuth helper utilities with state management and CSRF protection
-  - Token exchange proxy endpoints (Vite dev server + Cloudflare Functions)
-  - Secure token storage with automatic GitHub user info fetching
-  - Connect/disconnect flows with token revocation
-  - Configuration persistence in localStorage
-  - Comprehensive setup guide in `docs/GITHUB_OAUTH_SETUP.md`
-  - Updated `.env.example` with detailed GitHub OAuth setup instructions
-- Repository configuration UI in Settings → Integrations for entering GitHub owner, repository name, and branch
-- Manual save workflows: the editor's Save button and File ▸ Save Active Note now flush notes, tags, and markdown files immediately
-- Global keyboard shortcuts: `Ctrl/Cmd+S` saves the active note and `Ctrl/Cmd+Shift+S` runs Save All without opening the browser download dialog
-- Richer markdown preview rendering powered by `prism-react-renderer`, including VSCode-quality code themes, GitHub-flavoured tables, and lazy-loaded images
-- Pollinations proxy endpoints for chat and image generation, available locally at `/api/pollinations/*` and in Cloudflare Pages functions with optional API token support
-- Markdown formatting toolbar with headings, block styles, inline styles, and quick link/image helpers plus inline color and highlight pickers for markdown content
-- Settings ▸ Tags tab for creating, recolouring, renaming, and deleting tags alongside live usage counts
+  - Manual save workflows: the editor's Save button and File ▸ Save Active Note now flush notes, tags, and markdown files immediately
+  - Global keyboard shortcuts: `Ctrl/Cmd+S` saves the active note and `Ctrl/Cmd+Shift+S` runs Save All without opening the browser download dialog
+  - Richer markdown preview rendering powered by `prism-react-renderer`, including VSCode-quality code themes, GitHub-flavoured tables, and lazy-loaded images
+  - Pollinations proxy endpoints for chat and image generation, available locally at `/api/pollinations/*` and in Cloudflare Pages functions with optional API token support
+  - Markdown formatting toolbar with headings, block styles, inline styles, and quick link/image helpers plus inline color and highlight pickers for markdown content
+  - Settings ▸ Tags tab for creating, recolouring, renaming, and deleting tags alongside live usage counts
 
 ### 🔄 Changed
 
 - NotesContext now exposes `persistBundle` so user-triggered saves reuse the same filesystem pipeline as autosave
 - Markdown tables, links, and code blocks have refreshed styling for readability in both inline and full preview modes
 - Save notifications now reflect whether data wrote to the connected Notara folder or browser storage fallback
-- GitHub OAuth helper now stores authorization state in shared `localStorage`, keeping popup callbacks reliable across windows
 - Integration context pre-populates provider states from feature flags and mirrors adapter config/status updates so Connect buttons and repository details stay in sync
 - Calendar page layout improved with better responsive design and proper panel sizing
 - Calendar component styling updated to align with `react-day-picker@9` class names and keep day cells square
 - App header now highlights search, docs, and settings with gradient glass styling and icon tooltips
 - Sidebar promotes Starred Notes to the primary nav and replaces footer cards with compact icon chips for settings, docs, and the markdown cheat sheet
 - Tags navigation now lives beside the app menu bar as a dedicated icon button while starred indicators use a prominent star glyph in the editor and note list
-- Supabase authentication is opt-in behind `VITE_ENABLE_AUTH`; when disabled the app stays signed out and suppresses legacy auth console logging
 
 ### 🐛 Fixed
 
@@ -110,11 +93,6 @@ All notable changes to the Notara project will be documented in this file.
 - Removed deprecated cosmic-glow classes from calendar components
 - Restored calendar day grid proportions by retargeting custom CSS to the new DayPicker markup
 - Restored markdown image rendering by expanding the sanitizer allow-list for `img`, `span`, and highlight elements
-- Prevented GitHub sync from running before a repository is configured and disabled manual sync controls until repo details are saved
-
-### 🗑️ Removed
-
-- Supabase authentication, GitHub OAuth, and remote database sync requirements in favor of a local-first workflow powered by the File System Access API
 
 ## [1.0.0] - 2025-09-26
 
@@ -173,13 +151,6 @@ All notable changes to the Notara project will be documented in this file.
 - Added technical roadmap section
 - Improved contributing guidelines
 
-### 🔄 Changed
-
-- Updated dependencies to latest versions
-- Minor UI refinements
-
-## [Unreleased] - 2025-05-09
-
 ### ✨ Added
 
 - Improved AI assistant integration with Pollinations API:
@@ -197,15 +168,9 @@ All notable changes to the Notara project will be documented in this file.
 ### 🔄 Changed
 
 - Updated dependencies to latest versions
-- Refined cosmic theme styling
+- Refined theme styling
 - Improved responsive layout
 - Enhanced AI system prompt for better context awareness
-
-### 🐛 Fixed
-
-- Authentication flow improvements
-- Various UI and performance optimizations
-- Streaming API connection stability
 
 ## [Unreleased] - 2025-05-03
 
