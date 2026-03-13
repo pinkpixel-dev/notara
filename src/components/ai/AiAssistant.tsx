@@ -30,7 +30,7 @@ import { Slider } from '@/components/ui/slider';
 import { calculateNoteSimilarity } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { AiConversationSnapshot, AiMessage, Note } from '@/types';
-import { readPollinationsConfig } from '@/lib/pollinations';
+import { readPollinationsConfig, requestPollinationsImage, requestPollinationsText } from '@/lib/pollinations';
 
 type Message = AiMessage;
 
@@ -704,18 +704,7 @@ covered in the calendar data, please mention that.
         stream: true,
       };
 
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      };
-
-      headers["Authorization"] = `Bearer ${pollinationsToken}`;
-
-      const response = await fetch("/api/pollinations/text", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const response = await requestPollinationsText(payload, `Bearer ${pollinationsToken}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -1521,22 +1510,16 @@ Focus on finding meaningful relationships and insights rather than just summariz
         throw new Error('Pollinations API key is required for image generation. Add one in Settings → Integrations.');
       }
 
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${pollinationsToken}`,
-      };
-
-      const response = await fetch('/api/pollinations/image', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      const response = await requestPollinationsImage(
+        {
           prompt,
           width,
           height,
           seed,
           model: pollinationsConfig.imageModel,
-        })
-      });
+        },
+        `Bearer ${pollinationsToken}`
+      );
 
       if (!response.ok) {
         const errorText = await response.text();

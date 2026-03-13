@@ -232,7 +232,7 @@ npm run tauri:build:linux # Build .deb and AppImage bundles
 
 - The Tauri desktop shell is configured and uses `public/icon.png` for installer icons.
 - Desktop builds now support choosing and reconnecting a real local Notara folder through Tauri's native dialog and filesystem APIs.
-- The local `/api/*` proxy routes used for some web flows still need follow-up native integration work for full desktop parity.
+- Pollinations-backed AI text and image requests now use Tauri's native HTTP client in desktop builds, so the assistant is no longer blocked on the web proxy routes.
 
 ## 📋 Roadmap
 

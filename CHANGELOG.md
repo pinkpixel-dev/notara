@@ -11,6 +11,7 @@ All notable changes to the Notara project will be documented in this file.
 - Windows installer GitHub Actions workflow that builds an NSIS installer.
 - Desktop installer icon generation sourced from `public/icon.png`.
 - Native Tauri-backed folder selection and local file persistence for desktop builds, preserving Notara's linked-directory workflow outside the browser.
+- Native Pollinations transport for Tauri so AI text streaming and image generation no longer depend on browser-only `/api/pollinations/*` routes in desktop builds.
 
 ## [1.1.0] - 2026-03-13
 
