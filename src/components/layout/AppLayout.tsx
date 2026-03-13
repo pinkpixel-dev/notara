@@ -27,7 +27,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         "flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300",
         isSidebarOpen ? "ml-64" : "ml-0"
       )}>
-        <header className="px-4 py-3 flex justify-between items-center border-b border-border/30 bg-gradient-to-r from-card/90 via-background/70 to-card/90 backdrop-blur-xl shadow-sm">
+        <header className="glass-panel px-4 py-3 flex justify-between items-center border-b border-border/30 bg-card/70">
           <div className="flex items-center gap-3">
             {!isSidebarOpen && (
               <Button
