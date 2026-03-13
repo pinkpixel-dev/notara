@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { Github, Cloud, Folder, Share2, Download, ArrowLeft, X, Plus, Trash2, Save, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/context/ThemeContext';
@@ -21,15 +22,15 @@ const SettingsPage: React.FC = () => {
   const [autoSave, setAutoSave] = useState(true);
   const [spellCheck, setSpellCheck] = useState(true);
   const [exportFormat, setExportFormat] = useState('markdown');
-  const { settings, setThemeMode, setAccentColor, setFontSize, setAnimations, resetToDefaults, availableThemes, availableAccentColors } = useTheme();
+  const { settings, setThemeMode, setAccentColor, setFontSize, setAnimations, setGlassIntensity, resetToDefaults, availableThemes, availableAccentColors } = useTheme();
   const { tags, notes, addTag, updateTag, deleteTag } = useNotes();
-  const { 
-    connectIntegration, 
-    disconnectIntegration, 
+  const {
+    connectIntegration,
+    disconnectIntegration,
     getIntegrationState,
     updateIntegrationConfig,
     manualSync,
-    areIntegrationsEnabled 
+    areIntegrationsEnabled
   } = useIntegrations();
   const navigate = useNavigate();
 
@@ -294,9 +295,9 @@ const SettingsPage: React.FC = () => {
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate(-1)}
             className="hover:bg-secondary/50 transition-colors"
           >
@@ -304,9 +305,9 @@ const SettingsPage: React.FC = () => {
           </Button>
           <h1 className="text-2xl font-bold">Settings</h1>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => navigate(-1)}
           className="hover:bg-secondary/50 transition-colors"
         >
@@ -338,14 +339,14 @@ const SettingsPage: React.FC = () => {
                       <div
                         key={theme.mode}
                         className={`p-3 rounded-lg border-2 cursor-pointer transition-all hover:scale-105 ${
-                          settings.mode === theme.mode 
-                            ? 'border-primary bg-primary/10' 
+                          settings.mode === theme.mode
+                            ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50'
                         }`}
                         onClick={() => setThemeMode(theme.mode)}
                       >
-                        <div 
-                          className="w-full h-12 rounded-md mb-2" 
+                        <div
+                          className="w-full h-12 rounded-md mb-2"
                           style={{ background: theme.preview }}
                         />
                         <h4 className="font-medium text-sm">{theme.name}</h4>
@@ -388,12 +389,31 @@ const SettingsPage: React.FC = () => {
                   </Select>
                 </div>
 
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="glass-intensity">Glass Intensity</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {settings.glassIntensity === 0 ? 'Transparent' : settings.glassIntensity === 100 ? 'Frosted' : `${settings.glassIntensity}%`}
+                    </span>
+                  </div>
+                  <Slider
+                    id="glass-intensity"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[settings.glassIntensity]}
+                    onValueChange={(value) => setGlassIntensity(value[0] ?? 0)}
+                    aria-label="Glass intensity"
+                  />
+                  <p className="text-xs text-muted-foreground">Adjusts glass surfaces from transparent to frosted across the app.</p>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="animations">Enable Animations</Label>
-                  <Switch 
-                    id="animations" 
-                    checked={settings.animations} 
-                    onCheckedChange={setAnimations} 
+                  <Switch
+                    id="animations"
+                    checked={settings.animations}
+                    onCheckedChange={setAnimations}
                   />
                 </div>
               </CardContent>
@@ -413,19 +433,19 @@ const SettingsPage: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="autosave">Auto Save</Label>
-                  <Switch 
-                    id="autosave" 
-                    checked={autoSave} 
-                    onCheckedChange={setAutoSave} 
+                  <Switch
+                    id="autosave"
+                    checked={autoSave}
+                    onCheckedChange={setAutoSave}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="spellcheck">Spell Check</Label>
-                  <Switch 
-                    id="spellcheck" 
-                    checked={spellCheck} 
-                    onCheckedChange={setSpellCheck} 
+                  <Switch
+                    id="spellcheck"
+                    checked={spellCheck}
+                    onCheckedChange={setSpellCheck}
                   />
                 </div>
 
@@ -581,8 +601,8 @@ const SettingsPage: React.FC = () => {
               <CardHeader>
                 <CardTitle>External Integrations</CardTitle>
                 <CardDescription>
-                  {areIntegrationsEnabled() 
-                    ? 'Connect Notara to external services to sync your notes automatically.' 
+                  {areIntegrationsEnabled()
+                    ? 'Connect Notara to external services to sync your notes automatically.'
                     : 'Integrations are currently disabled. Enable them in your .env file to connect external services.'}
                 </CardDescription>
               </CardHeader>
@@ -661,9 +681,9 @@ const SettingsPage: React.FC = () => {
                     )}
                   </div>
                 )}
-                
+
                 <Separator />
-                
+
                 {/* Google Drive Integration */}
                 <IntegrationCard
                   provider="google-drive"
@@ -675,9 +695,9 @@ const SettingsPage: React.FC = () => {
                   onDisconnect={() => handleDisconnectIntegration('google-drive')}
                   onManualSync={() => handleManualSync('google-drive')}
                 />
-                
+
                 <Separator />
-                
+
                 {/* Dropbox Integration */}
                 <IntegrationCard
                   provider="dropbox"
@@ -689,9 +709,9 @@ const SettingsPage: React.FC = () => {
                   onDisconnect={() => handleDisconnectIntegration('dropbox')}
                   onManualSync={() => handleManualSync('dropbox')}
                 />
-                
+
                 <Separator />
-                
+
                 <div className="space-y-2">
                   <Label>Export Data</Label>
                   <div className="flex gap-2">
@@ -730,9 +750,9 @@ const SettingsPage: React.FC = () => {
                     A beautiful note-taking app with a cosmic theme and powerful features.
                   </p>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-2">
                   <h3 className="font-medium">Share Notara</h3>
                   <Button onClick={handleShareApp} variant="outline" className="flex items-center gap-2">
@@ -740,9 +760,9 @@ const SettingsPage: React.FC = () => {
                     Copy Link
                   </Button>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-2">
                   <h3 className="font-medium">Support</h3>
                   <div className="flex flex-col gap-2">

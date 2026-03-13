@@ -70,7 +70,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
       case 'cosmic': return <Sparkles className="h-4 w-4" />;
       case 'light': return <Sun className="h-4 w-4" />;
       case 'midnight': return <Moon className="h-4 w-4" />;
-      case 'frost': return <Monitor className="h-4 w-4" />;
+      case 'aurora': return <Monitor className="h-4 w-4" />;
       default: return <Palette className="h-4 w-4" />;
     }
   };

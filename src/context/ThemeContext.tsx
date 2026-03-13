@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { toast } from '@/hooks/use-toast';
 
 // Theme Types
-export type ThemeMode = 'cosmic' | 'light' | 'midnight' | 'frost';
+export type ThemeMode = 'cosmic' | 'light' | 'midnight' | 'aurora';
 export type AccentColor = 'blue' | 'pink' | 'orange' | 'purple' | 'green';
 export type VisualizationMode = 'constellation' | 'graph';
 
@@ -12,6 +12,7 @@ interface ThemeSettings {
   visualizationMode: VisualizationMode;
   animations: boolean;
   fontSize: 'small' | 'medium' | 'large';
+  glassIntensity: number;
 }
 
 interface ThemeContextType {
@@ -24,6 +25,7 @@ interface ThemeContextType {
   setVisualizationMode: (mode: VisualizationMode) => void;
   setAnimations: (enabled: boolean) => void;
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
+  setGlassIntensity: (value: number) => void;
 
   // Convenience functions
   resetToDefaults: () => void;
@@ -52,6 +54,7 @@ const defaultSettings: ThemeSettings = {
   visualizationMode: 'constellation',
   animations: true,
   fontSize: 'medium',
+  glassIntensity: 70,
 };
 
 // Theme metadata
@@ -75,10 +78,10 @@ const availableThemes = [
     preview: 'linear-gradient(135deg, #0f172a, #1e293b)',
   },
   {
-    mode: 'frost' as ThemeMode,
-    name: 'Frost',
-    description: 'Frosted glass effect with translucent panels',
-    preview: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6))',
+    mode: 'aurora' as ThemeMode,
+    name: 'Aurora',
+    description: 'Color-rich dark theme with subtle aurora gradients',
+    preview: 'linear-gradient(135deg, #101a35, #1f3559)',
   },
 ];
 
@@ -125,7 +128,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [settings, setSettings] = useState<ThemeSettings>(() => {
     try {
       const saved = localStorage.getItem('notara-theme-settings');
-      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+      if (!saved) return defaultSettings;
+
+      const parsed = JSON.parse(saved);
+      if (parsed?.mode === 'frost') {
+        parsed.mode = 'aurora';
+      }
+
+      return { ...defaultSettings, ...parsed };
     } catch (error) {
       console.error('Error loading theme settings:', error);
       return defaultSettings;
@@ -140,7 +150,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
       // Remove all theme classes
       body.classList.remove(
-        'theme-cosmic', 'theme-light', 'theme-midnight', 'theme-frost'
+        'theme-cosmic', 'theme-light', 'theme-midnight', 'theme-aurora'
       );
 
       // Remove all accent classes
@@ -159,10 +169,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         case 'midnight':
           body.classList.add('theme-midnight');
           break;
-        case 'frost':
-          body.classList.add('theme-frost');
+        case 'aurora':
+          body.classList.add('theme-aurora');
           break;
       }
+
+      body.classList.add('app-glass');
 
       // Apply accent color class
       body.classList.add(`accent-${settings.accentColor}`);
@@ -187,6 +199,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       } else {
         root.style.removeProperty('--animation-duration');
       }
+
+      // Apply glass intensity (0 = transparent, 100 = frosted)
+      const normalizedIntensity = Math.max(0, Math.min(100, settings.glassIntensity)) / 100;
+      root.style.setProperty('--glass-alpha', (normalizedIntensity * 0.78).toFixed(3));
+      root.style.setProperty('--glass-subtle-alpha', (normalizedIntensity * 0.58).toFixed(3));
+      root.style.setProperty('--glass-border-alpha', (0.08 + normalizedIntensity * 0.37).toFixed(3));
+      root.style.setProperty('--glass-blur', `${Math.round(normalizedIntensity * 28)}px`);
+      root.style.setProperty('--glass-saturate', `${Math.round(120 + normalizedIntensity * 80)}%`);
+      root.style.setProperty('--glass-shadow-alpha', (0.08 + normalizedIntensity * 0.27).toFixed(3));
     };
 
     applyTheme();
@@ -241,6 +262,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     });
   };
 
+  const setGlassIntensity = (value: number) => {
+    const clampedValue = Math.max(0, Math.min(100, value));
+    setSettings(prev => ({ ...prev, glassIntensity: clampedValue }));
+  };
+
   const resetToDefaults = () => {
     setSettings(defaultSettings);
     toast({
@@ -270,6 +296,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           visualizationMode: ['constellation', 'graph'].includes(imported.visualizationMode) ? imported.visualizationMode : defaultSettings.visualizationMode,
           animations: typeof imported.animations === 'boolean' ? imported.animations : defaultSettings.animations,
           fontSize: ['small', 'medium', 'large'].includes(imported.fontSize) ? imported.fontSize : defaultSettings.fontSize,
+          glassIntensity: typeof imported.glassIntensity === 'number'
+            ? Math.max(0, Math.min(100, imported.glassIntensity))
+            : defaultSettings.glassIntensity,
         };
 
         setSettings(validSettings);
@@ -298,6 +327,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setVisualizationMode,
     setAnimations,
     setFontSize,
+    setGlassIntensity,
     resetToDefaults,
     exportSettings,
     importSettings,
