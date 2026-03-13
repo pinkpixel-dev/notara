@@ -360,18 +360,24 @@ const createPollinationsProxyPlugin = (env: Record<string, string>): Plugin => {
             const width = payload.width ?? 1024;
             const height = payload.height ?? 1024;
             const seed = payload.seed ?? Math.floor(Math.random() * 1000);
-            const nologo = payload.nologo ?? false;
             const model = payload.model ?? "flux";
-            const referrer = payload.referrer as string | undefined;
+            const enhance = payload.enhance as boolean | undefined;
+            const safe = payload.safe as boolean | undefined;
+            const quality = payload.quality as "low" | "medium" | "high" | "hd" | undefined;
 
-            const upstreamUrl = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
+            const upstreamUrl = new URL(`https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}`);
             upstreamUrl.searchParams.set("width", String(width));
             upstreamUrl.searchParams.set("height", String(height));
             upstreamUrl.searchParams.set("seed", String(seed));
-            upstreamUrl.searchParams.set("nologo", nologo ? "true" : "false");
             upstreamUrl.searchParams.set("model", model);
-            if (referrer) {
-              upstreamUrl.searchParams.set("referrer", referrer);
+            if (typeof enhance === "boolean") {
+              upstreamUrl.searchParams.set("enhance", enhance ? "true" : "false");
+            }
+            if (typeof safe === "boolean") {
+              upstreamUrl.searchParams.set("safe", safe ? "true" : "false");
+            }
+            if (quality) {
+              upstreamUrl.searchParams.set("quality", quality);
             }
 
             const incomingAuthorization = req.headers["authorization"];
