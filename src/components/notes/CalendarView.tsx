@@ -10,10 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Note } from '@/types';
 
 const CalendarView: React.FC = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const { notes, addNote, updateNote, deleteNote } = useNotes();
+  const [eventsTab, setEventsTab] = useState<'upcoming' | 'selected'>('upcoming');
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<string | null>(null);
@@ -21,38 +24,22 @@ const CalendarView: React.FC = () => {
   const [eventContent, setEventContent] = useState('');
   const [eventTime, setEventTime] = useState('12:00');
 
-  // Debug log all notes when component renders
-  React.useEffect(() => {
-    console.log('All notes:', notes.map(note => ({
-      id: note.id,
-      title: note.title,
-      date: new Date(note.createdAt).toISOString(),
-      formattedDate: format(new Date(note.createdAt), 'yyyy-MM-dd HH:mm')
-    })));
-
-    if (date) {
-      console.log('Current selected date:', format(date, 'yyyy-MM-dd'));
-    }
-  }, [notes, date]);
-
   // Filter notes for the selected date
   const notesOnDate = notes.filter(note => {
     if (!date) return false;
     const noteDate = new Date(note.createdAt);
 
-    const isMatch = (
+    return (
       noteDate.getDate() === date.getDate() &&
       noteDate.getMonth() === date.getMonth() &&
       noteDate.getFullYear() === date.getFullYear()
     );
-
-    // Debug logging to help diagnose date filtering issues
-    if (isMatch) {
-      console.log('Note matched for date:', format(date, 'yyyy-MM-dd'), 'Note date:', format(noteDate, 'yyyy-MM-dd'), 'Note:', note.title);
-    }
-
-    return isMatch;
   });
+
+  const upcomingEvents = [...notes]
+    .filter(note => new Date(note.createdAt).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .slice(0, 5);
 
   const handleAddEvent = () => {
     if (!eventTitle.trim() || !date) return;
@@ -71,8 +58,6 @@ const CalendarView: React.FC = () => {
       minutes,
       0
     );
-
-    console.log('Creating event for date:', selectedDate.toISOString());
 
     addNote({
       title: eventTitle,
@@ -105,8 +90,6 @@ const CalendarView: React.FC = () => {
       minutes,
       0
     );
-
-    console.log('Updating event for date:', selectedDate.toISOString());
 
     updateNote(currentEvent, {
       title: eventTitle,
@@ -141,6 +124,92 @@ const CalendarView: React.FC = () => {
     setIsEditingEvent(true);
   };
 
+  const renderEventList = (eventNotes: Note[], emptyMessage: string) => {
+    if (!eventNotes.length) {
+      return (
+        <div className="text-center py-8 text-muted-foreground flex-1 flex flex-col items-center justify-center">
+          <p>{emptyMessage}</p>
+          <Button
+            variant="link"
+            onClick={() => {
+              if (!date) {
+                setDate(new Date());
+              }
+              if (eventTime === '') {
+                setEventTime('12:00');
+              }
+              setIsAddingEvent(true);
+            }}
+            className="mt-2"
+          >
+            Add an event
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3 overflow-y-auto flex-1">
+        {eventNotes.map(note => {
+          const noteTime = new Date(note.createdAt);
+          return (
+            <Card key={note.id} className="bg-secondary/30 hover:bg-secondary/40 transition-colors border-border/50">
+              <CardContent className="p-3">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-medium">{note.title}</h4>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {format(noteTime, 'h:mm a')}
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">{note.content.substring(0, 100)}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <div className="flex gap-1">
+                    {note.tags.map(tag => (
+                      <span
+                        key={tag.id}
+                        className="px-1.5 py-0.5 text-xs rounded-full"
+                        style={{ backgroundColor: `${tag.color}30`, color: tag.color }}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        const noteDate = new Date(note.createdAt);
+                        setDate(new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate(), 12, 0, 0));
+                        setEventsTab('selected');
+                        openEditDialog(note);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteEvent(note.id);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full w-full p-6 overflow-hidden">
       <div className="flex justify-between items-center mb-6">
@@ -166,7 +235,7 @@ const CalendarView: React.FC = () => {
         className="flex-1 w-full min-h-0"
       >
         <ResizablePanel
-          defaultSize={45}
+          defaultSize={58}
           minSize={40}
           className="bg-card/50 rounded-lg border border-border/50 backdrop-blur-sm shadow-lg min-w-[400px]"
         >
@@ -186,10 +255,11 @@ const CalendarView: React.FC = () => {
                       0,
                       0
                     );
-                    console.log('Date selected:', selectedDate.toISOString());
                     setDate(selectedDate);
+                    setEventsTab('selected');
                   } else {
                     setDate(undefined);
+                    setEventsTab('upcoming');
                   }
                 }}
                 className={cn(
@@ -212,89 +282,34 @@ const CalendarView: React.FC = () => {
 
         <ResizableHandle withHandle className="bg-border/30 hover:bg-primary/50 transition-colors" />
 
-        <ResizablePanel defaultSize={55} className="bg-card/30 rounded-lg p-4 border border-border/50 flex flex-col min-w-[300px]">
-          <h3 className="text-md font-semibold mb-3 px-2">
-            {date ? `Events for ${format(date, 'MMMM d, yyyy')}` : 'Select a date'}
-          </h3>
+        <ResizablePanel defaultSize={42} minSize={28} className="bg-card/30 rounded-lg p-4 border border-border/50 flex flex-col min-w-[300px]">
+          <Tabs
+            value={eventsTab}
+            onValueChange={(value) => setEventsTab(value as 'upcoming' | 'selected')}
+            className="h-full flex flex-col"
+          >
+            <TabsList className={cn('grid mb-3', date ? 'grid-cols-2' : 'grid-cols-1')}>
+              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+              {date && <TabsTrigger value="selected">Selected Date</TabsTrigger>}
+            </TabsList>
 
-          {notesOnDate.length > 0 ? (
-            <div className="space-y-3 overflow-y-auto flex-1">
-              {notesOnDate.map(note => {
-                const noteTime = new Date(note.createdAt);
-                return (
-                  <Card key={note.id} className="bg-secondary/30 hover:bg-secondary/40 transition-colors border-border/50">
-                    <CardContent className="p-3">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">{note.title}</h4>
-                        <div className="text-sm text-muted-foreground flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(noteTime, 'h:mm a')}
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{note.content.substring(0, 100)}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <div className="flex gap-1">
-                          {note.tags.map(tag => (
-                            <span
-                              key={tag.id}
-                              className="px-1.5 py-0.5 text-xs rounded-full"
-                              style={{ backgroundColor: `${tag.color}30`, color: tag.color }}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => openEditDialog(note)}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteEvent(note.id);
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground flex-1 flex flex-col items-center justify-center">
-              <p>No events for this date</p>
-              <Button variant="link" onClick={() => {
-                // Make sure we have a default time set
-                if (eventTime === '') {
-                  setEventTime('12:00');
-                }
-                setIsAddingEvent(true);
-                console.log('Opening Add Event dialog from empty state for date:', date ? format(date, 'yyyy-MM-dd') : 'No date selected');
-              }} className="mt-2">
-                Add an event
-              </Button>
-            </div>
-          )}
+            <TabsContent value="upcoming" className="flex-1 mt-0 min-h-0">
+              <h3 className="text-md font-semibold mb-3 px-2">Upcoming Events</h3>
+              {renderEventList(upcomingEvents, 'No upcoming events')}
+            </TabsContent>
+
+            {date && (
+              <TabsContent value="selected" className="flex-1 mt-0 min-h-0">
+                <h3 className="text-md font-semibold mb-3 px-2">Events for {format(date, 'MMMM d, yyyy')}</h3>
+                {renderEventList(notesOnDate, 'No events for this date')}
+              </TabsContent>
+            )}
+          </Tabs>
         </ResizablePanel>
       </ResizablePanelGroup>
 
       {/* Add Event Dialog */}
       <Dialog open={isAddingEvent} onOpenChange={(open) => {
-        if (!open) {
-          // When closing the dialog, make sure we don't lose our date selection
-          console.log('Closing Add Event dialog, preserving date:', date ? format(date, 'yyyy-MM-dd') : 'No date');
-        }
         setIsAddingEvent(open);
       }}>
         <DialogContent className="sm:max-w-md">
@@ -354,10 +369,6 @@ const CalendarView: React.FC = () => {
 
       {/* Edit Event Dialog */}
       <Dialog open={isEditingEvent} onOpenChange={(open) => {
-        if (!open) {
-          // When closing the dialog, make sure we don't lose our date selection
-          console.log('Closing Edit Event dialog, preserving date:', date ? format(date, 'yyyy-MM-dd') : 'No date');
-        }
         setIsEditingEvent(open);
       }}>
         <DialogContent className="sm:max-w-md">
