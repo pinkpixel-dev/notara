@@ -12,6 +12,7 @@ All notable changes to the Notara project will be documented in this file.
 - Desktop installer icon generation sourced from `public/icon.png`.
 - Native Tauri-backed folder selection and local file persistence for desktop builds, preserving Notara's linked-directory workflow outside the browser.
 - Native Pollinations transport for Tauri so AI text streaming and image generation no longer depend on browser-only `/api/pollinations/*` routes in desktop builds.
+- Linux packaging now sets `NO_STRIP=YES` to avoid AppImage `linuxdeploy` strip failures on newer systems.
 
 ## [1.1.0] - 2026-03-13
 

@@ -154,6 +154,8 @@ Artifacts are written to:
 
 If you are building on a rolling-release Linux distro, AppImage packaging may fail because `linuxdeploy` can lag behind newer system linker formats. The included GitHub Actions workflow builds Linux bundles on `ubuntu-22.04`, which is the most reliable path for AppImage output.
 
+Notara now sets `NO_STRIP=YES` for the Linux Tauri packaging script to work around `linuxdeploy` strip failures on newer distros such as Arch.
+
 ### Windows Installer via GitHub Actions
 
 This repository now includes a GitHub Actions workflow at `.github/workflows/windows-installer.yml`.

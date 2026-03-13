@@ -37,6 +37,8 @@ jobs:
         run: npm ci
 
       - name: Build Linux bundles
+        env:
+          NO_STRIP: "YES"
         run: npm run tauri:build:linux
 
       - name: Upload Debian artifact
