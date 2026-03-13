@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root,
+::backdrop {
+  --sl-font: 'Geist';
+  --sl-font-system: 'Geist', system-ui, sans-serif;
+  --sl-font-system-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  --sl-color-accent-low: hsl(329, 52%, 18%);
+  --sl-color-accent: hsl(330, 81%, 60%);
+  --sl-color-accent-high: hsl(327, 96%, 88%);
+  --sl-color-gray-1: hsl(220, 27%, 95%);
+  --sl-color-gray-2: hsl(220, 15%, 80%);
+  --sl-color-gray-3: hsl(223, 11%, 65%);
+  --sl-color-gray-4: hsl(223, 14%, 42%);
+  --sl-color-gray-5: hsl(223, 21%, 22%);
+  --sl-color-gray-6: hsl(226, 26%, 14%);
+  --sl-color-black: hsl(233, 27%, 9%);
+  --sl-color-bg: var(--sl-color-black);
+  --sl-color-bg-nav: hsla(228, 26%, 14%, 0.78);
+  --sl-color-bg-sidebar: hsla(228, 24%, 13%, 0.82);
+  --sl-color-bg-inline-code: hsla(328, 40%, 18%, 0.55);
+  --sl-color-hairline: hsla(0, 0%, 100%, 0.08);
+  --sl-color-hairline-light: hsla(0, 0%, 100%, 0.12);
+  --sl-shadow-lg: 0 25px 80px hsla(330, 70%, 8%, 0.45);
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: hsl(331, 85%, 92%);
+  --sl-color-accent: hsl(330, 72%, 52%);
+  --sl-color-accent-high: hsl(332, 62%, 26%);
+  --sl-color-bg: hsl(0, 0%, 100%);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, hsla(330, 88%, 60%, 0.2), transparent 30%),
+    radial-gradient(circle at 85% 10%, hsla(204, 90%, 62%, 0.16), transparent 24%),
+    linear-gradient(145deg, #080b15 0%, #12182a 48%, #0d1220 100%);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 1px 1px, hsla(0, 0%, 100%, 0.08) 1px, transparent 0);
+  background-size: 22px 22px;
+  opacity: 0.14;
+}
+
+.header,
+.sidebar-pane,
+.right-sidebar-panel,
+.sl-markdown-content :is(.card, .sl-link-card, blockquote, table, pre.astro-code) {
+  backdrop-filter: blur(22px) saturate(160%);
+}
+
+.header {
+  background:
+    linear-gradient(180deg, hsla(227, 27%, 16%, 0.92), hsla(227, 27%, 16%, 0.7));
+  border-bottom: 1px solid hsla(0, 0%, 100%, 0.08);
+}
+
+.sidebar-pane,
+.right-sidebar-panel {
+  background:
+    linear-gradient(180deg, hsla(227, 26%, 15%, 0.74), hsla(227, 22%, 11%, 0.58));
+}
+
+.hero h1,
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  font-family: 'Space Grotesk', 'Geist', sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.sl-markdown-content a {
+  text-decoration-thickness: 0.08em;
+}
+
+.sl-markdown-content :is(.card, .sl-link-card) {
+  background:
+    linear-gradient(180deg, hsla(227, 28%, 18%, 0.62), hsla(227, 20%, 13%, 0.52));
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 18px 60px hsla(235, 40%, 4%, 0.35);
+}
+
+.sl-markdown-content .card-grid {
+  align-items: stretch;
+}
+
+.sl-markdown-content .card-grid > * {
+  height: 100%;
+}
+
+.sl-markdown-content .card {
+  height: 100%;
+}
+
+.sl-markdown-content .card .body {
+  flex: 1;
+}
+
+.sl-markdown-content blockquote,
+.sl-markdown-content table,
+.sl-markdown-content pre.astro-code,
+.sl-markdown-content code:not(pre code) {
+  border-radius: 1rem;
+}
+
+.sl-markdown-content blockquote,
+.sl-markdown-content table,
+.sl-markdown-content pre.astro-code {
+  background:
+    linear-gradient(180deg, hsla(227, 28%, 18%, 0.6), hsla(227, 20%, 12%, 0.45));
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+}
+
+.sl-markdown-content code:not(pre code) {
+  border: 1px solid hsla(330, 72%, 62%, 0.18);
+}
+
+.notara-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid hsla(0, 0%, 100%, 0.1);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at top left, hsla(330, 86%, 62%, 0.22), transparent 30%),
+    linear-gradient(135deg, hsla(228, 28%, 19%, 0.82), hsla(228, 22%, 12%, 0.72));
+  box-shadow: 0 24px 80px hsla(235, 42%, 5%, 0.4);
+  backdrop-filter: blur(28px) saturate(170%);
+}
+
+.notara-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -45% 45%;
+  height: 16rem;
+  background: radial-gradient(circle, hsla(330, 88%, 60%, 0.28), transparent 60%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.notara-hero__eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid hsla(0, 0%, 100%, 0.12);
+  background: hsla(0, 0%, 100%, 0.04);
+  color: var(--sl-color-accent-high);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.notara-hero__title {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2.8rem, 6vw, 4.8rem);
+  line-height: 0.94;
+}
+
+.notara-hero__headline {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.notara-hero__headline-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.notara-hero__title-line,
+.notara-hero__subtitle-line {
+  margin: 0;
+}
+
+.notara-hero__title-line {
+  max-width: 12ch;
+  font-family: 'Space Grotesk', 'Geist', sans-serif;
+  font-size: clamp(2.8rem, 6vw, 4.8rem);
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+}
+
+.notara-hero__subtitle-line {
+  font-family: 'Space Grotesk', 'Geist', sans-serif;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--sl-color-gray-1);
+}
+
+.notara-hero__title-logo {
+  width: clamp(10em, 14vw, 14rem);
+  height: auto;
+  flex-shrink: 0;
+  margin-top: -0.5rem;
+  filter:
+    drop-shadow(0 0 10px hsla(0, 0%, 100%, 0.335))
+    drop-shadow(0 0 24px hsla(0, 0%, 100%, 0.233));
+  animation: notara-logo-float 6s ease-in-out infinite;
+}
+
+@keyframes notara-logo-float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notara-hero__title-logo {
+    animation: none;
+  }
+}
+
+.notara-hero__lede {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--sl-color-gray-2);
+  font-size: 1.05rem;
+}
+
+.notara-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.notara-hero__button,
+.notara-hero__button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.notara-hero__button {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  color: #170710;
+  box-shadow: 0 14px 35px hsla(330, 81%, 60%, 0.32);
+}
+
+.notara-hero__button-secondary {
+  border: 1px solid hsla(0, 0%, 100%, 0.12);
+  background: hsla(0, 0%, 100%, 0.04);
+  color: var(--sl-color-white);
+}
+
+.notara-hero__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.9rem;
+}
+
+.notara-hero__meta-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-self: stretch;
+  min-height: 11.5rem;
+  padding: 1rem;
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: 1rem;
+  background: hsla(0, 0%, 100%, 0.04);
+}
+
+.notara-hero__meta-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--sl-color-white);
+}
+
+.notara-hero__meta-card span {
+  display: block;
+  margin-top: 0.3rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 50rem) {
+  .notara-hero {
+    padding: 1.35rem;
+  }
+
+  .notara-hero__headline-row {
+    align-items: center;
+    gap: 0.95rem;
+  }
+
+  .notara-hero__title-logo {
+    width: clamp(5.5rem, 24vw, 7.5rem);
+  }
+}
+
+@media (max-width: 68rem) {
+  .notara-hero__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .notara-hero__meta-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .notara-hero__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .notara-hero__meta-card:last-child {
+    grid-column: auto;
+  }
+}
+
+:root {
+  --sl-nav-height: 6rem;
+}
+/* Starlight header title font */
+.site-title,
+.site-title a,
+.site-title span {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--sl-color-white);
+  filter: drop-shadow(0 0 6px hsla(303, 56%, 63%, 0.156)) drop-shadow(0 0 4px hsla(318, 77%, 62%, 0.117));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+  margin: 0;
+  text-decoration: none;
+}
+.site-title img {
+  height: 3.5rem;
+  width: auto;
+  flex-shrink: 0;
+  margin-bottom: -0.2rem;
+  filter: drop-shadow(0 0 6px hsla(0, 0%, 100%, 0.156)) drop-shadow(0 0 4px hsla(0, 0%, 100%, 0.117));
+  animation: notara-logo-float 6s ease-in-out infinite;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}

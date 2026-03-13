@@ -1,0 +1,97 @@
+---
+title: Storage & Runtime Targets
+description: Reference notes for where Notara stores data and how each runtime behaves.
+---
+
+## Runtime targets
+
+Notara currently supports three primary ways to run:
+
+| Target | Runtime | What it is for |
+| --- | --- | --- |
+| Web | Vite SPA or Cloudflare Pages | Fast browser access and hosted deployment |
+| Desktop | Tauri 2 shell | Native-feeling Linux and Windows app with local app-data workspace |
+| Docker | Node 20 web runtime | Self-hosted browser deployment with Pollinations proxy routes |
+
+## Desktop storage
+
+Tauri builds automatically use an app-data workspace. On Linux, that resolves to:
+
+```text
+~/.local/share/dev.pinkpixel.notara/workspace/
+```
+
+If `XDG_DATA_HOME` is set, Tauri uses that location instead.
+
+The code marks this as the default desktop root, which means users do not need to choose a folder
+manually for normal desktop usage.
+
+## Browser storage
+
+The browser runtime can use two local-first fallback paths:
+
+- **File System Access API** when available in a secure context
+- **localStorage** when direct directory access is unavailable
+
+Browser directory handles are persisted in IndexedDB so Notara can reconnect to a previously granted
+folder when possible.
+
+## Filesystem readiness states
+
+The filesystem context tracks a small runtime state machine:
+
+- `unsupported`
+- `uninitialized`
+- `no-directory`
+- `needs-permission`
+- `ready`
+- `error`
+
+This allows the app to distinguish between "the browser cannot do this", "we need permission", and
+"the local workspace is mounted and writable".
+
+## AI transport differences
+
+| Runtime | Text route | Image route |
+| --- | --- | --- |
+| Web / Cloudflare / Docker | `/api/pollinations/text` | `/api/pollinations/image` |
+| Tauri desktop | `https://gen.pollinations.ai/v1/chat/completions` | direct `https://gen.pollinations.ai/image/...` URL |
+
+Desktop requests are sent with the Tauri HTTP plugin, including support for authorization headers.
+
+## Optional legacy subsystems
+
+Two pieces of the codebase remain opt-in rather than default:
+
+### Supabase authentication
+
+Auth only activates when all of the following are true:
+
+- `VITE_ENABLE_AUTH=true`
+- `VITE_SUPABASE_URL` is set
+- `VITE_SUPABASE_ANON_KEY` is set
+
+### Integration adapters
+
+The repository still contains a more advanced integration subsystem for:
+
+- GitHub
+- Google Drive
+- Dropbox
+
+That subsystem includes encrypted token storage, adapter abstractions, sync queueing, retries, and
+manual sync workflows, but the primary v1.1.0 product experience is local-first and does not require
+those providers.
+
+## Architectural snapshot
+
+At a high level, the current app layers look like this:
+
+1. React routes and page components define the note, todo, AI, calendar, and settings surfaces.
+2. Context providers manage notes, todos, theme settings, filesystem access, auth, and integrations.
+3. The filesystem layer decides whether to use Tauri app storage, browser folder handles, or local
+   fallback storage.
+4. Pollinations helpers choose either proxy routes or native desktop HTTP based on runtime.
+
+That split is why Notara can keep one shared frontend while still behaving like a desktop app when it
+needs to.

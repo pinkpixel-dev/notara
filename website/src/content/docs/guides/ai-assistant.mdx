@@ -1,0 +1,69 @@
+---
+title: AI Assistant & Images
+description: How Notara handles Pollinations chat, image generation, and saved AI output.
+---
+
+## What the assistant does
+
+Notara’s AI assistant is designed as a workspace helper rather than a separate chat app. The current
+implementation supports:
+
+- drafting and rewriting help
+- note summaries
+- idea generation
+- image generation from prompts
+- session continuity while you move around the app
+- chat archive saving
+- saving conversations into markdown notes
+- saving generated images into vision boards or local media storage
+
+## Pollinations configuration
+
+The app stores a small Pollinations config locally with:
+
+- API key
+- text model
+- image model
+
+The default values in code are:
+
+| Setting | Default |
+| --- | --- |
+| Text model | `gemini-fast` |
+| Image model | `flux` |
+| API key | empty |
+
+## How requests are routed
+
+### Browser and hosted web runtime
+
+Web builds send AI requests through proxy endpoints:
+
+- `/api/pollinations/text`
+- `/api/pollinations/image`
+
+That design avoids browser CORS issues and allows an optional server-side token to be injected.
+
+### Tauri desktop runtime
+
+Desktop builds do not rely on those browser routes. Instead, they use Tauri’s native HTTP plugin to
+talk directly to `https://gen.pollinations.ai/` endpoints.
+
+That split matters because it keeps the desktop app functional even outside a hosted proxy setup.
+
+## Saving AI output
+
+Generated and imported images can be stored in the local workspace under `data/media/`. Saved AI
+conversation archives are written to `data/ai/conversations.json` when filesystem access is
+available.
+
+## Token behavior
+
+If you provide a Pollinations token, Notara normalizes it into a `Bearer` authorization header. If
+you do not, the app still works for flows that do not require an authenticated token, and users can
+also enter their own key in Settings.
+
+## Optional auth is separate from AI
+
+Pollinations setup is independent from Supabase auth. The codebase keeps legacy authentication flows
+available, but AI features do not require you to enable account sign-in.

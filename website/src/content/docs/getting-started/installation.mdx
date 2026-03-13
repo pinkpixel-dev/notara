@@ -1,0 +1,187 @@
+---
+title: Installation & Downloads
+description: All current installation paths for Notara, including desktop packages, source setup, and Docker.
+---
+
+import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
+
+## Release downloads
+
+Notara `1.1.0` currently ships with the following downloadable installers and bundles:
+
+<CardGrid>
+  <Card title="Linux .deb" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb">
+    Debian and Ubuntu-friendly desktop package.
+  </Card>
+  <Card title="Linux .rpm" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm">
+    RPM package for Fedora, RHEL-family, and compatible distros.
+  </Card>
+  <Card title="Linux AppImage" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage">
+    Portable desktop build with no package manager required.
+  </Card>
+  <Card title="Windows installer" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe">
+    NSIS installer for Windows desktops.
+  </Card>
+</CardGrid>
+
+## Install option matrix
+
+| Option | Best for | Notes |
+| --- | --- | --- |
+| Tauri `.deb` | Debian or Ubuntu users | Native desktop experience with automatic app-data workspace storage. |
+| Tauri `.rpm` | Fedora or RPM-based systems | Same desktop feature set, packaged for RPM ecosystems. |
+| Tauri `AppImage` | Portable Linux installs | Useful when you do not want system package integration. |
+| Windows NSIS installer | Windows desktops | Native installer path for the Tauri build. |
+| Source install | Contributors or custom builds | Run the Vite app locally and optionally launch the Tauri shell. |
+| Docker | Self-hosted browser runtime | Serves the built SPA plus Pollinations proxy routes. |
+
+## Desktop package install
+
+### Linux `.deb`
+
+```bash
+sudo dpkg -i Notara_1.1.0_amd64.deb
+sudo apt-get install -f
+```
+
+### Linux `.rpm`
+
+```bash
+sudo rpm -i Notara-1.1.0-1.x86_64.rpm
+```
+
+### Linux `AppImage`
+
+```bash
+chmod +x Notara_1.1.0_amd64.AppImage
+./Notara_1.1.0_amd64.AppImage
+```
+
+### Windows
+
+Run `Notara_1.1.0_x64-setup.exe` and follow the installer prompts.
+
+## Build from source
+
+### Prerequisites
+
+- Node.js `18+`
+- `npm` or `yarn`
+- Git
+- Rust toolchain
+- On Debian or Ubuntu for desktop builds:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+```
+
+### Web development
+
+<Steps>
+1. Clone the repository.
+
+   ```bash
+   git clone https://github.com/pinkpixel-dev/notara.git
+   cd notara
+   ```
+
+2. Install dependencies.
+
+   ```bash
+   npm install
+   ```
+
+3. Copy the example environment file.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+4. Keep auth disabled unless you explicitly want the legacy Supabase flows.
+
+   ```bash
+   VITE_ENABLE_AUTH=false
+   VITE_POLLINATIONS_API_TOKEN=optional_pollinations_token
+   ```
+
+5. Start the dev server.
+
+   ```bash
+   npm run dev
+   ```
+
+6. Open `http://localhost:3489`.
+</Steps>
+
+### Desktop development
+
+Run the Tauri shell against the local frontend:
+
+```bash
+npm run tauri:dev
+```
+
+### Production web build
+
+```bash
+npm run build
+```
+
+### Linux desktop bundles
+
+```bash
+npm run tauri:build:linux
+```
+
+Artifacts are written to:
+
+- `src-tauri/target/release/bundle/deb/`
+- `src-tauri/target/release/bundle/appimage/`
+
+## Docker
+
+Build the self-hosted web runtime:
+
+```bash
+docker build -t notara:latest .
+```
+
+Run it:
+
+```bash
+docker run --rm -p 3489:3489 \
+  -e POLLINATIONS_API_TOKEN=your_optional_pollinations_token \
+  notara:latest
+```
+
+Then open `http://localhost:3489`.
+
+The Docker image serves both the production SPA and the `/api/pollinations/*` endpoints used by the
+web app, so AI chat and image generation still work through the container runtime.
+
+## Deployment note for hosted web installs
+
+If you deploy the web version to Cloudflare Pages, the repo already includes Pages Functions for the
+Pollinations routes. Mirror the optional token with:
+
+```bash
+wrangler secret put POLLINATIONS_API_TOKEN
+```
+
+## Environment variables you actually need
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `VITE_ENABLE_AUTH` | No | Enables the legacy Supabase auth flow only when set to `true`. |
+| `VITE_POLLINATIONS_API_TOKEN` | No | Adds an authorization header for authenticated Pollinations requests in browser builds. |
+| `VITE_SUPABASE_URL` | Only if auth is enabled | Supabase project URL. |
+| `VITE_SUPABASE_ANON_KEY` | Only if auth is enabled | Supabase anon key. |
+| `POLLINATIONS_API_TOKEN` | Optional for Docker and Cloudflare | Server-side token used by proxy routes. |
+
+## Known packaging note
+
+On some rolling-release Linux distros, AppImage packaging can fail because `linuxdeploy` can lag
+behind newer linker formats. The repository works around part of that by building with
+`NO_STRIP=YES`, and GitHub Actions on `ubuntu-22.04` remain the most reliable path for AppImage
+output.

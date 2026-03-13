@@ -1,0 +1,99 @@
+---
+title: Product Overview
+description: What Notara is, who it is for, and how the major features fit together.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What Notara is
+
+Notara is a local-first personal workspace built with React, TypeScript, and Vite. The app ships as
+a browser SPA, a Tauri desktop app, and a Dockerized web runtime. Its center of gravity is markdown
+notes, but the product also includes task planning, visual boards, calendar organization, and AI
+tools without requiring a cloud account.
+
+The current release emphasizes three ideas:
+
+1. **Keep data readable.** Desktop data is stored in JSON and markdown files inside a Notara
+   workspace rather than a hidden proprietary database.
+2. **Make planning multi-modal.** Notes, todos, vision boards, and calendar views all reference the
+   same personal workflow instead of living in separate tools.
+3. **Treat AI as an in-app tool, not the product.** The assistant helps with drafting, summaries,
+   and image generation, but your workspace remains usable without external setup.
+
+## Core areas of the app
+
+<CardGrid stagger>
+  <Card title="Notes">
+    Create markdown notes with live editing, preview, toolbar shortcuts, inline color accents,
+    highlights, tags, pinning, and save actions from buttons, menus, or keyboard shortcuts.
+  </Card>
+  <Card title="Tags and starred notes">
+    Use color-coded tags, manage them from Settings, and keep important notes surfaced through the
+    starred flow in navigation and note headers.
+  </Card>
+  <Card title="Todos">
+    Build dated lists with nested sub-items, time fields, completion states, and an in-app calendar
+    picker that works cleanly in desktop builds.
+  </Card>
+  <Card title="Calendar">
+    See upcoming items, jump back to today quickly, and inspect selected-day content from a tighter
+    right-side panel layout.
+  </Card>
+  <Card title="Vision Boards">
+    Organize image and text cards with drag-and-drop positioning, resizing, inline editing, item
+    color coding, and saved board filters.
+  </Card>
+  <Card title="AI Assistant">
+    Run Pollinations text and image generation, keep chat state during navigation, archive
+    conversations, save outputs to notes, and push generated images into vision boards or local media.
+  </Card>
+</CardGrid>
+
+## Design language
+
+The app’s theme system exposes four modes, but the default for v1.1.0 is **Midnight** with a
+**Rose Pink** accent. That default gives you:
+
+- a dark layered background with subtle depth gradients
+- frosted-glass panels controlled by a glass intensity slider
+- pink as the active accent for links, highlights, buttons, and focus states
+- a modern dense workspace layout designed for long-form use
+
+This docs site borrows that same visual direction so the transition from docs to product feels
+natural.
+
+## Local-first by default
+
+Notara no longer assumes a Supabase backend or a mandatory sign-in flow. In the current release:
+
+- desktop builds automatically write into the Tauri app-data workspace
+- browser builds use browser storage when local files are unavailable
+- optional Supabase auth only activates if `VITE_ENABLE_AUTH=true`
+- optional integration adapters for GitHub, Google Drive, and Dropbox remain in the codebase as a
+  legacy subsystem rather than a required workflow
+
+## Technology snapshot
+
+| Layer | Details |
+| --- | --- |
+| Frontend | React 19.1.1, TypeScript 5.5.3, Vite 7.3.1 |
+| Routing | React Router 7.9.2 |
+| Styling | TailwindCSS 3.4.17, shadcn/ui, Radix UI |
+| Desktop | Tauri 2.10.x with FS, HTTP, dialog, and log plugins |
+| AI transport | Pollinations via web proxy routes or Tauri native HTTP |
+| Persistence | Tauri app-data workspace, browser localStorage, and File System Access API where available |
+
+## What changed in v1.1.0
+
+The current release is where Notara’s identity sharpened. Highlights include:
+
+- midnight plus pink as the default visual setup
+- broader glass styling and adjustable frost intensity
+- Linux and Windows desktop distribution
+- Docker delivery for self-hosted web runtime
+- improved markdown preview and save workflows
+- stronger AI settings, persistence, and save targets
+- richer vision board editing and filtering
+
+For exact release details, see [Release Notes](/reference/releases/).

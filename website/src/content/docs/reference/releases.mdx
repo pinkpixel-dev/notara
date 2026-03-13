@@ -1,0 +1,69 @@
+---
+title: Release Notes
+description: Highlights from the current Notara release and the recent product direction.
+---
+
+## Current release
+
+**Notara 1.1.0** is the current release documented across this site. It formalizes Notara as a
+local-first workspace with desktop distribution, Docker support, richer markdown handling, and a
+stronger midnight visual identity.
+
+## 1.1.0 highlights
+
+### Visual system
+
+- midnight plus pink is now the default theme pairing
+- glass styling was expanded across the app
+- a transparency-to-frost control now adjusts glass intensity
+- the top menu bar and header actions were restyled to match the new visual system
+
+### Notes and markdown
+
+- save button and File menu actions now flush note data immediately
+- keyboard shortcuts support save active note and save all
+- markdown preview gained better code highlighting and GitHub-flavored tables
+- the markdown toolbar now includes block styles, inline styles, links, images, color, and highlight tools
+
+### AI workflows
+
+- Pollinations settings now support API key, text model, and image model configuration
+- AI chat state persists while navigating during a session
+- chats can be archived more reliably and stored as markdown notes
+- generated images can be saved directly to vision boards or local media
+
+### Visual planning
+
+- vision board items can now be resized
+- text cards support inline editing with save and cancel controls
+- item colors and board-level color filters were added
+- calendar now uses Upcoming and Selected Date tabs plus a Today shortcut
+
+### Delivery and packaging
+
+- Linux desktop bundles are available as `.deb`, `.rpm`, and `AppImage`
+- the repository includes a Windows NSIS installer workflow
+- Docker support packages the web runtime plus Pollinations proxy endpoints
+- desktop storage automatically lives in the Tauri app-data workspace
+
+## Other notable recent direction
+
+The repo history and changelog show a consistent shift toward a cleaner, more usable dark workspace:
+
+- older cosmic flourishes were reduced in favor of cleaner surfaces
+- glass palettes were unified and made more believable
+- layout complexity was reduced by removing nested panel structures
+- navigation around starred notes, tags, docs, and settings was made more direct
+
+## Download links
+
+- [Notara_1.1.0_amd64.deb](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb)
+- [Notara-1.1.0-1.x86_64.rpm](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm)
+- [Notara_1.1.0_amd64.AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage)
+- [Notara_1.1.0_x64-setup.exe](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe)
+
+## Changelog source
+
+This page is a curated summary of the repository’s `CHANGELOG.md`, `README.md`, `OVERVIEW.md`, and
+runtime code. If you want to maintain future docs consistency, updating those source documents first
+will keep the docs site easy to refresh.

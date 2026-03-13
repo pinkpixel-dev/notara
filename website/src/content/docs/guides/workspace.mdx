@@ -1,0 +1,100 @@
+---
+title: Workspace & Content Model
+description: How notes, tags, todos, vision boards, and saved markdown files fit together in Notara.
+---
+
+## The workspace structure
+
+Notara stores multiple kinds of content, but they all orbit the same personal workspace. Based on
+the current codebase, these are the core entities:
+
+- **Note**: title, markdown content, timestamps, tag list, and pinned state
+- **NoteTag**: id, display name, and color
+- **TodoList**: title, date, time, and an array of todo items
+- **TodoItem**: text, checked state, optional sub-items, and time
+- **VisionBoard**: board name and an array of positioned items
+- **VisionBoardItem**: text or image content, position, optional size, and optional accent color
+- **AI conversation snapshot**: saved assistant session title, created timestamp, and message history
+
+## What gets saved where
+
+When the filesystem layer is available, Notara creates a structured workspace under `data/` and
+writes content into readable files:
+
+```text
+data/
+  ai/
+    conversations.json
+  media/
+  notes/
+    notes.json
+    tags.json
+    markdown/
+      note-<id>.md
+  settings/
+  todos/
+    todos.json
+  vision-boards/
+    vision-boards.json
+```
+
+That means the app does not just save opaque JSON blobs. It also exports notes into individual
+markdown files with frontmatter metadata for title, timestamps, pinned state, and tag names.
+
+## Notes workflow
+
+The note editor is the center of the workspace. Current capabilities include:
+
+- live markdown editing with preview
+- formatting toolbar actions for headings, lists, quotes, links, images, inline styles, color
+  accents, and highlights
+- save actions from the toolbar, file menu, `Ctrl/Cmd+S`, and `Ctrl/Cmd+Shift+S`
+- pinning from the editor or note list
+- color-coded tags with management in Settings
+- syntax-highlighted code and GitHub-flavored markdown rendering
+
+## Visual organization
+
+Notara gives you multiple views over the same personal content instead of forcing everything into a
+single list.
+
+### Vision Boards
+
+Vision boards support:
+
+- draggable image and text cards
+- item resizing
+- inline note editing
+- per-item color coding
+- saved color filters per board
+- direct saves of generated AI images into boards or local media
+
+### Calendar
+
+The calendar combines note and todo context with:
+
+- an upcoming view for the next five events
+- a selected-date panel
+- a quick jump back to today
+- a narrower right panel designed for faster scanning
+
+### Starred and tagged content
+
+Pinned notes surface in navigation and the dedicated starred page, while tags can be created,
+renamed, recolored, and deleted from the settings flow.
+
+## Browser fallback behavior
+
+If Notara cannot access the local filesystem, it falls back to browser storage. The code currently
+persists notes, tags, and vision boards in `localStorage`, which keeps the web app usable even
+without Tauri or File System Access API support.
+
+## Why this matters
+
+This content model is what makes Notara portable. You can use the same workspace as:
+
+- a desktop-first personal vault
+- a browser-only notes app
+- a self-hosted Docker deployment
+
+The interface changes by runtime, but the underlying data shape stays familiar.

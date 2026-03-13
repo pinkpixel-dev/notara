@@ -1,0 +1,74 @@
+---
+title: Welcome
+description: Notara documentation for setup, downloads, workflows, and architecture.
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import WelcomeHero from "../../components/WelcomeHero.astro";
+
+<WelcomeHero />
+
+## What Notara includes
+
+<CardGrid stagger>
+  <Card title="Markdown notes">
+    Rich note editing, live preview, a formatting toolbar, GitHub-flavored
+    tables, syntax-highlighted code blocks, tags, pinning, and save shortcuts.
+  </Card>
+  <Card title="Todos and planning">
+    Date-based task lists, sub-items, progress tracking, time scheduling, and a
+    calendar view with upcoming and selected-day tabs.
+  </Card>
+  <Card title="Vision boards">
+    Drag, resize, recolor, and filter mixed image and text boards for planning,
+    inspiration, and reference gathering.
+  </Card>
+  <Card title="AI assistant">
+    Pollinations-backed text and image generation with configurable models, chat
+    persistence, and save flows into notes or boards.
+  </Card>
+  <Card title="Local-first storage">
+    Desktop builds automatically use a Notara workspace folder. Web builds fall
+    back to browser storage when filesystem access is unavailable.
+  </Card>
+  <Card title="Optional legacy extras">
+    Supabase auth and GitHub, Google Drive, and Dropbox integrations remain
+    available as opt-in, legacy-oriented capabilities.
+  </Card>
+</CardGrid>
+
+## Start where you are
+
+<CardGrid>
+  <Card title="Installing for yourself" href="/getting-started/installation/">
+    Download the Linux or Windows package, build from source, or run Notara in
+    Docker.
+  </Card>
+  <Card title="Understanding the product" href="/getting-started/overview/">
+    Get the product map, feature breakdown, and the design philosophy behind the
+    current release.
+  </Card>
+  <Card
+    title="Storage and runtime details"
+    href="/reference/storage-and-runtimes/"
+  >
+    Learn where files live, how the Tauri build differs from the browser build,
+    and how AI requests are routed.
+  </Card>
+</CardGrid>
+
+## Download the current release
+
+| Package           | Download                                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| Linux `.deb`      | [Notara_1.1.0_amd64.deb](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb)           |
+| Linux `.rpm`      | [Notara-1.1.0-1.x86_64.rpm](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm)     |
+| Linux `AppImage`  | [Notara_1.1.0_amd64.AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage) |
+| Windows installer | [Notara_1.1.0_x64-setup.exe](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe)   |
+
+## A quick orientation
+
+Notara’s current release defaults to the **midnight** theme with the **pink** accent selected. The
+same release also introduced app-wide glass styling, better AI persistence, richer markdown preview,
+desktop installers, Docker delivery, and automatic desktop workspace storage. If you want the full
+breakdown, head to the [release notes](/reference/releases/).
