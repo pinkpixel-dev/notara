@@ -22,7 +22,7 @@ type PollinationsChatMessage = {
 type PollinationsTextPayload = {
   model: string;
   messages: PollinationsChatMessage[];
-  stream: true;
+  stream: boolean;
 };
 
 type PollinationsImagePayload = {
@@ -37,7 +37,8 @@ type PollinationsImagePayload = {
 };
 
 export const isTauriDesktopRuntime = (): boolean =>
-  typeof window !== 'undefined' && '__TAURI_INTERNALS__' in (window as Window & Record<string, unknown>);
+  typeof window !== 'undefined' &&
+  '__TAURI_INTERNALS__' in (window as unknown as Record<string, unknown>);
 
 const getPollinationsFetch = () => (isTauriDesktopRuntime() ? tauriFetch : fetch);
 

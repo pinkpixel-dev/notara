@@ -30,7 +30,12 @@ import { Slider } from '@/components/ui/slider';
 import { calculateNoteSimilarity } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { AiConversationSnapshot, AiMessage, Note } from '@/types';
-import { readPollinationsConfig, requestPollinationsImage, requestPollinationsText } from '@/lib/pollinations';
+import {
+  isTauriDesktopRuntime,
+  readPollinationsConfig,
+  requestPollinationsImage,
+  requestPollinationsText,
+} from '@/lib/pollinations';
 
 type Message = AiMessage;
 
@@ -698,10 +703,11 @@ covered in the calendar data, please mention that.
         throw new Error('Pollinations API key is required for text generation. Add one in Settings → Integrations.');
       }
 
+      const isDesktopRuntime = isTauriDesktopRuntime();
       const payload = {
         model: pollinationsConfig.textModel,
         messages: messages,
-        stream: true,
+        stream: !isDesktopRuntime,
       };
 
       const response = await requestPollinationsText(payload, `Bearer ${pollinationsToken}`);
@@ -713,9 +719,24 @@ covered in the calendar data, please mention that.
         );
       }
 
+      if (isDesktopRuntime) {
+        const data = await response.json();
+        const fullContent =
+          data?.choices?.[0]?.message?.content ??
+          data?.choices?.[0]?.delta?.content ??
+          '';
+
+        if (!fullContent) {
+          throw new Error('Pollinations returned an empty response.');
+        }
+
+        onChunkReceived(fullContent);
+        return;
+      }
+
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error("Failed to get reader from response");
+        throw new Error('Failed to get reader from response');
       }
 
       const decoder = new TextDecoder();

@@ -1,4 +1,4 @@
-import { join } from '@tauri-apps/api/path';
+import { homeDir, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   exists as tauriExists,
@@ -259,9 +259,11 @@ const selectBrowserDirectory = async (): Promise<BrowserDirectoryReference | nul
 };
 
 const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> => {
+  const defaultPath = await homeDir().catch(() => undefined);
   const selected = await open({
     directory: true,
     multiple: false,
+    defaultPath,
   });
 
   if (!selected || Array.isArray(selected)) {
