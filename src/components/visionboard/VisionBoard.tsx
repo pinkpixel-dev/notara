@@ -367,6 +367,17 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           <Button
             size="sm"
+            variant="ghost"
+            onClick={() => setActiveColorFilters([])}
+            className="gap-2"
+            title="Reset color filters"
+            disabled={!activeColorFilters.length}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>
+            Reset
+          </Button>
+          <Button
+            size="sm"
             variant="outline"
             onClick={() => setIsColorFilterOpen(true)}
             className="gap-2"
