@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Search, BookOpen, Settings, Menu, Tag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,8 +16,36 @@ interface AppLayoutProps {
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
   const isOnTagsPage = location.pathname.startsWith('/tags');
   const isOnStarredPage = location.pathname.startsWith('/starred');
+
+  const triggerSearchFocus = useCallback(() => {
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('notara:focus-note-search'));
+    }, 0);
+  }, []);
+
+  const handleSearchNotes = useCallback(() => {
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
+    triggerSearchFocus();
+  }, [location.pathname, navigate, triggerSearchFocus]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isModifier = event.metaKey || event.ctrlKey;
+      if (!isModifier || event.key.toLowerCase() !== 'k') {
+        return;
+      }
+      event.preventDefault();
+      handleSearchNotes();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSearchNotes]);
 
   return (
     <div className="h-screen flex overflow-hidden font-poppins">
@@ -92,6 +120,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   size="icon"
                   className="rounded-full hover:bg-secondary/50 transition-all hover:scale-105"
                   aria-label="Search notes"
+                  onClick={handleSearchNotes}
                 >
                   <Search className="h-5 w-5" />
                 </Button>
