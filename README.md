@@ -10,6 +10,8 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Made with Love](https://img.shields.io/badge/made%20with-❤️-red.svg)](https://pinkpixel.dev)
 
+![Notara Screenshot](screenshot.png)
+
 ## 🌟 Features
 
 ### 📝 **Smart Note-Taking**
