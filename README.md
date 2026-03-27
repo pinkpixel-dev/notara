@@ -6,7 +6,7 @@
 
 > **Dream it, Pixel it** - A feature-rich note-taking application and markdown editor with AI assistant
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/pinkpixel-dev/notara)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/pinkpixel-dev/notara)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Made with Love](https://img.shields.io/badge/made%20with-❤️-red.svg)](https://pinkpixel.dev)
 
@@ -123,12 +123,12 @@
 
 ## 📦 Downloads
 
-Direct download links for `v1.1.0`:
+Direct download links for `v1.1.1`:
 
-- [Linux `.deb`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb)
-- [Linux `.rpm`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm)
-- [Linux `AppImage`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage)
-- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe)
+- [Linux `.deb`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.deb)
+- [Linux `.rpm`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.1-1.x86_64.rpm)
+- [Linux `AppImage`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.AppImage)
+- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_x64-setup.exe)
 
 Available installation options:
 
@@ -168,6 +168,7 @@ npm run tauri:build:linux
 Artifacts are written to:
 
 - `src-tauri/target/release/bundle/deb/`
+- `src-tauri/target/release/bundle/rpm/`
 - `src-tauri/target/release/bundle/appimage/`
 
 Desktop data is written to Notara's Tauri app-data folder. On Linux this is typically:
@@ -207,7 +208,7 @@ The Docker image serves the built SPA and also provides `/api/pollinations/text`
 This repository now includes a GitHub Actions workflow at `.github/workflows/windows-installer.yml`.
 
 - Trigger it manually from the Actions tab, or
-- Push a tag like `v1.1.0`
+- Push a tag like `v1.1.1`
 
 The workflow builds an NSIS Windows installer and uploads it as both:
 
@@ -290,7 +291,7 @@ npm run build      # Build for production
 npm run lint       # Run ESLint
 npm run preview    # Preview production build
 npm run tauri:dev  # Run the Tauri desktop app in development
-npm run tauri:build:linux # Build .deb and AppImage bundles
+npm run tauri:build:linux # Build .deb, .rpm, and AppImage bundles
 ```
 
 ### Desktop Notes

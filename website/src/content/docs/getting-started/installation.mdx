@@ -7,19 +7,19 @@ import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
 
 ## Release downloads
 
-Notara `1.1.0` currently ships with the following downloadable installers and bundles:
+Notara `1.1.1` currently ships with the following downloadable installers and bundles:
 
 <CardGrid>
-  <Card title="Linux .deb" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.deb">
+  <Card title="Linux .deb" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.deb">
     Debian and Ubuntu-friendly desktop package.
   </Card>
-  <Card title="Linux .rpm" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.0-1.x86_64.rpm">
+  <Card title="Linux .rpm" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.1-1.x86_64.rpm">
     RPM package for Fedora, RHEL-family, and compatible distros.
   </Card>
-  <Card title="Linux AppImage" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_amd64.AppImage">
+  <Card title="Linux AppImage" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.AppImage">
     Portable desktop build with no package manager required.
   </Card>
-  <Card title="Windows installer" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.0_x64-setup.exe">
+  <Card title="Windows installer" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_x64-setup.exe">
     NSIS installer for Windows desktops.
   </Card>
 </CardGrid>
@@ -40,26 +40,26 @@ Notara `1.1.0` currently ships with the following downloadable installers and bu
 ### Linux `.deb`
 
 ```bash
-sudo dpkg -i Notara_1.1.0_amd64.deb
+sudo dpkg -i Notara_1.1.1_amd64.deb
 sudo apt-get install -f
 ```
 
 ### Linux `.rpm`
 
 ```bash
-sudo rpm -i Notara-1.1.0-1.x86_64.rpm
+sudo rpm -i Notara-1.1.1-1.x86_64.rpm
 ```
 
 ### Linux `AppImage`
 
 ```bash
-chmod +x Notara_1.1.0_amd64.AppImage
-./Notara_1.1.0_amd64.AppImage
+chmod +x Notara_1.1.1_amd64.AppImage
+./Notara_1.1.1_amd64.AppImage
 ```
 
 ### Windows
 
-Run `Notara_1.1.0_x64-setup.exe` and follow the installer prompts.
+Run `Notara_1.1.1_x64-setup.exe` and follow the installer prompts.
 
 ## Build from source
 
@@ -137,6 +137,7 @@ npm run tauri:build:linux
 Artifacts are written to:
 
 - `src-tauri/target/release/bundle/deb/`
+- `src-tauri/target/release/bundle/rpm/`
 - `src-tauri/target/release/bundle/appimage/`
 
 ## Docker
