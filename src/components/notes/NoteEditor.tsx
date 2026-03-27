@@ -8,16 +8,17 @@ import TagSelector from './TagSelector';
 import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Maximize2, Star } from 'lucide-react';
+import { Maximize2, Plus, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface NoteEditorProps {
   note?: Note;
   isNew?: boolean;
   onSave?: (note: Note) => void;
+  onCreateNote?: () => void;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, onCreateNote }) => {
   const {
     notes,
     tags: availableTags,
@@ -37,13 +38,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    if (isNew) {
+      setTitle('');
+      setContent('');
+      setSelectedTags([]);
+      setIsPinned(false);
+      setIsPreview(false);
+      return;
+    }
+
     if (note) {
       setTitle(note.title);
       setContent(note.content);
       setSelectedTags(note.tags);
       setIsPinned(note.isPinned);
     }
-  }, [note]);
+  }, [isNew, note]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -191,6 +201,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave }) 
             onChange={setSelectedTags}
             availableTags={availableTags}
           />
+          <Button
+            onClick={onCreateNote}
+            disabled={!onCreateNote}
+            variant="outline"
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            New Note
+          </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving}

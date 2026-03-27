@@ -47,7 +47,10 @@ const NoteViewPage: React.FC = () => {
             </Button>
           </div>
           {note ? (
-            <NoteEditor note={note} />
+            <NoteEditor
+              note={note}
+              onCreateNote={() => navigate('/', { state: { createNote: true } })}
+            />
           ) : (
             <div className="p-10 text-center">
               <p className="text-muted-foreground">Loading note...</p>

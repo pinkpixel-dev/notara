@@ -1,6 +1,6 @@
 [package]
 name = "notara"
-version = "1.1.0"
+version = "1.1.1"
 description = "Notara desktop application powered by Tauri."
 authors = ["Pink Pixel <admin@pinkpixel.dev>"]
 license = "Apache-2.0"

@@ -2,6 +2,14 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## [1.1.1] - 2026-03-26
+
+### 🐛 Fixed
+
+- Added a `New Note` button beside `Save` in the open note editor so users can create another note without getting stuck on the current note screen.
+- Fixed the editor transition into new-note mode so the web app opens a fresh blank note instead of reusing the previously opened note state.
+- Fixed the desktop Constellation page layout by restoring the expected `ResizablePanel` wrapper used by `AppLayout`, which resolves the broken installed-app rendering.
+
 ## Initial Release [1.1.0]
 
 ### ✨ Added
