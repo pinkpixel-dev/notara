@@ -1,19 +1,25 @@
 import { join } from '@tauri-apps/api/path';
+import { open as openSystemDialog } from '@tauri-apps/plugin-dialog';
 import {
   BaseDirectory,
   exists as tauriExists,
   mkdir as tauriMkdir,
   readDir as tauriReadDir,
+  readFile as tauriReadFile,
   readTextFile,
   remove as tauriRemove,
   writeFile,
   writeTextFile,
 } from '@tauri-apps/plugin-fs';
 import type { Note, NoteTag, VisionBoard } from '@/types';
+import { approveWorkspace, forgetWorkspace } from '@/lib/workspace/commands';
 import {
   clearPersistedBrowserDirectoryHandle,
+  clearPersistedWorkspacePath,
   persistBrowserDirectoryHandle,
+  persistWorkspacePath,
   retrievePersistedBrowserDirectoryHandle,
+  retrievePersistedWorkspacePath,
 } from './persistence';
 
 export interface NotesBundle {
@@ -39,18 +45,18 @@ export interface BrowserDirectoryReference {
 export interface TauriDirectoryReference {
   kind: 'tauri';
   name: string;
+  /**
+   * App-relative when `baseDir` is set, absolute when it is not.
+   *
+   * A workspace the user chose sits outside the app directories, so it has no
+   * base directory to resolve against and carries its full path instead.
+   */
   path: string;
-  baseDir: BaseDirectory;
-  source: 'app-data';
+  baseDir?: BaseDirectory;
+  source: 'app-data' | 'workspace';
 }
 
 export type RootDirectoryHandle = BrowserDirectoryReference | TauriDirectoryReference;
-
-interface PersistedTauriDirectoryRecord {
-  kind: 'tauri';
-  path: string;
-  name: string;
-}
 
 const DATA_DIRECTORY = 'data';
 const TAURI_DEFAULT_DIRECTORY_NAME = 'App storage';
@@ -78,14 +84,51 @@ const getDefaultTauriDirectory = async (): Promise<TauriDirectoryReference> => {
   };
 };
 
+/**
+ * Resolves the option bag for a `plugin-fs` call.
+ *
+ * App storage passes a base directory and a relative path. A chosen workspace
+ * passes an absolute path and no base directory at all, so the key has to be
+ * left out rather than set to `undefined`.
+ */
+const tauriOptions = (root: TauriDirectoryReference) =>
+  root.baseDir === undefined ? {} : { baseDir: root.baseDir };
+
+/**
+ * Hands a folder to the backend for approval and turns it into a root handle.
+ *
+ * The backend resolves symlinks, widens the desktop filesystem scope, and
+ * creates the `.notara` sidecar. Calling this again with the same path is how
+ * the app reconnects after a restart.
+ */
+const approveTauriWorkspace = async (path: string): Promise<TauriDirectoryReference> => {
+  const approved = await approveWorkspace(path);
+  return {
+    kind: 'tauri',
+    name: approved.name,
+    path: approved.path,
+    source: 'workspace',
+  };
+};
+
 const persistTauriDirectory = async (handle: TauriDirectoryReference): Promise<void> => {
-  void handle;
+  if (handle.source === 'workspace') {
+    persistWorkspacePath(handle.path);
+    return;
+  }
+
+  clearPersistedWorkspacePath();
 };
 
 const clearPersistedTauriDirectory = async (): Promise<void> => {
   if (!isBrowserEnvironment) {
     return;
   }
+
+  clearPersistedWorkspacePath();
+  await forgetWorkspace().catch((error) => {
+    console.error('Failed to clear the approved workspace', error);
+  });
 };
 
 const getBrowserDirectoryHandle = async (
@@ -125,7 +168,7 @@ const ensureTauriPath = async (
   segments: string[]
 ): Promise<void> => {
   const targetPath = await resolveTauriPath(root.path, segments);
-  await tauriMkdir(targetPath, { recursive: true, baseDir: root.baseDir });
+  await tauriMkdir(targetPath, { recursive: true, ...tauriOptions(root) });
 };
 
 const writeBrowserJSON = async (
@@ -229,7 +272,26 @@ const selectBrowserDirectory = async (): Promise<BrowserDirectoryReference | nul
   };
 };
 
-const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> => getDefaultTauriDirectory();
+/**
+ * Opens the native folder picker and approves whatever the user chooses.
+ *
+ * Returning `null` covers a cancelled dialog, which is a normal outcome rather
+ * than an error, so the caller leaves the current workspace alone.
+ */
+const selectTauriDirectory = async (): Promise<TauriDirectoryReference | null> => {
+  const selected = await openSystemDialog({
+    directory: true,
+    multiple: false,
+    recursive: false,
+    title: 'Choose your Notara workspace folder',
+  });
+
+  if (typeof selected !== 'string' || !selected) {
+    return null;
+  }
+
+  return approveTauriWorkspace(selected);
+};
 
 export const fileSystemHelpers = {
   isSupported: () => isTauriEnvironment() || supportsBrowserFileSystem(),
@@ -255,6 +317,19 @@ export const fileSystemHelpers = {
 
   retrieveDirectoryHandle: async (): Promise<RootDirectoryHandle | null> => {
     if (isTauriEnvironment()) {
+      const savedPath = retrievePersistedWorkspacePath();
+      if (savedPath) {
+        try {
+          return await approveTauriWorkspace(savedPath);
+        } catch (error) {
+          // A workspace can be renamed, unmounted, or deleted between runs.
+          // Forgetting it and falling back to app storage keeps Notara usable
+          // instead of leaving it stuck on a folder that is no longer there.
+          console.error('The saved workspace folder is unavailable', error);
+          clearPersistedWorkspacePath();
+        }
+      }
+
       return getDefaultTauriDirectory();
     }
 
@@ -296,7 +371,7 @@ export const fileSystemHelpers = {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
       await ensureTauriPath(root, segments.slice(0, -1));
-      await writeTextFile(targetPath, JSON.stringify(data, null, 2), { baseDir: root.baseDir });
+      await writeTextFile(targetPath, JSON.stringify(data, null, 2), tauriOptions(root));
       return;
     }
 
@@ -307,7 +382,7 @@ export const fileSystemHelpers = {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
       await ensureTauriPath(root, segments.slice(0, -1));
-      await writeTextFile(targetPath, contents, { baseDir: root.baseDir });
+      await writeTextFile(targetPath, contents, tauriOptions(root));
       return;
     }
 
@@ -318,7 +393,7 @@ export const fileSystemHelpers = {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
       await ensureTauriPath(root, segments.slice(0, -1));
-      await writeFile(targetPath, new Uint8Array(await contents.arrayBuffer()), { baseDir: root.baseDir });
+      await writeFile(targetPath, new Uint8Array(await contents.arrayBuffer()), tauriOptions(root));
       return;
     }
 
@@ -328,27 +403,51 @@ export const fileSystemHelpers = {
   readJSON: async <T>(root: RootDirectoryHandle, segments: string[]): Promise<T | null> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const fileExists = await tauriExists(targetPath, { baseDir: root.baseDir });
+      const fileExists = await tauriExists(targetPath, tauriOptions(root));
       if (!fileExists) {
         return null;
       }
 
-      const text = await readTextFile(targetPath, { baseDir: root.baseDir });
+      const text = await readTextFile(targetPath, tauriOptions(root));
       return JSON.parse(text) as T;
     }
 
     return readBrowserJSON<T>(root.handle, segments);
   },
 
+  /** Reads a file as a blob, returning null when it is not there. */
+  readBlob: async (root: RootDirectoryHandle, segments: string[]): Promise<Blob | null> => {
+    if (root.kind === 'tauri') {
+      const targetPath = await resolveTauriPath(root.path, segments);
+      const fileExists = await tauriExists(targetPath, tauriOptions(root));
+      if (!fileExists) {
+        return null;
+      }
+
+      const bytes = await tauriReadFile(targetPath, tauriOptions(root));
+      return new Blob([bytes as BlobPart]);
+    }
+
+    try {
+      const fileHandle = await getBrowserFileHandle(root.handle, segments, false);
+      return await fileHandle.getFile();
+    } catch (error) {
+      if ((error as DOMException)?.name === 'NotFoundError') {
+        return null;
+      }
+      throw error;
+    }
+  },
+
   listDirectoryEntries: async (root: RootDirectoryHandle, segments: string[]): Promise<string[]> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const directoryExists = await tauriExists(targetPath, { baseDir: root.baseDir });
+      const directoryExists = await tauriExists(targetPath, tauriOptions(root));
       if (!directoryExists) {
         return [];
       }
 
-      const entries = await tauriReadDir(targetPath, { baseDir: root.baseDir });
+      const entries = await tauriReadDir(targetPath, tauriOptions(root));
       return entries.map((entry) => entry.name).filter((name): name is string => Boolean(name));
     }
 
@@ -358,12 +457,12 @@ export const fileSystemHelpers = {
   deleteEntry: async (root: RootDirectoryHandle, segments: string[]): Promise<void> => {
     if (root.kind === 'tauri') {
       const targetPath = await resolveTauriPath(root.path, segments);
-      const targetExists = await tauriExists(targetPath, { baseDir: root.baseDir });
+      const targetExists = await tauriExists(targetPath, tauriOptions(root));
       if (!targetExists) {
         return;
       }
 
-      await tauriRemove(targetPath, { recursive: true, baseDir: root.baseDir });
+      await tauriRemove(targetPath, { recursive: true, ...tauriOptions(root) });
       return;
     }
 
@@ -386,7 +485,7 @@ export const fileSystemHelpers = {
 
   directoryExists: async (root: RootDirectoryHandle): Promise<boolean> => {
     if (root.kind === 'tauri') {
-      return tauriExists(root.path, { baseDir: root.baseDir });
+      return tauriExists(root.path, tauriOptions(root));
     }
 
     try {

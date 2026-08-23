@@ -64,7 +64,7 @@ const AppMenuBar: React.FC = () => {
   const { settings, setFontSize } = useTheme();
   const hasLinkedDirectory =
     rootHandle?.kind === 'browser' ||
-    (rootHandle?.kind === 'tauri' && rootHandle.source === 'linked');
+    (rootHandle?.kind === 'tauri' && rootHandle.source === 'workspace');
 
   const handleSaveActiveNote = useCallback(() => {
     dispatchEditorEvent('notara:save-active-note');
@@ -152,8 +152,8 @@ const AppMenuBar: React.FC = () => {
     const connected = await selectDirectory();
     if (connected) {
       toast({
-        title: 'Storage ready',
-        description: 'Notara app storage is ready.',
+        title: 'Workspace ready',
+        description: 'Notara is reading and writing in your chosen folder.',
       });
     }
   }, [selectDirectory]);
@@ -171,7 +171,7 @@ const AppMenuBar: React.FC = () => {
   const handleForgetDirectory = useCallback(async () => {
     await forgetDirectory();
     toast({
-      title: 'Folder disconnected',
+      title: 'Workspace disconnected',
       description: 'Notara switched back to app storage.',
     });
   }, [forgetDirectory]);
@@ -203,7 +203,7 @@ const AppMenuBar: React.FC = () => {
         <MenubarTrigger className="hover:bg-secondary/60">File</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onSelect={(event) => { event.preventDefault(); void handleConnectDirectory(); }}>
-            Initialize Storage
+            Choose Workspace...
           </MenubarItem>
           <MenubarItem
             disabled={status !== 'needs-permission'}

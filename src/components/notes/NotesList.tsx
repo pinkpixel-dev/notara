@@ -3,6 +3,7 @@ import { Note } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Search, Star, X, FileText } from 'lucide-react';
+import WorkspaceTree from './WorkspaceTree';
 
 interface NotesListProps {
   notes: Note[];
@@ -168,6 +169,11 @@ const NotesList: React.FC<NotesListProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* The tree is the real folder structure on disk. It sits above the
+            note list rather than replacing it, because notes are still loaded
+            from the notes bundle until Markdown becomes the source of truth. */}
+        {!searchQuery && <WorkspaceTree />}
+
         {searchQuery && (
           <p
             className="surface-elevated px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"

@@ -59,3 +59,37 @@ export const clearPersistedBrowserDirectoryHandle = async (): Promise<void> => {
     tx.onabort = () => reject(tx.error);
   });
 };
+
+/**
+ * The desktop build remembers its workspace as a plain path string.
+ *
+ * `tauri-plugin-persisted-scope` restores filesystem *access* across restarts,
+ * but it does not tell Notara which folder was in use. That part is stored
+ * here. The path is not a secret, so `localStorage` is the right amount of
+ * machinery for it.
+ */
+const KEY_WORKSPACE_PATH = 'notara-workspace-path';
+
+export const persistWorkspacePath = (path: string): void => {
+  try {
+    window.localStorage.setItem(KEY_WORKSPACE_PATH, path);
+  } catch (error) {
+    console.error('Failed to remember the workspace path', error);
+  }
+};
+
+export const retrievePersistedWorkspacePath = (): string | null => {
+  try {
+    return window.localStorage.getItem(KEY_WORKSPACE_PATH);
+  } catch {
+    return null;
+  }
+};
+
+export const clearPersistedWorkspacePath = (): void => {
+  try {
+    window.localStorage.removeItem(KEY_WORKSPACE_PATH);
+  } catch (error) {
+    console.error('Failed to forget the workspace path', error);
+  }
+};

@@ -7,10 +7,15 @@ import { toast } from '@/hooks/use-toast';
 
 const StorageStatusBadge: React.FC = () => {
   const { status, rootHandle, selectDirectory, reconnectToPersisted, lastError } = useFileSystem();
-  const storageLabel =
-    rootHandle?.kind === 'tauri' && rootHandle.source === 'app-data'
-      ? 'App storage'
-      : rootHandle?.name || 'Notara';
+  const isAppStorage = rootHandle?.kind === 'tauri' && rootHandle.source === 'app-data';
+  const storageLabel = isAppStorage ? 'App storage' : rootHandle?.name || 'Notara';
+  // App storage is the fallback, not a chosen workspace, so the tooltip says
+  // which one is in use and where the files actually are.
+  const storageDetail = isAppStorage
+    ? 'Saving to Notara app storage. Choose a workspace folder to keep notes somewhere you control.'
+    : rootHandle?.kind === 'tauri'
+      ? `Saving to ${rootHandle.path}`
+      : `Saving to the ${rootHandle?.name ?? 'selected'} folder.`;
 
   // Picking a folder waits on the OS dialog, so the control has to show that
   // something is happening and refuse a second press meanwhile.
@@ -22,8 +27,8 @@ const StorageStatusBadge: React.FC = () => {
       const connected = await selectDirectory();
       if (connected) {
         toast({
-          title: 'Storage ready',
-          description: 'Notara storage is ready to use.',
+          title: 'Workspace ready',
+          description: 'Notara is reading and writing in your chosen folder.',
         });
       }
     } finally {
@@ -68,7 +73,7 @@ const StorageStatusBadge: React.FC = () => {
           <span className="hidden max-w-[10rem] truncate sm:inline">{storageLabel}</span>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Saving to Notara app storage.</p>
+          <p className="max-w-xs break-words">{storageDetail}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -117,7 +122,7 @@ const StorageStatusBadge: React.FC = () => {
       loading={isBusy}
       loadingLabel="Opening folder picker"
       className="flex shrink-0 items-center gap-2"
-      aria-label="Choose storage folder"
+      aria-label="Choose workspace folder"
     >
       {!isBusy && <FolderOpen className="h-4 w-4 shrink-0" aria-hidden="true" />}
       <span className="hidden whitespace-nowrap sm:inline">Choose folder</span>

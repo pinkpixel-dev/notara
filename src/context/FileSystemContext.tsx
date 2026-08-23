@@ -9,6 +9,27 @@ import React, {
 } from 'react';
 import type { NotesBundle, RootDirectoryHandle } from '@/lib/filesystem';
 import { fileSystemHelpers } from '@/lib/filesystem';
+import { buildNoteMarkdown, noteMarkdownFileName } from '@/lib/filesystem/note-markdown';
+import {
+  AI_CONVERSATIONS_JSON_PATH,
+  inferFileExtension,
+  LEGACY_NOTES_BUNDLE_PATH,
+  LEGACY_TODOS_PATH,
+  LEGACY_VISION_BOARDS_PATH,
+  NOTES_JSON_PATH,
+  NOTE_MARKDOWN_DIRECTORY,
+  REQUIRED_DIRECTORIES,
+  sanitizeFileSegment,
+  TAGS_JSON_PATH,
+} from '@/lib/filesystem/paths';
+import {
+  ensureSidecarDirectories,
+  relocateLegacyNotaraFiles,
+  relocationHappened,
+  SIDECAR_MEDIA_DIRECTORY,
+  SIDECAR_TODOS_PATH,
+  SIDECAR_VISION_BOARDS_PATH,
+} from '@/lib/workspace/sidecar';
 import type { AiConversationSnapshot, Note, NoteTag, TodoList, VisionBoard } from '@/types';
 
 type FileSystemStatus = import('@/lib/filesystem').FileSystemStatus;
@@ -35,81 +56,6 @@ const FileSystemContext = createContext<FileSystemContextValue | undefined>(unde
 
 const isFileSystemSupported = () => fileSystemHelpers.isSupported();
 
-const DATA_DIRECTORY = 'data';
-const NOTES_JSON_PATH = [DATA_DIRECTORY, 'notes', 'notes.json'] as const;
-const TAGS_JSON_PATH = [DATA_DIRECTORY, 'notes', 'tags.json'] as const;
-const VISION_BOARDS_JSON_PATH = [DATA_DIRECTORY, 'vision-boards', 'vision-boards.json'] as const;
-const LEGACY_NOTES_BUNDLE_PATH = [DATA_DIRECTORY, 'notes-bundle.json'] as const;
-const NOTE_MARKDOWN_DIRECTORY = [DATA_DIRECTORY, 'notes', 'markdown'] as const;
-const TODOS_JSON_PATH = [DATA_DIRECTORY, 'todos', 'todos.json'] as const;
-const AI_CONVERSATIONS_JSON_PATH = [DATA_DIRECTORY, 'ai', 'conversations.json'] as const;
-const MEDIA_DIRECTORY_PATH = [DATA_DIRECTORY, 'media'] as const;
-
-const inferFileExtension = (mimeType?: string): string => {
-  switch (mimeType) {
-    case 'image/jpeg':
-      return 'jpg';
-    case 'image/png':
-      return 'png';
-    case 'image/webp':
-      return 'webp';
-    case 'image/gif':
-      return 'gif';
-    default:
-      return 'png';
-  }
-};
-
-const sanitizeFileSegment = (value: string): string => {
-  const sanitized = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return sanitized || 'image';
-};
-
-const REQUIRED_DIRECTORIES: string[][] = [
-  [DATA_DIRECTORY],
-  [DATA_DIRECTORY, 'notes'],
-  [DATA_DIRECTORY, 'notes', 'markdown'],
-  [DATA_DIRECTORY, 'vision-boards'],
-  [DATA_DIRECTORY, 'todos'],
-  [DATA_DIRECTORY, 'ai'],
-  [DATA_DIRECTORY, 'media'],
-  [DATA_DIRECTORY, 'settings'],
-];
-
-const noteMarkdownFileName = (note: Note): string => `note-${note.id}.md`;
-
-const escapeYamlValue = (value: string): string =>
-  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-
-const formatTagList = (tags: NoteTag[]): string => {
-  if (!tags.length) {
-    return '[]';
-  }
-  const rendered = tags.map((tag) => `"${escapeYamlValue(tag.name)}"`).join(', ');
-  return `[${rendered}]`;
-};
-
-const buildNoteMarkdown = (note: Note): string => {
-  const metadata = [
-    '---',
-    `id: ${note.id}`,
-    `title: "${escapeYamlValue(note.title || 'Untitled')}"`,
-    `createdAt: ${note.createdAt}`,
-    `updatedAt: ${note.updatedAt}`,
-    `isPinned: ${note.isPinned}`,
-    `tags: ${formatTagList(note.tags)}`,
-    '---',
-    '',
-  ];
-
-  return [...metadata, note.content || ''].join('\n');
-};
-
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supported = isFileSystemSupported();
   const [status, setStatus] = useState<FileSystemStatus>(supported ? 'uninitialized' : 'unsupported');
@@ -119,10 +65,24 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const initializingRef = useRef(false);
   const aiArchiveCacheRef = useRef<AiConversationSnapshot[] | null>(null);
 
+  /**
+   * Creates everything a workspace needs before anything reads or writes.
+   *
+   * `.notara` is created here rather than lazily on the first pin, so every
+   * later stage can assume it exists. The relocation pass then copies Notara's
+   * own files out of the old `data/` layout, leaving the originals in place for
+   * the stage 5 migration to deal with.
+   */
   const ensureProjectStructure = useCallback(async (handle: RootDirectoryHandle) => {
     await fileSystemHelpers.ensureDataDirectory(handle);
     for (const path of REQUIRED_DIRECTORIES) {
       await fileSystemHelpers.ensurePath(handle, path);
+    }
+    await ensureSidecarDirectories(handle);
+
+    const relocated = await relocateLegacyNotaraFiles(handle);
+    if (relocationHappened(relocated)) {
+      console.info('Moved Notara files into .notara', relocated);
     }
   }, []);
 
@@ -307,7 +267,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await Promise.all([
           fileSystemHelpers.writeJSON(rootHandle, NOTES_JSON_PATH, bundle.notes),
           fileSystemHelpers.writeJSON(rootHandle, TAGS_JSON_PATH, bundle.tags),
-          fileSystemHelpers.writeJSON(rootHandle, VISION_BOARDS_JSON_PATH, bundle.visionBoards),
+          fileSystemHelpers.writeJSON(rootHandle, SIDECAR_VISION_BOARDS_PATH, bundle.visionBoards),
           // Legacy bundle for backwards compatibility
           fileSystemHelpers.writeJSON(rootHandle, LEGACY_NOTES_BUNDLE_PATH, bundle),
         ]);
@@ -326,11 +286,18 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return null;
     }
     try {
-      const [notes, tags, visionBoards] = await Promise.all([
+      const [notes, tags, sidecarBoards] = await Promise.all([
         fileSystemHelpers.readJSON<Note[]>(rootHandle, NOTES_JSON_PATH),
         fileSystemHelpers.readJSON<NoteTag[]>(rootHandle, TAGS_JSON_PATH),
-        fileSystemHelpers.readJSON<VisionBoard[]>(rootHandle, VISION_BOARDS_JSON_PATH),
+        fileSystemHelpers.readJSON<VisionBoard[]>(rootHandle, SIDECAR_VISION_BOARDS_PATH),
       ]);
+
+      // Relocation runs on selection, so the sidecar copy is normally there.
+      // The old path is still read for a workspace that has not been prepared
+      // yet, which is what keeps boards visible instead of silently empty.
+      const visionBoards =
+        sidecarBoards ??
+        (await fileSystemHelpers.readJSON<VisionBoard[]>(rootHandle, LEGACY_VISION_BOARDS_PATH));
 
       if (!notes && !tags && !visionBoards) {
         const legacy = await fileSystemHelpers.readJSON<NotesBundle>(rootHandle, LEGACY_NOTES_BUNDLE_PATH);
@@ -358,7 +325,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return;
       }
       try {
-        await fileSystemHelpers.writeJSON(rootHandle, TODOS_JSON_PATH, todos);
+        await fileSystemHelpers.writeJSON(rootHandle, SIDECAR_TODOS_PATH, todos);
       } catch (error) {
         console.error('Failed to write todos', error);
         setLastError((error as Error).message ?? 'Failed to save todos');
@@ -373,7 +340,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return null;
     }
     try {
-      return await fileSystemHelpers.readJSON<TodoList[]>(rootHandle, TODOS_JSON_PATH);
+      const stored = await fileSystemHelpers.readJSON<TodoList[]>(rootHandle, SIDECAR_TODOS_PATH);
+      if (stored) {
+        return stored;
+      }
+
+      return fileSystemHelpers.readJSON<TodoList[]>(rootHandle, LEGACY_TODOS_PATH);
     } catch (error) {
       console.error('Failed to read todos', error);
       setLastError((error as Error).message ?? 'Failed to load todos');
@@ -435,14 +407,14 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       try {
-        await fileSystemHelpers.ensurePath(rootHandle, MEDIA_DIRECTORY_PATH as unknown as string[]);
+        await fileSystemHelpers.ensurePath(rootHandle, SIDECAR_MEDIA_DIRECTORY);
 
         const filePrefix = sanitizeFileSegment(options?.fileNamePrefix ?? 'ai-image');
         const extension = inferFileExtension(options?.mimeType ?? blob.type);
         const fileName = `${filePrefix}-${Date.now()}.${extension}`;
 
-        await fileSystemHelpers.writeBlob(rootHandle, [...MEDIA_DIRECTORY_PATH, fileName], blob);
-        return `data/media/${fileName}`;
+        await fileSystemHelpers.writeBlob(rootHandle, [...SIDECAR_MEDIA_DIRECTORY, fileName], blob);
+        return `${SIDECAR_MEDIA_DIRECTORY.join('/')}/${fileName}`;
       } catch (error) {
         console.error('Failed to save generated image', error);
         setLastError((error as Error).message ?? 'Failed to save generated image');

@@ -4,6 +4,36 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📁 Workspace
+
+- Choose Workspace now opens a real folder picker on the desktop. Notara used to
+  ignore your choice and always save to a fixed app-data folder, whatever the
+  button said.
+- Notara remembers the folder you picked and reconnects to it on the next start.
+- Your notes bar now shows the real folder structure on disk as collapsible
+  groups, with a file count on each group. Browsing never writes, so opening a
+  group does not change any file or its modified time.
+- Open and closed groups are saved and come back the way you left them.
+- You can create, rename, move, and delete workspace folders from the tree. Each
+  action asks first, and the delete confirmation counts the files and folders it
+  is about to remove.
+- Notara now keeps its own files in a `.notara` directory inside your workspace.
+  Todos, vision boards, and generated images moved there, so your folder holds
+  your Markdown and one dot directory instead of a `data` tree mixed in with
+  your notes.
+- Existing todos, vision boards, and images are copied into `.notara` the first
+  time a workspace is prepared. The originals are left alone.
+- The storage badge tooltip now shows the folder path Notara is writing to,
+  rather than always claiming app storage.
+
+### 🔒 Safety
+
+- Folder actions run in the Tauri backend, which resolves symlinks and refuses
+  any path that lands outside the workspace root. It also refuses to rename,
+  move, or delete the workspace root and the `.notara` directory.
+- The desktop file system scope now covers the folder you chose, and nothing
+  wider.
+
 ### 🎨 Interface
 
 - Rebuilt the styling on semantic surface tokens. Each theme now assigns one color per surface role (app, sidebar, toolbar, content, elevated, input, pinboard) instead of stacking translucent layers.
@@ -37,6 +67,8 @@ All notable changes to the Notara project will be documented in this file.
 
 - Split `src/index.css` into `src/styles/tokens.css`, `src/styles/markdown.css`, and `src/styles/calendar.css`, bringing it under the 500-line limit.
 - Split the Markdown cheat sheet, to-do, and vision board files so every file touched in this work is under the 500-line limit, apart from the AI component that Phase 6 covers.
+- Split `src/context/FileSystemContext.tsx`, which was one line over the 500-line limit. Storage paths and the Markdown mirror helpers moved into `src/lib/filesystem/paths.ts` and `src/lib/filesystem/note-markdown.ts`.
+- Added the first Rust code in the project. `src-tauri/src/workspace/` holds the path guard, the directory operations, and the Tauri commands, with 16 unit tests covering path escapes, symlinks, and every directory action.
 - Added `WorkspacePanes`, one component that gives every two-pane screen the same desktop and mobile behavior instead of each page inventing its own.
 - Removed the unused legacy Tailwind colors, keyframes, and animations left over from the cosmic theme.
 - Deleted the unreferenced `ThemeSelector` and `ThemeSwitcher` components. The Settings page had already replaced both.

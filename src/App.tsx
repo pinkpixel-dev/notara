@@ -7,6 +7,7 @@ import { NotesProvider } from "./context/NotesContext";
 import { TodoProvider } from "./context/TodoContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { FileSystemProvider } from "./context/FileSystemContext";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
 import HomePage from "./pages/HomePage";
 import TagsPage from "./pages/TagsPage";
 import ConstellationsPage from "./pages/ConstellationsPage";
@@ -32,6 +33,7 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <FileSystemProvider>
+        <WorkspaceProvider>
         <ThemeProvider>
           <NotesProvider>
             <TodoProvider>
@@ -54,6 +56,7 @@ const App = () => {
             </TodoProvider>
           </NotesProvider>
         </ThemeProvider>
+        </WorkspaceProvider>
       </FileSystemProvider>
       <Toaster />
       <Sonner />
