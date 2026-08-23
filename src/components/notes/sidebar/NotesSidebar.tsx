@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FolderPlus, RefreshCw, Search, X } from 'lucide-react';
+import { FolderPlus, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -151,8 +151,77 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
    */
   const isCompact = sidebarWidth > 0 && sidebarWidth < 300;
 
+  const hasWorkspace = notesStatus !== 'no-workspace';
+
   return (
     <div ref={sidebarRef} className="flex h-full flex-col surface-content">
+      {/* Creating a note or a folder used to be reachable only from a folder's
+          own menu, which meant an empty workspace had nowhere obvious to start.
+          These sit above search because they act on the whole workspace, while
+          the row below filters what is already in it. */}
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
+        {/* A note is a file, so there is nowhere to put one until a folder is
+            chosen. The empty state hides its own Create Note for the same
+            reason: letting someone write a note that cannot be saved is worse
+            than not offering it. */}
+        {hasWorkspace && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label="New note in the workspace root"
+                onClick={() => onCreateNote('')}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>New note</TooltipContent>
+          </Tooltip>
+        )}
+
+        {canManageDirectories && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label="New folder in the workspace root"
+                onClick={() => setFolderAction({ kind: 'create', parentPath: '' })}
+              >
+                <FolderPlus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>New folder</TooltipContent>
+          </Tooltip>
+        )}
+
+        <span className="flex-1" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              aria-label="Rescan the workspace folder"
+              onClick={() => void refresh()}
+            >
+              <RefreshCw
+                className={cn('h-4 w-4', scanStatus === 'scanning' && 'animate-spin')}
+                aria-hidden="true"
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Rescan folder</TooltipContent>
+        </Tooltip>
+      </div>
+
       <div className="border-b border-border p-3">
         <div className="relative">
           <label htmlFor="note-search" className="sr-only">
@@ -217,43 +286,6 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
             <span className="ml-1.5 text-xs tabular-nums opacity-70">{option.count}</span>
           </button>
         ))}
-
-        {canManageDirectories && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0"
-                aria-label="New folder in the workspace root"
-                onClick={() => setFolderAction({ kind: 'create', parentPath: '' })}
-              >
-                <FolderPlus className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>New folder</TooltipContent>
-          </Tooltip>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-              aria-label="Rescan the workspace folder"
-              onClick={() => void refresh()}
-            >
-              <RefreshCw
-                className={cn('h-4 w-4', scanStatus === 'scanning' && 'animate-spin')}
-                aria-hidden="true"
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Rescan folder</TooltipContent>
-        </Tooltip>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">

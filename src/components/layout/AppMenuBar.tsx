@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Menubar,
   MenubarMenu,
@@ -65,6 +66,14 @@ const AppMenuBar: React.FC = () => {
   const hasLinkedDirectory =
     rootHandle?.kind === 'browser' ||
     (rootHandle?.kind === 'tauri' && rootHandle.source === 'workspace');
+
+  const navigate = useNavigate();
+
+  // The notes page owns note creation, so this routes there and asks for a new
+  // note the same way the note view's New Note button does.
+  const handleNewNote = useCallback(() => {
+    navigate('/', { state: { createNote: true } });
+  }, [navigate]);
 
   const handleSaveActiveNote = useCallback(() => {
     dispatchEditorEvent('notara:save-active-note');
@@ -190,18 +199,29 @@ const AppMenuBar: React.FC = () => {
         } else {
           handleSaveActiveNote();
         }
+        return;
+      }
+
+      // The File menu has always shown this shortcut. Nothing listened for it.
+      if (event.key.toLowerCase() === 'o') {
+        event.preventDefault();
+        void handleOpenMarkdown();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSaveActiveNote, handleSaveAll]);
+  }, [handleOpenMarkdown, handleSaveActiveNote, handleSaveAll]);
 
   return (
     <Menubar className="bg-transparent border-none shadow-none p-0">
       <MenubarMenu>
         <MenubarTrigger className="hover:bg-secondary/60">File</MenubarTrigger>
         <MenubarContent>
+          <MenubarItem onSelect={(event) => { event.preventDefault(); handleNewNote(); }}>
+            New Note
+          </MenubarItem>
+          <MenubarSeparator />
           <MenubarItem onSelect={(event) => { event.preventDefault(); void handleConnectDirectory(); }}>
             Choose Workspace...
           </MenubarItem>
@@ -224,8 +244,11 @@ const AppMenuBar: React.FC = () => {
             Disconnect Folder
           </MenubarItem>
           <MenubarSeparator />
+          {/* This copies the file's text into a new note in the workspace. It
+              never opens the original in place, so it is named for what it
+              does. Save As, which would make Open meaningful, is not built. */}
           <MenubarItem onSelect={(event) => { event.preventDefault(); void handleOpenMarkdown(); }}>
-            Open Markdown...
+            Import Markdown...
             <MenubarShortcut>Ctrl+O</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onSelect={(event) => { event.preventDefault(); handleSaveActiveNote(); }}>

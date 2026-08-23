@@ -4,6 +4,20 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🧭 Getting around
+
+- The notes sidebar has its own row of actions above the search box: New note,
+  New folder, and Rescan. New folder and Rescan used to sit beside the All notes
+  and Starred filters, which mixed acting on the workspace with filtering it.
+- New note is hidden until you have chosen a folder, because a note is a file
+  and there is nowhere to put one yet.
+- The File menu has a New Note item.
+- Open Markdown is now called Import Markdown, which is what it always did. It
+  copies the file's text into a new note in your workspace and never edits the
+  original in place.
+- Ctrl+O opens the import picker. The File menu has always shown that shortcut
+  but nothing listened for it.
+
 ### 📝 Notes
 
 - You can rename a note from the sidebar now, through Rename in its menu.
