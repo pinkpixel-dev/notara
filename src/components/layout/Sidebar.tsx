@@ -44,17 +44,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   <img
                     src="/logo.png"
                     alt="Notara Logo"
-                    className="w-20 h-20 object-cover"
-                    style={{ filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))' }}
+                    className="w-14 h-14 object-cover"
+                    style={{ filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.5))' }}
                   />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight"
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white"
                   style={{
-                    background: "linear-gradient(90deg, #22d3ee 0%, #fbbf24 55%, #f43f8e 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    filter: "drop-shadow(0 0 8px rgba(255, 255, 255, 0.52))",
+                    filter: "drop-shadow(0 0 2px rgba(255, 255, 255, 0.52))",
                   }}
                 >
                   Notara
@@ -66,7 +62,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 size="icon"
                 className="rounded-full hover:bg-secondary/50 transition-colors hover:scale-105"
               >
-                <ChevronLeft className="h-10 w-10" />
+                <ChevronLeft className="h-6 w-6" />
               </Button>
             </>
           ) : (

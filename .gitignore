@@ -25,5 +25,4 @@ dist-ssr
 .env
 
 # Other
-R2Bucket.md
-Tauri-Fixes/
+DOCS/
