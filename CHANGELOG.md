@@ -23,6 +23,8 @@ All notable changes to the Notara project will be documented in this file.
 - Added architecture, storage, OpenAI, reminders, design, security, development, configuration, testing, troubleshooting, user, and contribution guides.
 - Rewrote the README to separate current behavior from planned features and remove unsupported claims.
 - Recorded the approved OpenAI text and image model catalog for future Settings selectors.
+- Added the accepted nested-directory notes tree, pinned-note section, and independent starred filter to the overhaul roadmap.
+- Defined the documentation-site update as a visual and content match for the finished Notara application.
 
 ## [1.1.1] - 2026-03-26
 
