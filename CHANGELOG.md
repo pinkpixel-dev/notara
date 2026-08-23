@@ -4,6 +4,24 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🧭 Navigation moved into the header
+
+- Notes, To-Do, Calendar, Vision Board, and Constellations sit across the top
+  now. The 256 pixel navigation column they used to live in is gone, so the
+  whole left side belongs to your notes.
+- Tab labels show from 1280 pixels up. Below that they are icons with tooltips,
+  because five labels plus the File menu do not fit and navigation that wraps to
+  two lines is not an option.
+- Settings, the Markdown cheat sheet, the AI Assistant, and Documentation moved
+  into a single overflow menu on the right of the header.
+- On phones the header cannot hold the tabs, so the hamburger menu opens a
+  drawer with everything in it. No extra bar was added at the bottom: the mobile
+  layout already has a header and a pane switcher, and vertical space is
+  scarcest exactly where it would have gone.
+- The notes sidebar no longer gets squeezed on smaller screens. It keeps a real
+  minimum width instead of a percentage, so at tablet sizes the search box is
+  still a search box rather than a sliver reading "Searc".
+
 ### 🗂️ One notes sidebar
 
 - The notes bar used to show a folder tree and then, underneath it, a separate

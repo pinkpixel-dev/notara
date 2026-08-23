@@ -1,21 +1,36 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, Menu, Tag } from 'lucide-react';
+import { Menu, Search, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AppMenuBar from './AppMenuBar';
 import StorageStatusBadge from './StorageStatusBadge';
+import SectionTabs from './SectionTabs';
+import HeaderUtilityMenu from './HeaderUtilityMenu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * The application shell.
+ *
+ * One horizontal bar and one vertical one. Section navigation sits in the
+ * header, which leaves the whole left side to whatever the current section
+ * needs. On the notes screen that is the notes tree, which is the thing that
+ * actually wanted the vertical space.
+ *
+ * Below the mobile breakpoint the header cannot hold five tabs as well as the
+ * File menu, so a drawer takes over. A bottom tab bar was the alternative and
+ * was turned down: the mobile layout already carries a header and a pane
+ * switcher, and a third horizontal bar would spend the scarcest vertical space
+ * in the app on navigation that is one tap away either way.
+ */
 const AppLayout = ({ children }: AppLayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
@@ -58,96 +73,106 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   }, [isMobile]);
 
   return (
-    /* A two-column grid keeps the main area beside the sidebar at every width.
-       The column width comes from the same token the sidebar renders at, so
-       the two can never disagree. Grid columns are not transitioned, because
-       animating a layout property is both janky and against the design rules. */
-    <div
-      className="grid h-screen w-full overflow-hidden surface-app"
-      style={{
-        gridTemplateColumns: isMobile
-          ? 'minmax(0, 1fr)'
-          : `${
-              isSidebarOpen ? 'var(--app-sidebar-width)' : 'var(--app-sidebar-width-collapsed)'
-            } minmax(0, 1fr)`,
-      }}
-    >
-      {isMobile ? (
+    <div className="flex h-screen w-full flex-col overflow-hidden surface-app">
+      {/* Padding and gaps tighten below 640 pixels. At 320 the hamburger, the
+          File menu, and the right-hand controls together came to 334 pixels
+          against 320 of header, and nothing in a header may be clipped. */}
+      <header className="flex shrink-0 items-center gap-1 border-b border-border surface-toolbar px-2 py-2 sm:gap-2 sm:px-3">
+        {isMobile ? (
+          <Button
+            onClick={() => setIsDrawerOpen(true)}
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            aria-label="Open navigation menu"
+            aria-expanded={isDrawerOpen}
+          >
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Link
+            to="/"
+            className="flex shrink-0 items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <img
+              src="/logo.png"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 shrink-0 object-contain"
+            />
+            {/* The wordmark is the first thing to go when width runs short. The
+                logo alone still identifies the app. */}
+            <span className="hidden font-poppins text-base font-semibold tracking-tight lg:inline">
+              Notara
+            </span>
+          </Link>
+        )}
+
+        <AppMenuBar />
+
+        {/* Decorative, so it is hidden from assistive technology. The nav
+            landmark inside SectionTabs is what announces the boundary. */}
+        <span aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-border md:block" />
+
+        <SectionTabs />
+
+        {/* The only flexible item, so it both pushes the controls right and
+            stops the tabs from stretching to fill the bar. */}
+        <div className="min-w-0 flex-1" />
+
+        <div className="flex shrink-0 items-center gap-1">
+          <StorageStatusBadge />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden shrink-0 md:inline-flex"
+                aria-label="Search notes"
+                aria-keyshortcuts="Control+K Meta+K"
+                onClick={handleSearchNotes}
+              >
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Search notes</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'hidden shrink-0 md:inline-flex',
+                  isOnTagsPage && 'bg-accent text-primary'
+                )}
+                aria-label="Open tags"
+              >
+                <Link to="/tags" aria-current={isOnTagsPage ? 'page' : undefined}>
+                  <Tag className="h-5 w-5" aria-hidden="true" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Tags</TooltipContent>
+          </Tooltip>
+
+          <HeaderUtilityMenu />
+        </div>
+      </header>
+
+      {isMobile && (
         <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
           <SheetContent side="left" className="w-[17rem] max-w-[85vw] p-0 surface-sidebar">
             <SheetTitle className="sr-only">Main navigation</SheetTitle>
-            <Sidebar
-              isOpen
-              setIsOpen={setIsSidebarOpen}
-              variant="drawer"
-              onNavigate={() => setIsDrawerOpen(false)}
-            />
+            <Sidebar onNavigate={() => setIsDrawerOpen(false)} />
           </SheetContent>
         </Sheet>
-      ) : (
-        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       )}
 
-      <main className="flex min-w-0 flex-col overflow-hidden">
-        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border surface-toolbar px-3 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            {isMobile && (
-              <Button
-                onClick={() => setIsDrawerOpen(true)}
-                variant="ghost"
-                size="icon"
-                className="shrink-0"
-                aria-label="Open navigation menu"
-                aria-expanded={isDrawerOpen}
-              >
-                <Menu className="h-5 w-5" aria-hidden="true" />
-              </Button>
-            )}
-            <AppMenuBar />
-            <StorageStatusBadge />
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    'hidden h-11 w-11 md:inline-flex',
-                    isOnTagsPage && 'bg-accent text-primary'
-                  )}
-                  aria-label="Open tags"
-                >
-                  <Link to="/tags" aria-current={isOnTagsPage ? 'page' : undefined}>
-                    <Tag className="h-5 w-5" aria-hidden="true" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Tags</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden h-11 w-11 md:inline-flex"
-                  aria-label="Search notes"
-                  aria-keyshortcuts="Control+K Meta+K"
-                  onClick={handleSearchNotes}
-                >
-                  <Search className="h-5 w-5" aria-hidden="true" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Search notes</TooltipContent>
-            </Tooltip>
-          </div>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
-      </main>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 };

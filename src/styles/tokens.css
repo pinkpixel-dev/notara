@@ -9,8 +9,6 @@
 @layer base {
   :root {
     /* ---- Layout ---- */
-    --app-sidebar-width: 16rem;
-    --app-sidebar-width-collapsed: 4.5rem;
     --radius: 0.5rem;
 
     /* ---- Accent color system ---- */
