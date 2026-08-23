@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useWorkspace } from '@/context/WorkspaceContextTypes';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { useNotes } from '@/context/NotesContextTypes';
+import { toast } from '@/hooks/use-toast';
 import { buildNoteTree } from '@/lib/notes/tree';
 import { flattenDirectories } from '@/lib/workspace/tree';
 import type { Note } from '@/types';
@@ -20,7 +21,10 @@ type NoteFilter = 'all' | 'starred';
 interface NotesSidebarProps {
   activeNoteId: string | null;
   onSelectNote: (note: Note) => void;
+  onMoveNote: (note: Note) => void;
   onDeleteNote: (note: Note) => void;
+  /** Starts a new note in a folder. The empty string is the workspace root. */
+  onCreateNote: (directory: string) => void;
 }
 
 /**
@@ -38,9 +42,11 @@ interface NotesSidebarProps {
 const NotesSidebar: React.FC<NotesSidebarProps> = ({
   activeNoteId,
   onSelectNote,
+  onMoveNote,
   onDeleteNote,
+  onCreateNote,
 }) => {
-  const { notes, notesStatus, togglePin } = useNotes();
+  const { notes, notesStatus, togglePin, toggleStar } = useNotes();
   const { scan, scanStatus, canManageDirectories, refresh } = useWorkspace();
 
   // The sidebar is resizable, so its contents react to its own width rather
@@ -106,11 +112,29 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
     [filter, isFlat, matches]
   );
 
-  const handleUnpin = useCallback(
+  // Both write the note's file, so a failure is reported rather than dropped.
+  const handleTogglePin = useCallback(
     (note: Note) => {
-      void togglePin(note.id);
+      void togglePin(note.id).then((result) => {
+        if (!result.ok) {
+          toast({ title: 'Could not pin', description: result.reason, variant: 'destructive' });
+        }
+      });
     },
     [togglePin]
+  );
+
+  const handleToggleStar = useCallback(
+    (note: Note) => {
+      void toggleStar(note.id).catch((error) => {
+        toast({
+          title: 'Could not update the note',
+          description: error instanceof Error ? error.message : 'Unable to write the note file.',
+          variant: 'destructive',
+        });
+      });
+    },
+    [toggleStar]
   );
 
   const isEmpty = isFlat ? flatNotes.length === 0 : tree.total === 0 && directoryPaths.length === 0;
@@ -249,7 +273,9 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                   depth={0}
                   isActive={activeNoteId === note.id}
                   onSelect={onSelectNote}
-                  onUnpin={handleUnpin}
+                  onTogglePin={handleTogglePin}
+                  onToggleStar={handleToggleStar}
+                  onMove={onMoveNote}
                   onDelete={onDeleteNote}
                 />
               ))}
@@ -268,7 +294,9 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                     depth={0}
                     isActive={activeNoteId === note.id}
                     onSelect={onSelectNote}
-                    onUnpin={handleUnpin}
+                    onTogglePin={handleTogglePin}
+                    onToggleStar={handleToggleStar}
+                    onMove={onMoveNote}
                     onDelete={onDeleteNote}
                   />
                 ))}
@@ -283,8 +311,11 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                   depth={0}
                   activeNoteId={activeNoteId}
                   onSelectNote={onSelectNote}
-                  onUnpinNote={handleUnpin}
+                  onTogglePinNote={handleTogglePin}
+                  onToggleStarNote={handleToggleStar}
+                  onMoveNote={onMoveNote}
                   onDeleteNote={onDeleteNote}
+                  onCreateNote={onCreateNote}
                   onFolderAction={setFolderAction}
                 />
               ))}
@@ -307,7 +338,9 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                       depth={0}
                       isActive={activeNoteId === note.id}
                       onSelect={onSelectNote}
-                      onUnpin={handleUnpin}
+                      onTogglePin={handleTogglePin}
+                      onToggleStar={handleToggleStar}
+                      onMove={onMoveNote}
                       onDelete={onDeleteNote}
                     />
                   ))}

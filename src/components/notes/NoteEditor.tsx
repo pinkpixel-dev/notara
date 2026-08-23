@@ -10,21 +10,37 @@ import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Maximize2, Pin, Plus, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import NoteConflictDialog from './NoteConflictDialog';
+import { NoteConflictError } from '@/lib/notes/store';
 
 interface NoteEditorProps {
   note?: Note;
   isNew?: boolean;
+  /**
+   * Folder a new note is written into. Empty is the workspace root.
+   *
+   * Only meaningful with `isNew`. An existing note already has a folder, and
+   * changing it is a move rather than a save.
+   */
+  directory?: string;
   onSave?: (note: Note) => void;
   onCreateNote?: () => void;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, onCreateNote }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({
+  note,
+  isNew = false,
+  directory = '',
+  onSave,
+  onCreateNote,
+}) => {
   const {
     notes,
     tags: availableTags,
     visionBoards,
     addNote,
     updateNote,
+    reloadNote,
     persistBundle,
     togglePin,
     toggleStar,
@@ -38,6 +54,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
+  // Set when a save is refused because the file moved underneath us. Holding it
+  // here keeps the user's unsaved text in the editor while they decide.
+  const [hasConflict, setHasConflict] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -76,7 +95,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
       // A title change renames that file, which means the saved note can come
       // back carrying a different path than the one that went in.
       const savedNote = isNew
-        ? await addNote(saveData)
+        ? await addNote({ ...saveData, directory })
         : note
           ? await updateNote(note.id, saveData)
           : null;
@@ -94,6 +113,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
         onSave(savedNote);
       }
     } catch (error) {
+      // A refused write is not a failure, it is a question. The editor keeps
+      // the user's text and asks which version should win.
+      if (error instanceof NoteConflictError || (error as Error)?.name === 'NoteConflictError') {
+        setHasConflict(true);
+        return;
+      }
+
       console.error('Failed to save note', error);
       toast({
         title: 'Save failed',
@@ -106,6 +132,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     }
   }, [
     addNote,
+    directory,
     isNew,
     isPinned,
     isStarred,
@@ -165,6 +192,73 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
       });
     }
   }, [isNew, note, toggleStar]);
+
+  /** Overwrite the file with what is in the editor. */
+  const resolveKeepMine = useCallback(async () => {
+    if (!note) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const saved = await updateNote(
+        note.id,
+        { title: title || 'Untitled', content, tags: selectedTags, isPinned, isStarred },
+        { force: true }
+      );
+      setHasConflict(false);
+      toast({
+        title: 'Your version was kept',
+        description: saved
+          ? `Written to ${saved.path}. The previous file is in .notara/backups.`
+          : 'The note was written.',
+      });
+      if (saved && onSave) {
+        onSave(saved);
+      }
+    } catch (error) {
+      toast({
+        title: 'Save failed',
+        description:
+          (error instanceof Error && error.message) || 'Unable to save the current note.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [content, isPinned, isStarred, note, onSave, selectedTags, title, updateNote]);
+
+  /** Throw away the editor's text and take whatever is on disk. */
+  const resolveUseTheirs = useCallback(async () => {
+    if (!note) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const fresh = await reloadNote(note.id);
+      if (fresh) {
+        // The effect that syncs these fields keys off the note object, and the
+        // reloaded note may be the same object identity, so they are set here.
+        setTitle(fresh.title);
+        setContent(fresh.content);
+        setSelectedTags(fresh.tags);
+        setIsPinned(fresh.isPinned);
+        setIsStarred(fresh.isStarred);
+      }
+      setHasConflict(false);
+      toast({ title: 'Reloaded from disk' });
+    } catch (error) {
+      toast({
+        title: 'Could not reload the note',
+        description:
+          (error instanceof Error && error.message) || 'Unable to read the note file.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [note, reloadNote]);
 
   const togglePreview = () => {
     setIsPreview(!isPreview);
@@ -307,6 +401,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NoteConflictDialog
+        open={hasConflict}
+        path={note?.path ?? ''}
+        isBusy={isSaving}
+        onKeepMine={() => void resolveKeepMine()}
+        onUseTheirs={() => void resolveUseTheirs()}
+        onCancel={() => setHasConflict(false)}
+      />
     </div>
   );
 };

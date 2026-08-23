@@ -4,6 +4,7 @@ import WorkspacePanes, { WorkspacePaneId } from '@/components/layout/WorkspacePa
 import { useNotes } from '@/context/NotesContextTypes';
 import NotesSidebar from '@/components/notes/sidebar/NotesSidebar';
 import DeleteNoteDialog from '@/components/notes/DeleteNoteDialog';
+import MoveNoteDialog from '@/components/notes/MoveNoteDialog';
 import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,10 @@ const HomePage: React.FC = () => {
   const { activeNote, setActiveNote, notesStatus } = useNotes();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
+  const [noteAwaitingMove, setNoteAwaitingMove] = useState<Note | null>(null);
+  // Which folder a note being written now belongs in. Empty is the workspace
+  // root, which is what the Create Note button and the File menu use.
+  const [newNoteDirectory, setNewNoteDirectory] = useState('');
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
   // Null until the header has been measured. The panes are held back until
   // then: a panel reads its opening width once, at mount, and cannot be
@@ -30,7 +35,8 @@ const HomePage: React.FC = () => {
     setActivePane('detail');
   };
 
-  const handleCreateNote = useCallback(() => {
+  const handleCreateNote = useCallback((directory = '') => {
+    setNewNoteDirectory(directory);
     setActiveNote(null);
     setIsCreatingNote(true);
     setActivePane('detail');
@@ -90,7 +96,10 @@ const HomePage: React.FC = () => {
           <p className="mb-6 max-w-md text-muted-foreground">
             Get started by creating a note or selecting one from the list.
           </p>
-          <Button onClick={handleCreateNote}>
+          {/* Called through an arrow, not passed directly: a click handler receives
+          the event as its first argument, which would arrive here as the folder
+          to create the note in. */}
+      <Button onClick={() => handleCreateNote()}>
             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             Create Note
           </Button>
@@ -126,6 +135,8 @@ const HomePage: React.FC = () => {
           <NotesSidebar
             activeNoteId={activeNote?.id || null}
             onSelectNote={handleSelectNote}
+            onMoveNote={setNoteAwaitingMove}
+            onCreateNote={handleCreateNote}
             onDeleteNote={handleDeleteNote}
           />
         }

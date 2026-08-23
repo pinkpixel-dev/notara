@@ -22,8 +22,11 @@ interface FolderNodeProps {
   depth: number;
   activeNoteId: string | null;
   onSelectNote: (note: Note) => void;
-  onUnpinNote: (note: Note) => void;
+  onTogglePinNote: (note: Note) => void;
+  onToggleStarNote: (note: Note) => void;
+  onMoveNote: (note: Note) => void;
   onDeleteNote: (note: Note) => void;
+  onCreateNote: (directory: string) => void;
   onFolderAction: (action: DirectoryAction) => void;
 }
 
@@ -40,8 +43,11 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   depth,
   activeNoteId,
   onSelectNote,
-  onUnpinNote,
+  onTogglePinNote,
+  onToggleStarNote,
+  onMoveNote,
   onDeleteNote,
+  onCreateNote,
   onFolderAction,
 }) => {
   const { expandedDirectories, toggleDirectory, canManageDirectories } = useWorkspace();
@@ -78,8 +84,10 @@ const FolderNode: React.FC<FolderNodeProps> = ({
           </span>
         </button>
 
-        {canManageDirectories && (
-          <DropdownMenu>
+        {/* The folder actions below are desktop only, because the Rust engine
+            owns them. Creating a note is not, so the menu itself is always
+            rendered and only its folder entries are gated. */}
+        <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -95,27 +103,43 @@ const FolderNode: React.FC<FolderNodeProps> = ({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onSelect={() => onFolderAction({ kind: 'create', parentPath: folder.path })}
-              >
-                New folder inside
+              {/* First, because putting a note in a folder is the thing you
+                  want from a folder far more often than renaming it. */}
+              <DropdownMenuItem onSelect={() => onCreateNote(folder.path)}>
+                New note here
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => onFolderAction({ kind: 'rename', path: folder.path })}>
-                Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onFolderAction({ kind: 'move', path: folder.path })}>
-                Move to...
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onSelect={() => onFolderAction({ kind: 'delete', path: folder.path })}
-              >
-                Delete
-              </DropdownMenuItem>
+
+              {/* Folder actions run through the Rust engine, so they are desktop
+                  only. Creating a note is not, which is why it sits outside
+                  this gate and the browser build still gets a usable menu. */}
+              {canManageDirectories && (
+                <>
+                  <DropdownMenuItem
+                    onSelect={() => onFolderAction({ kind: 'create', parentPath: folder.path })}
+                  >
+                    New folder inside
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => onFolderAction({ kind: 'rename', path: folder.path })}
+                  >
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => onFolderAction({ kind: 'move', path: folder.path })}
+                  >
+                    Move to...
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => onFolderAction({ kind: 'delete', path: folder.path })}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
       </div>
 
       <ul id={contentId} hidden={!isExpanded}>
@@ -126,8 +150,11 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             depth={depth + 1}
             activeNoteId={activeNoteId}
             onSelectNote={onSelectNote}
-            onUnpinNote={onUnpinNote}
+            onTogglePinNote={onTogglePinNote}
+            onToggleStarNote={onToggleStarNote}
+            onMoveNote={onMoveNote}
             onDeleteNote={onDeleteNote}
+            onCreateNote={onCreateNote}
             onFolderAction={onFolderAction}
           />
         ))}
@@ -139,7 +166,9 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             depth={depth + 1}
             isActive={activeNoteId === note.id}
             onSelect={onSelectNote}
-            onUnpin={onUnpinNote}
+            onTogglePin={onTogglePinNote}
+            onToggleStar={onToggleStarNote}
+            onMove={onMoveNote}
             onDelete={onDeleteNote}
           />
         ))}

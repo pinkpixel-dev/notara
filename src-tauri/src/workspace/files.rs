@@ -309,6 +309,45 @@ mod tests {
         assert!(!second.revision.is_empty());
     }
 
+    /// The flow behind the interface's "Keep my version" choice.
+    ///
+    /// A refused write must stay refused until the caller explicitly drops the
+    /// revision, and the version being replaced has to reach the backups first,
+    /// because that is the only copy of it left afterwards.
+    #[test]
+    fn a_forced_write_overwrites_a_conflict_and_backs_up_what_it_replaced() {
+        let workspace = Workspace::new();
+        let first = write_note(workspace.root(), "Note.md", "mine\n", None).expect("written");
+
+        std::fs::write(workspace.root().join("Note.md"), "theirs, from elsewhere\n")
+            .expect("outside edit");
+
+        // The guard refuses while the caller still claims the old revision.
+        let refused = write_note(
+            workspace.root(),
+            "Note.md",
+            "mine, edited\n",
+            Some(&first.revision),
+        );
+        assert!(refused.is_err());
+
+        // Dropping the revision is the user having answered the question.
+        write_note(workspace.root(), "Note.md", "mine, edited\n", None).expect("forced");
+
+        assert_eq!(workspace.read("Note.md"), "mine, edited\n");
+
+        let backup = workspace
+            .root()
+            .join(SIDECAR_DIRECTORY)
+            .join("backups")
+            .join("Note.md.bak");
+        assert_eq!(
+            std::fs::read_to_string(backup).expect("backup"),
+            "theirs, from elsewhere\n",
+            "the overwritten version must be recoverable"
+        );
+    }
+
     #[test]
     fn refuses_to_write_outside_the_workspace() {
         let workspace = Workspace::new();

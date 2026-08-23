@@ -40,6 +40,17 @@ export interface NoteInput {
   directory?: string;
 }
 
+/** Options for a save that is not a plain edit. */
+export interface SaveOptions {
+  /**
+   * Write even though the file changed underneath Notara.
+   *
+   * Only set after the user has seen the conflict and chosen to keep their
+   * version. The previous contents are still backed up before the overwrite.
+   */
+  force?: boolean;
+}
+
 export interface NoteFilesApi {
   notes: Note[];
   status: NoteFilesStatus;
@@ -50,7 +61,11 @@ export interface NoteFilesApi {
   discoveredTags: NoteTag[];
   reload: () => Promise<void>;
   createNote: (input: NoteInput) => Promise<Note>;
-  saveNote: (id: string, input: NoteInput) => Promise<Note | null>;
+  saveNote: (id: string, input: NoteInput, options?: SaveOptions) => Promise<Note | null>;
+  /** Moves a note's file into another workspace folder. */
+  moveNote: (id: string, directory: string) => Promise<Note | null>;
+  /** Re-reads a note from disk, dropping any in-memory version. */
+  reloadNote: (id: string) => Promise<Note | null>;
   removeNote: (id: string) => Promise<void>;
 }
 
@@ -273,7 +288,7 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
   );
 
   const saveNote = useCallback(
-    async (id: string, input: NoteInput): Promise<Note | null> => {
+    async (id: string, input: NoteInput, options?: SaveOptions): Promise<Note | null> => {
       const root = requireWorkspace();
       const existing = notesRef.current.find((note) => note.id === id);
       if (!existing) {
@@ -302,21 +317,35 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
       }
 
       const contents = noteToFileContents(updated, onDisk);
-      const targetPath =
-        updated.title === existing.title
-          ? existing.path
-          : uniqueNotePath(
-              parentOf(existing.path),
-              updated.title,
-              notesRef.current.filter((note) => note.id !== id).map((note) => note.path)
-            );
 
+      // A move and a rename are the same operation: both change the path. The
+      // directory comes from the input when the caller is moving the note, and
+      // from the note's current folder otherwise.
+      const targetDirectory = input.directory ?? parentOf(existing.path);
+      const keepsPath =
+        updated.title === existing.title && targetDirectory === parentOf(existing.path);
+
+      const targetPath = keepsPath
+        ? existing.path
+        : uniqueNotePath(
+            targetDirectory,
+            updated.title,
+            notesRef.current.filter((note) => note.id !== id).map((note) => note.path)
+          );
+
+      /*
+       * Forcing skips the revision guard.
+       *
+       * This is only reached after the user has been shown the conflict and
+       * asked to keep their version, so the overwrite is a decision rather than
+       * an accident. The previous contents still go to `.notara/backups` first.
+       */
       const written = await moveNoteFile(
         root,
         existing.path,
         targetPath,
         contents,
-        existing.revision
+        options?.force ? null : existing.revision
       );
 
       const saved: Note = {
@@ -347,6 +376,39 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
     [requireWorkspace]
   );
 
+  const moveNote = useCallback(
+    (id: string, directory: string): Promise<Note | null> => saveNote(id, { directory }),
+    [saveNote]
+  );
+
+  /**
+   * Re-reads a note from disk, discarding whatever Notara had in memory.
+   *
+   * This is the "their version wins" half of resolving a conflict, and it is
+   * also how a note recovers after being edited in another editor.
+   */
+  const reloadNote = useCallback(
+    async (id: string): Promise<Note | null> => {
+      const root = requireWorkspace();
+      const existing = notesRef.current.find((note) => note.id === id);
+      if (!existing) {
+        return null;
+      }
+
+      const { contents, revision } = await readNoteFile(root, existing.path);
+      const { note } = noteFromFile({
+        path: existing.path,
+        contents,
+        revision,
+        knownTags: knownTagsRef.current,
+      });
+
+      setNotes((previous) => previous.map((entry) => (entry.id === id ? note : entry)));
+      return note;
+    },
+    [requireWorkspace]
+  );
+
   const reload = useCallback(async () => {
     await refresh();
   }, [refresh]);
@@ -360,6 +422,8 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
     reload,
     createNote,
     saveNote,
+    moveNote,
+    reloadNote,
     removeNote,
   };
 };

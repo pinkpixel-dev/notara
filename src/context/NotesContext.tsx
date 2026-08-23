@@ -4,7 +4,7 @@ import { Note, NoteTag, VisionBoard } from '../types';
 import { NotesContext, PIN_LIMIT, type PinResult } from './NotesContextTypes';
 import { useFileSystem } from './FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
-import { useNoteFiles, type NoteInput } from './notes/useNoteFiles';
+import { useNoteFiles, type NoteInput, type SaveOptions } from './notes/useNoteFiles';
 
 /**
  * Notes, tags, and vision boards.
@@ -39,7 +39,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isInitialised, setIsInitialised] = useState(false);
 
   const files = useNoteFiles(tags);
-  const { notes, createNote, saveNote, removeNote } = files;
+  const { notes, createNote, saveNote, moveNote: moveNoteFile, reloadNote: reloadNoteFile, removeNote } = files;
 
   const tagsRef = useRef(tags);
   tagsRef.current = tags;
@@ -148,7 +148,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isInitialised, tags, visionBoards, persistBundle, status]);
 
   const addNote = useCallback(
-    async (note: Partial<Note>): Promise<Note> => {
+    async (note: Partial<Note> & { directory?: string }): Promise<Note> => {
       const created = await createNote(note as NoteInput);
       return created;
     },
@@ -156,14 +156,36 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const updateNote = useCallback(
-    async (id: string, note: Partial<Note>): Promise<Note | null> => {
-      const updated = await saveNote(id, note as NoteInput);
+    async (id: string, note: Partial<Note>, options?: SaveOptions): Promise<Note | null> => {
+      const updated = await saveNote(id, note as NoteInput, options);
       if (updated) {
         setActiveNote((current) => (current?.id === id ? updated : current));
       }
       return updated;
     },
     [saveNote]
+  );
+
+  const moveNote = useCallback(
+    async (id: string, directory: string): Promise<Note | null> => {
+      const moved = await moveNoteFile(id, directory);
+      if (moved) {
+        setActiveNote((current) => (current?.id === id ? moved : current));
+      }
+      return moved;
+    },
+    [moveNoteFile]
+  );
+
+  const reloadNote = useCallback(
+    async (id: string): Promise<Note | null> => {
+      const fresh = await reloadNoteFile(id);
+      if (fresh) {
+        setActiveNote((current) => (current?.id === id ? fresh : current));
+      }
+      return fresh;
+    },
+    [reloadNoteFile]
   );
 
   const deleteNote = useCallback(
@@ -300,6 +322,8 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reloadNotes: files.reload,
       addNote,
       updateNote,
+      moveNote,
+      reloadNote,
       deleteNote,
       togglePin,
       toggleStar,
@@ -326,6 +350,8 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       files.reload,
       files.status,
       getCurrentBundle,
+      moveNote,
+      reloadNote,
       notes,
       persistBundle,
       tags,

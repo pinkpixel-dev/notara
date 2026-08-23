@@ -1,7 +1,14 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Pin, Star, X } from 'lucide-react';
+import { MoreHorizontal, Pin, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Note } from '@/types';
 
@@ -11,7 +18,9 @@ interface NoteRowProps {
   /** Indent depth. Root-level rows are 0. */
   depth: number;
   onSelect: (note: Note) => void;
-  onUnpin: (note: Note) => void;
+  onTogglePin: (note: Note) => void;
+  onToggleStar: (note: Note) => void;
+  onMove: (note: Note) => void;
   onDelete: (note: Note) => void;
 }
 
@@ -35,7 +44,9 @@ const NoteRow: React.FC<NoteRowProps> = ({
   isActive,
   depth,
   onSelect,
-  onUnpin,
+  onTogglePin,
+  onToggleStar,
+  onMove,
   onDelete,
 }) => {
   const title = note.title || 'Untitled';
@@ -75,13 +86,15 @@ const NoteRow: React.FC<NoteRowProps> = ({
       </button>
 
       {/* A pinned row carries its own unpin control, so the way back is in the
-          same place as the thing it undid. */}
+          same place as the thing it undid. Everything else lives in the menu,
+          which keeps the row to one visible action instead of a strip of
+          icons. */}
       {note.isPinned && (
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={() => onUnpin(note)}
+              onClick={() => onTogglePin(note)}
               aria-label={`Unpin ${title}`}
               className={cn(
                 'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
@@ -97,18 +110,39 @@ const NoteRow: React.FC<NoteRowProps> = ({
 
       {/* Always there on touch. On pointer devices it appears on hover or when
           it takes focus, so it never becomes keyboard-unreachable. */}
-      <button
-        type="button"
-        onClick={() => onDelete(note)}
-        aria-label={`Delete ${title}`}
-        className={cn(
-          'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
-          'text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive',
-          'md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100'
-        )}
-      >
-        <X className="h-4 w-4" aria-hidden="true" />
-      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Actions for ${title}`}
+            className={cn(
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
+              'text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+              'md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100',
+              'data-[state=open]:opacity-100'
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => onTogglePin(note)}>
+            {note.isPinned ? 'Unpin' : 'Pin to top'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onToggleStar(note)}>
+            {note.isStarred ? 'Remove star' : 'Star'}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => onMove(note)}>Move to...</DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={() => onDelete(note)}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
     </li>
   );
 };

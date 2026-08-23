@@ -4,6 +4,20 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🗃️ Working with notes in the tree
+
+- A folder's menu now has New note here, so a note lands in the folder you
+  picked instead of always at the top of the workspace.
+- Every note row has an actions menu: pin, star, move, and delete. Pinned rows
+  keep their pin icon for a one-click unpin.
+- You can move a note into another folder from inside Notara. It shows you the
+  file's current path and asks before moving anything, and your tags, pin, and
+  star are left alone.
+- When a note changed outside Notara since you opened it, saving now asks what
+  to do instead of showing an error you cannot act on. Keep your version and the
+  file on disk is copied to `.notara/backups` before being replaced, or take the
+  file on disk and the editor reloads. Nothing is chosen for you.
+
 ### 📐 Sidebar width
 
 - The notes sidebar now opens level with the divider in the header, so the line
