@@ -20,6 +20,7 @@ interface NoteRowProps {
   onSelect: (note: Note) => void;
   onTogglePin: (note: Note) => void;
   onToggleStar: (note: Note) => void;
+  onRename: (note: Note) => void;
   onMove: (note: Note) => void;
   onDelete: (note: Note) => void;
 }
@@ -46,6 +47,7 @@ const NoteRow: React.FC<NoteRowProps> = ({
   onSelect,
   onTogglePin,
   onToggleStar,
+  onRename,
   onMove,
   onDelete,
 }) => {
@@ -169,6 +171,7 @@ const NoteRow: React.FC<NoteRowProps> = ({
             {note.isStarred ? 'Remove star' : 'Star'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => onRename(note)}>Rename</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onMove(note)}>Move to...</DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

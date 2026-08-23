@@ -4,6 +4,16 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📝 Notes
+
+- You can rename a note from the sidebar now, through Rename in its menu.
+  Renaming used to mean opening the note and editing its title, because a note's
+  title is its file name. The dialog shows the file name your title will produce
+  while you type, so a character a file name cannot hold is visible right away
+  rather than found later in your folder.
+- Move to and Delete work again in the note menu. Both actions opened nothing at
+  all, because their confirmation dialogs were never placed on the page.
+
 ### 🖼️ Vision board
 
 - The board no longer prints its own name across the top-left corner. The tab

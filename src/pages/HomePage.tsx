@@ -5,6 +5,7 @@ import { useNotes } from '@/context/NotesContextTypes';
 import NotesSidebar from '@/components/notes/sidebar/NotesSidebar';
 import DeleteNoteDialog from '@/components/notes/DeleteNoteDialog';
 import MoveNoteDialog from '@/components/notes/MoveNoteDialog';
+import RenameNoteDialog from '@/components/notes/RenameNoteDialog';
 import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ const HomePage: React.FC = () => {
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
   const [noteAwaitingMove, setNoteAwaitingMove] = useState<Note | null>(null);
+  const [noteAwaitingRename, setNoteAwaitingRename] = useState<Note | null>(null);
   // Which folder a note being written now belongs in. Empty is the workspace
   // root, which is what the Create Note button and the File menu use.
   const [newNoteDirectory, setNewNoteDirectory] = useState('');
@@ -130,6 +132,7 @@ const HomePage: React.FC = () => {
           <NotesSidebar
             activeNoteId={activeNote?.id || null}
             onSelectNote={handleSelectNote}
+            onRenameNote={setNoteAwaitingRename}
             onMoveNote={setNoteAwaitingMove}
             onCreateNote={handleCreateNote}
             onDeleteNote={handleDeleteNote}
@@ -138,6 +141,18 @@ const HomePage: React.FC = () => {
         detail={<div className="h-full border-l border-border">{editor}</div>}
       />
       )}
+
+      {/* Each of these owns a real file operation, so they render once here and
+          are opened by setting the note they act on. */}
+      <RenameNoteDialog
+        note={noteAwaitingRename}
+        onClose={() => setNoteAwaitingRename(null)}
+      />
+      <MoveNoteDialog note={noteAwaitingMove} onClose={() => setNoteAwaitingMove(null)} />
+      <DeleteNoteDialog
+        note={noteAwaitingDelete}
+        onClose={() => setNoteAwaitingDelete(null)}
+      />
     </AppLayout>
   );
 };

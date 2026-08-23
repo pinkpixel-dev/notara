@@ -21,6 +21,7 @@ type NoteFilter = 'all' | 'starred';
 interface NotesSidebarProps {
   activeNoteId: string | null;
   onSelectNote: (note: Note) => void;
+  onRenameNote: (note: Note) => void;
   onMoveNote: (note: Note) => void;
   onDeleteNote: (note: Note) => void;
   /** Starts a new note in a folder. The empty string is the workspace root. */
@@ -42,6 +43,7 @@ interface NotesSidebarProps {
 const NotesSidebar: React.FC<NotesSidebarProps> = ({
   activeNoteId,
   onSelectNote,
+  onRenameNote,
   onMoveNote,
   onDeleteNote,
   onCreateNote,
@@ -275,6 +277,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                   onSelect={onSelectNote}
                   onTogglePin={handleTogglePin}
                   onToggleStar={handleToggleStar}
+                  onRename={onRenameNote}
                   onMove={onMoveNote}
                   onDelete={onDeleteNote}
                 />
@@ -296,6 +299,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                     onSelect={onSelectNote}
                     onTogglePin={handleTogglePin}
                     onToggleStar={handleToggleStar}
+                    onRename={onRenameNote}
                     onMove={onMoveNote}
                     onDelete={onDeleteNote}
                   />
@@ -313,6 +317,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                   onSelectNote={onSelectNote}
                   onTogglePinNote={handleTogglePin}
                   onToggleStarNote={handleToggleStar}
+                  onRenameNote={onRenameNote}
                   onMoveNote={onMoveNote}
                   onDeleteNote={onDeleteNote}
                   onCreateNote={onCreateNote}
@@ -340,6 +345,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
                       onSelect={onSelectNote}
                       onTogglePin={handleTogglePin}
                       onToggleStar={handleToggleStar}
+                      onRename={onRenameNote}
                       onMove={onMoveNote}
                       onDelete={onDeleteNote}
                     />

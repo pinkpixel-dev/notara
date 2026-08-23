@@ -24,6 +24,7 @@ interface FolderNodeProps {
   onSelectNote: (note: Note) => void;
   onTogglePinNote: (note: Note) => void;
   onToggleStarNote: (note: Note) => void;
+  onRenameNote: (note: Note) => void;
   onMoveNote: (note: Note) => void;
   onDeleteNote: (note: Note) => void;
   onCreateNote: (directory: string) => void;
@@ -45,6 +46,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
   onSelectNote,
   onTogglePinNote,
   onToggleStarNote,
+  onRenameNote,
   onMoveNote,
   onDeleteNote,
   onCreateNote,
@@ -152,6 +154,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             onSelectNote={onSelectNote}
             onTogglePinNote={onTogglePinNote}
             onToggleStarNote={onToggleStarNote}
+            onRenameNote={onRenameNote}
             onMoveNote={onMoveNote}
             onDeleteNote={onDeleteNote}
             onCreateNote={onCreateNote}
@@ -168,6 +171,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             onSelect={onSelectNote}
             onTogglePin={onTogglePinNote}
             onToggleStar={onToggleStarNote}
+            onRename={onRenameNote}
             onMove={onMoveNote}
             onDelete={onDeleteNote}
           />
