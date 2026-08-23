@@ -9,12 +9,17 @@ import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavDividerX } from '@/hooks/use-nav-divider-x';
 
 const HomePage: React.FC = () => {
   const { activeNote, setActiveNote, notesStatus } = useNotes();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
+  // Null until the header has been measured. The panes are held back until
+  // then: a panel reads its opening width once, at mount, and cannot be
+  // corrected afterwards.
+  const navDividerX = useNavDividerX();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -101,13 +106,21 @@ const HomePage: React.FC = () => {
 
   return (
     <AppLayout>
+      {navDividerX === null ? null : (
       <WorkspacePanes
         listLabel="Notes"
         detailLabel="Editor"
         activePane={activePane}
         onPaneChange={setActivePane}
+        /* Opens level with the header's divider, so the one vertical line runs
+           straight down the page. Falls back to a fixed width when there is no
+           divider to line up with, which is the mobile layout. A sidebar is a
+           fixed-ish width rather than a share of the window, so a wider monitor
+           hands the extra room to the editor, not to a column of note titles. */
+        listDefaultPx={navDividerX && navDividerX > 0 ? navDividerX : 270}
+        listMinPx={240}
         listDefaultSize={20}
-        listMinSize={20}
+        listMinSize={15}
         listMaxSize={70}
         list={
           <NotesSidebar
@@ -118,6 +131,7 @@ const HomePage: React.FC = () => {
         }
         detail={<div className="h-full border-l border-border">{editor}</div>}
       />
+      )}
     </AppLayout>
   );
 };

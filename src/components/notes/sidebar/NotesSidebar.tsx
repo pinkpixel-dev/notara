@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWorkspace } from '@/context/WorkspaceContextTypes';
+import { useElementWidth } from '@/hooks/use-element-width';
 import { useNotes } from '@/context/NotesContextTypes';
 import { buildNoteTree } from '@/lib/notes/tree';
 import { flattenDirectories } from '@/lib/workspace/tree';
@@ -42,6 +43,10 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
   const { notes, notesStatus, togglePin } = useNotes();
   const { scan, scanStatus, canManageDirectories, refresh } = useWorkspace();
 
+  // The sidebar is resizable, so its contents react to its own width rather
+  // than the window's. A viewport breakpoint would say "desktop" while this
+  // pane sits at 240 pixels.
+  const [sidebarRef, sidebarWidth] = useElementWidth<HTMLDivElement>();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<NoteFilter>('all');
   const [folderAction, setFolderAction] = useState<DirectoryAction>(null);
@@ -110,8 +115,18 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
 
   const isEmpty = isFlat ? flatNotes.length === 0 : tree.total === 0 && directoryPaths.length === 0;
 
+  /**
+   * Shorter filter labels once the pane gets narrow.
+   *
+   * "All notes" and "Starred" plus the two folder actions need about 300 pixels
+   * to sit on one row. Below that the labels drop to "All" and "Starred", which
+   * is the difference between a readable row and a clipped one. 0 means the
+   * width has not been measured yet, so the full labels stand in.
+   */
+  const isCompact = sidebarWidth > 0 && sidebarWidth < 300;
+
   return (
-    <div className="flex h-full flex-col surface-content">
+    <div ref={sidebarRef} className="flex h-full flex-col surface-content">
       <div className="border-b border-border p-3">
         <div className="relative">
           <label htmlFor="note-search" className="sr-only">
@@ -155,7 +170,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
       >
         {(
           [
-            { id: 'all' as const, label: 'All notes', count: notes.length },
+            { id: 'all' as const, label: isCompact ? 'All' : 'All notes', count: notes.length },
             { id: 'starred' as const, label: 'Starred', count: starredCount },
           ]
         ).map((option) => (
@@ -165,7 +180,8 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({
             onClick={() => setFilter(option.id)}
             aria-pressed={filter === option.id}
             className={cn(
-              'min-h-11 flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors',
+              'min-h-11 flex-1 whitespace-nowrap rounded-md text-sm font-medium transition-colors',
+              isCompact ? 'px-2' : 'px-3',
               filter === option.id
                 ? 'bg-accent text-primary'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'

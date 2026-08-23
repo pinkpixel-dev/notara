@@ -4,6 +4,16 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📐 Sidebar width
+
+- The notes sidebar now opens level with the divider in the header, so the line
+  between the File menu and the section tabs runs straight down the page.
+- It opens narrower than before and keeps a fixed width as you resize the
+  window, so a bigger screen gives the extra room to the editor instead of
+  stretching a column of note titles. Drag the divider and your size sticks.
+- Dragged narrow, the filter shortens from "All notes" to "All" so the row stays
+  readable instead of clipping.
+
 ### 🧭 Navigation moved into the header
 
 - Notes, To-Do, Calendar, Vision Board, and Constellations sit across the top

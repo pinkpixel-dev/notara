@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 
 export type WorkspacePaneId = "list" | "detail";
 
@@ -33,6 +34,15 @@ interface WorkspacePanesProps {
    * the pane keeps a real floor at every width.
    */
   listMinPx?: number;
+  /**
+   * Width the list pane opens at, in pixels.
+   *
+   * A sidebar is a fixed-ish width rather than a proportion of the window:
+   * widening the window should hand the extra space to the editor, not scale up
+   * a column of note titles. When set, this wins over `listDefaultSize`, which
+   * remains the fallback until the group has been measured.
+   */
+  listDefaultPx?: number;
 }
 
 /**
@@ -54,19 +64,40 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
   listDefaultSize = 20,
   listMinSize = 20,
   listMaxSize = 70,
-  listMinPx = 280,
+  listMinPx = 240,
+  listDefaultPx,
 }) => {
   const isMobile = useIsMobile();
   const groupRef = useRef<HTMLDivElement>(null);
+  const listPanelRef = useRef<ImperativePanelHandle>(null);
+  /**
+   * Whether the user has taken hold of the divider.
+   *
+   * Until they do, the list pane is held at its pixel width, so resizing the
+   * window hands the extra space to the detail pane instead of stretching a
+   * column of note titles. Once they have dragged it, that size is theirs and
+   * nothing here moves it again.
+   */
+  const userHasResized = useRef(false);
   const [groupWidth, setGroupWidth] = useState(0);
 
-  // Measured rather than read off the window, because the group is not the full
-  // width of the page and only its own width decides what a percentage is worth.
-  useEffect(() => {
+  /*
+   * Measured rather than read off the window, because the group is not the full
+   * width of the page and only its own width decides what a percentage is worth.
+   *
+   * This is a layout effect, and the first measurement is taken directly rather
+   * than waiting for the observer. `defaultSize` is only read when a panel
+   * mounts, so a width arriving after the first paint is ignored and the pane
+   * keeps whatever percentage it opened at. Measuring before paint, and holding
+   * the panels back until there is a width, is what makes a pixel default apply.
+   */
+  useLayoutEffect(() => {
     const element = groupRef.current;
     if (!element || isMobile) {
       return;
     }
+
+    setGroupWidth(element.getBoundingClientRect().width);
 
     const observer = new ResizeObserver((entries) => {
       setGroupWidth(entries[0]?.contentRect.width ?? 0);
@@ -74,6 +105,45 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
     observer.observe(element);
     return () => observer.disconnect();
   }, [isMobile]);
+
+  /*
+   * These sit above the mobile branch on purpose. The branch returns early, and
+   * a hook declared after it would not run on mobile, which React reports as
+   * rendering fewer hooks than expected and takes the whole page down.
+   */
+  const asPercent = (pixels: number) =>
+    Math.min((pixels / groupWidth) * 100, listMaxSize);
+
+  const effectiveMin = groupWidth > 0 ? asPercent(listMinPx) : listMinSize;
+
+  const requestedDefault =
+    groupWidth > 0 && listDefaultPx !== undefined
+      ? asPercent(listDefaultPx)
+      : listDefaultSize;
+
+  // The floor wins over the requested width. A default narrower than the
+  // minimum would be snapped wider on the first drag, which reads as the pane
+  // moving on its own.
+  const effectiveDefault = Math.min(
+    Math.max(requestedDefault, effectiveMin),
+    listMaxSize,
+  );
+
+  /*
+   * Re-applies the opening width when it changes.
+   *
+   * A panel reads `defaultSize` once, at mount, so a width corrected later has
+   * no effect on its own. Two things correct it: webfonts settling, which moves
+   * the header divider this pane lines up with, and the window resizing, which
+   * changes what that pixel width is as a percentage.
+   */
+  useEffect(() => {
+    if (isMobile || userHasResized.current || groupWidth <= 0 || listDefaultPx === undefined) {
+      return;
+    }
+    listPanelRef.current?.resize(effectiveDefault);
+  }, [effectiveDefault, groupWidth, isMobile, listDefaultPx]);
+
 
   if (isMobile) {
     const panes: Array<{ id: WorkspacePaneId; label: string }> = [
@@ -121,46 +191,44 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
     );
   }
 
-  // Before the first measurement there is no width to convert against, so the
-  // plain percentages stand in. They are replaced on the first observed frame.
-  const minFromPixels =
-    groupWidth > 0
-      ? Math.min((listMinPx / groupWidth) * 100, listMaxSize)
-      : listMinSize;
-  const effectiveMin = Math.max(listMinSize, minFromPixels);
-  const effectiveDefault = Math.min(
-    Math.max(listDefaultSize, effectiveMin),
-    listMaxSize,
-  );
-
   return (
     // The panel group's ref is its imperative handle rather than the element,
     // so the measurement goes on a wrapper.
     <div ref={groupRef} className="h-full">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel
-          defaultSize={effectiveDefault}
-          minSize={effectiveMin}
-          maxSize={listMaxSize}
-        >
-          <section aria-label={listLabel} className="h-full min-h-0">
-            {list}
-          </section>
-        </ResizablePanel>
+      {/* Nothing renders until the width is known. One frame of an empty pane
+          beats a pane that opens at the wrong size and cannot be corrected,
+          because `defaultSize` is read once at mount. */}
+      {groupWidth > 0 && (
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanel
+            ref={listPanelRef}
+            defaultSize={effectiveDefault}
+            minSize={effectiveMin}
+            maxSize={listMaxSize}
+          >
+            <section aria-label={listLabel} className="h-full min-h-0">
+              {list}
+            </section>
+          </ResizablePanel>
 
-        <ResizableHandle
-          withHandle
-          className="bg-border hover:bg-primary/50 transition-colors"
-        />
+          <ResizableHandle
+            withHandle
+            // Taking hold of the divider hands sizing to the user for good.
+            onPointerDown={() => {
+              userHasResized.current = true;
+            }}
+            className="bg-border hover:bg-primary/50 transition-colors"
+          />
 
-        {/* Panel sizes normalize against their sum, so the pair has to add up to
+          {/* Panel sizes normalize against their sum, so the pair has to add up to
           100 or neither pane renders at the size it asks for. */}
-        <ResizablePanel defaultSize={100 - effectiveDefault}>
-          <section aria-label={detailLabel} className="h-full min-h-0">
-            {detail}
-          </section>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          <ResizablePanel defaultSize={100 - effectiveDefault}>
+            <section aria-label={detailLabel} className="h-full min-h-0">
+              {detail}
+            </section>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      )}
     </div>
   );
 };

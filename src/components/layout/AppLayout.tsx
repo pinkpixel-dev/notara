@@ -78,6 +78,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           File menu, and the right-hand controls together came to 334 pixels
           against 320 of header, and nothing in a header may be clipped. */}
       <header className="flex shrink-0 items-center gap-1 border-b border-border surface-toolbar px-2 py-2 sm:gap-2 sm:px-3">
+        {/* Everything left of the divider, in one element so its width can be
+            watched. The divider's position depends on how wide the wordmark and
+            the File menu render, which changes when webfonts arrive and again
+            whenever the interface font is changed in Settings. The notes sidebar
+            lines up with that divider, so it has to follow those moves rather
+            than be measured once. */}
+        <div data-nav-leading="" className="flex shrink-0 items-center gap-1 sm:gap-2">
         {isMobile ? (
           <Button
             onClick={() => setIsDrawerOpen(true)}
@@ -111,12 +118,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         )}
 
         <AppMenuBar />
+        </div>
 
         {/* Decorative, so it is hidden from assistive technology. The nav
             landmark inside SectionTabs is what announces the boundary. The
             side margins are what set the sections apart from the File menu
             rather than letting them read as one long row of controls. */}
-        <span aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-border md:mx-2 md:block" />
+        <span
+          aria-hidden="true"
+          data-nav-divider=""
+          className="hidden h-6 w-px shrink-0 bg-border md:mx-2 md:block"
+        />
 
         <SectionTabs />
 
