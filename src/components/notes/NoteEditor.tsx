@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { useNotes } from '@/context/NotesContextTypes';
+import { useNotes, PIN_LIMIT } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
 import { Note } from '@/types';
@@ -8,7 +8,7 @@ import TagSelector from './TagSelector';
 import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Maximize2, Plus, Star } from 'lucide-react';
+import { Maximize2, Pin, Plus, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface NoteEditorProps {
@@ -26,12 +26,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     addNote,
     updateNote,
     persistBundle,
+    togglePin,
+    toggleStar,
   } = useNotes();
   const { status } = useFileSystem();
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [selectedTags, setSelectedTags] = useState(note?.tags || []);
   const [isPinned, setIsPinned] = useState(note?.isPinned || false);
+  const [isStarred, setIsStarred] = useState(note?.isStarred || false);
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
@@ -43,6 +46,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
       setContent('');
       setSelectedTags([]);
       setIsPinned(false);
+      setIsStarred(false);
       setIsPreview(false);
       return;
     }
@@ -52,6 +56,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
       setContent(note.content);
       setSelectedTags(note.tags);
       setIsPinned(note.isPinned);
+      setIsStarred(note.isStarred);
     }
   }, [isNew, note]);
 
@@ -63,6 +68,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
       content,
       tags: selectedTags,
       isPinned,
+      isStarred,
     };
 
     try {
@@ -120,6 +126,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     availableTags,
     isNew,
     isPinned,
+    isStarred,
     note,
     notes,
     onSave,
@@ -132,14 +139,38 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     content,
   ]);
 
-  const togglePin = useCallback(() => {
-    const nextPinned = !isPinned;
-    setIsPinned(nextPinned);
+  const refusePin = (reason: string) => {
+    toast({ title: 'Pin limit reached', description: reason, variant: 'destructive' });
+  };
+
+  const handleTogglePin = useCallback(() => {
+    if (!isNew && note) {
+      const result = togglePin(note.id);
+      if (!result.ok) {
+        refusePin(result.reason);
+        return;
+      }
+      setIsPinned((pinned) => !pinned);
+      return;
+    }
+
+    // An unsaved note is not in the list yet, so the cap is measured against
+    // the notes that are already pinned.
+    if (!isPinned && notes.filter((entry) => entry.isPinned).length >= PIN_LIMIT) {
+      refusePin(`You can pin up to ${PIN_LIMIT} notes. Unpin one to make room.`);
+      return;
+    }
+
+    setIsPinned((pinned) => !pinned);
+  }, [isNew, isPinned, note, notes, togglePin]);
+
+  const handleToggleStar = useCallback(() => {
+    setIsStarred((starred) => !starred);
 
     if (!isNew && note) {
-      updateNote(note.id, { isPinned: nextPinned });
+      toggleStar(note.id);
     }
-  }, [isNew, isPinned, note, updateNote]);
+  }, [isNew, note, toggleStar]);
 
   const togglePreview = () => {
     setIsPreview(!isPreview);
@@ -166,14 +197,32 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-border flex justify-between items-center">
         <div className="flex items-center gap-2">
+          {/* Pinning keeps a note at the top of the notes bar and is capped.
+              Starring marks it important and is not. They are separate
+              controls because they answer different questions. */}
           <button
-            onClick={togglePin}
-            className={`p-2 rounded-md transition-colors ${
+            type="button"
+            onClick={handleTogglePin}
+            className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
               isPinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             }`}
-            aria-label={isPinned ? 'Unstar note' : 'Star note'}
+            aria-pressed={isPinned}
+            aria-label={isPinned ? 'Unpin note' : 'Pin note'}
+            title={isPinned ? 'Unpin note' : 'Pin note'}
           >
-            <Star className={`h-5 w-5 ${isPinned ? 'fill-current' : 'fill-transparent'}`} />
+            <Pin className={`h-5 w-5 ${isPinned ? 'fill-current' : 'fill-transparent'}`} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleStar}
+            className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
+              isStarred ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+            }`}
+            aria-pressed={isStarred}
+            aria-label={isStarred ? 'Unstar note' : 'Star note'}
+            title={isStarred ? 'Unstar note' : 'Star note'}
+          >
+            <Star className={`h-5 w-5 ${isStarred ? 'fill-current' : 'fill-transparent'}`} aria-hidden="true" />
           </button>
           <div className="flex gap-2">
             <Button

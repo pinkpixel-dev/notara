@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
-  FileText, Star, Image, MessageSquare, CheckSquare,
+  FileText, Image, MessageSquare, CheckSquare,
   Calendar, PanelLeftClose, PanelLeftOpen, Settings, FileCode, BookOpen, Sparkle, Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,12 +31,11 @@ const navItems = [
 ];
 
 /**
- * Tags and Starred Notes live in the header on desktop. There is no room for
- * them there at phone widths, so the drawer carries them instead.
+ * Tags lives in the header on desktop. There is no room for it there at phone
+ * widths, so the drawer carries it instead.
  */
 const drawerOnlyNavItems = [
   { name: 'Tags', icon: Tag, path: '/tags' },
-  { name: 'Starred Notes', icon: Star, path: '/starred' },
 ];
 
 const utilityItems = [

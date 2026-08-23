@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, Menu, Tag, Star } from 'lucide-react';
+import { Search, Menu, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -21,7 +21,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isOnTagsPage = location.pathname.startsWith('/tags');
-  const isOnStarredPage = location.pathname.startsWith('/starred');
 
   const triggerSearchFocus = useCallback(() => {
     window.setTimeout(() => {
@@ -127,26 +126,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Tags</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    'hidden h-11 w-11 md:inline-flex',
-                    isOnStarredPage && 'bg-accent text-primary'
-                  )}
-                  aria-label="Open starred notes"
-                >
-                  <Link to="/starred" aria-current={isOnStarredPage ? 'page' : undefined}>
-                    <Star className="h-5 w-5" aria-hidden="true" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Starred Notes</TooltipContent>
             </Tooltip>
 
             <Tooltip>

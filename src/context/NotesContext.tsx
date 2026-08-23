@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Note, NoteTag, VisionBoard } from '../types';
-import { NotesContext } from './NotesContextTypes';
+import { NotesContext, PIN_LIMIT, type PinResult } from './NotesContextTypes';
 import { useFileSystem } from './FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
 
@@ -32,6 +32,7 @@ Get started by creating your first note!`,
     updatedAt: new Date().toISOString(),
     tags: [defaultTags[0], defaultTags[2]],
     isPinned: true,
+    isStarred: false,
   },
   {
     id: '2',
@@ -82,6 +83,7 @@ function hello() {
     updatedAt: new Date().toISOString(),
     tags: [defaultTags[2]],
     isPinned: false,
+    isStarred: false,
   },
 ];
 
@@ -106,6 +108,16 @@ const defaultVisionBoards: VisionBoard[] = [
     ],
   },
 ];
+
+/**
+ * Fills in fields added after a note was last saved.
+ *
+ * Starring arrived after pinning, so notes written by an older build have no
+ * `isStarred` at all. Defaulting it here keeps the rest of the app from having
+ * to treat the flag as optional.
+ */
+const normalizeNotes = (loaded: Note[]): Note[] =>
+  loaded.map((note) => ({ ...note, isStarred: note.isStarred ?? false }));
 
 export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { status, loadNotesBundle, saveNotesBundle } = useFileSystem();
@@ -209,7 +221,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (cancelled) {
             return;
           }
-          setNotes(bundle.notes?.length ? bundle.notes : defaultNotes);
+          setNotes(normalizeNotes(bundle.notes?.length ? bundle.notes : defaultNotes));
           setTags(bundle.tags?.length ? bundle.tags : defaultTags);
           setVisionBoards(bundle.visionBoards?.length ? bundle.visionBoards : defaultVisionBoards);
         } catch (error) {
@@ -218,7 +230,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (cancelled) {
             return;
           }
-          setNotes(localBundle.notes?.length ? localBundle.notes : defaultNotes);
+          setNotes(normalizeNotes(localBundle.notes?.length ? localBundle.notes : defaultNotes));
           setTags(localBundle.tags?.length ? localBundle.tags : defaultTags);
           setVisionBoards(localBundle.visionBoards?.length ? localBundle.visionBoards : defaultVisionBoards);
         }
@@ -227,7 +239,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (cancelled) {
           return;
         }
-        setNotes(localBundle.notes?.length ? localBundle.notes : defaultNotes);
+        setNotes(normalizeNotes(localBundle.notes?.length ? localBundle.notes : defaultNotes));
         setTags(localBundle.tags?.length ? localBundle.tags : defaultTags);
         setVisionBoards(localBundle.visionBoards?.length ? localBundle.visionBoards : defaultVisionBoards);
       }
@@ -264,6 +276,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updatedAt: now,
       tags: note.tags || [],
       isPinned: note.isPinned || false,
+      isStarred: note.isStarred || false,
     };
 
     setNotes((prevNotes) => [...prevNotes, newNote]);
@@ -301,7 +314,25 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const togglePin = (id: string) => {
+  const togglePin = (id: string): PinResult => {
+    const target = notesRef.current.find((note) => note.id === id);
+    if (!target) {
+      return { ok: false, reason: 'That note no longer exists.' };
+    }
+
+    // Unpinning is always allowed. Only adding a pin can hit the cap, so a
+    // user who already had more than `PIN_LIMIT` pinned before the cap existed
+    // keeps every one of them and simply cannot add more.
+    if (!target.isPinned) {
+      const pinnedCount = notesRef.current.filter((note) => note.isPinned).length;
+      if (pinnedCount >= PIN_LIMIT) {
+        return {
+          ok: false,
+          reason: `You can pin up to ${PIN_LIMIT} notes. Unpin one to make room.`,
+        };
+      }
+    }
+
     let updatedNote: Note | null = null;
     setNotes((prevNotes) =>
       prevNotes.map((existing) => {
@@ -311,6 +342,29 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updatedNote = {
           ...existing,
           isPinned: !existing.isPinned,
+          updatedAt: new Date().toISOString(),
+        };
+        return updatedNote;
+      })
+    );
+
+    if (updatedNote && activeNote?.id === id) {
+      setActiveNote(updatedNote);
+    }
+
+    return { ok: true };
+  };
+
+  const toggleStar = (id: string) => {
+    let updatedNote: Note | null = null;
+    setNotes((prevNotes) =>
+      prevNotes.map((existing) => {
+        if (existing.id !== id) {
+          return existing;
+        }
+        updatedNote = {
+          ...existing,
+          isStarred: !existing.isStarred,
           updatedAt: new Date().toISOString(),
         };
         return updatedNote;
@@ -378,6 +432,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateNote,
         deleteNote,
         togglePin,
+        toggleStar,
         addTag,
         updateTag,
         deleteTag,

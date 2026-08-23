@@ -19,7 +19,6 @@ import NotFound from "./pages/NotFound";
 import MarkdownCheatsheetPage from "./pages/MarkdownCheatsheetPage";
 import NoteViewPage from "./pages/NoteViewPage";
 import TodoPage from "./pages/TodoPage";
-import StarredNotesPage from "./pages/StarredNotesPage";
 import { removeLegacyCredentialStorage } from "./lib/legacy-cleanup";
 
 const queryClient = new QueryClient();
@@ -49,7 +48,6 @@ const App = () => {
                 <Route path="/markdown-cheatsheet" element={<MarkdownCheatsheetPage />} />
                 <Route path="/note/:id" element={<NoteViewPage />} />
                 <Route path="/todos" element={<TodoPage />} />
-                <Route path="/starred" element={<StarredNotesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </BrowserRouter>

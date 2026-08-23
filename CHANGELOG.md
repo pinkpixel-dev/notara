@@ -4,6 +4,20 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### ⭐ Pinned and starred notes
+
+- Pinning and starring are two separate things now. They used to be one flag
+  behind two different names, so the star button in the editor and the pinned
+  section in the notes bar always moved together.
+- Pin a note to keep it at the top of the notes bar. You can pin up to five
+  notes. Notara refuses the sixth and tells you to unpin one first, rather than
+  quietly dropping a pin you chose. Unpinning always works.
+- Star a note to mark it important. There is no limit on starred notes.
+- The notes bar has an All notes and Starred filter with a count on each. The
+  separate Starred Notes page is gone, along with the star button in the header,
+  because the filter does the same job in the place you are already looking.
+- Note rows show a pin icon for a pinned note and a star icon for a starred one.
+
 ### 📁 Workspace
 
 - Choose Workspace now opens a real folder picker on the desktop. Notara used to

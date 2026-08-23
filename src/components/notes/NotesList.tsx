@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Note } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Search, Star, X, FileText } from 'lucide-react';
+import { Search, Star, Pin, X, FileText } from 'lucide-react';
 import WorkspaceTree from './WorkspaceTree';
+
+/** Which slice of the notes the bar is showing. */
+type NoteFilter = 'all' | 'starred';
 
 interface NotesListProps {
   notes: Note[];
@@ -19,6 +22,7 @@ const NotesList: React.FC<NotesListProps> = ({
   onDeleteNote
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<NoteFilter>('all');
   const [filteredNotes, setFilteredNotes] = useState<Note[]>(notes);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,8 +39,14 @@ const NotesList: React.FC<NotesListProps> = ({
     }
   }, [searchQuery, notes]);
 
-  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
-  const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
+  // Starred is a view over the same list rather than a separate page, so the
+  // search box, the tree, and the pinned section all keep working inside it.
+  const visibleNotes =
+    filter === 'starred' ? filteredNotes.filter(note => note.isStarred) : filteredNotes;
+
+  const pinnedNotes = visibleNotes.filter(note => note.isPinned);
+  const unpinnedNotes = visibleNotes.filter(note => !note.isPinned);
+  const starredCount = notes.filter(note => note.isStarred).length;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -92,7 +102,10 @@ const NotesList: React.FC<NotesListProps> = ({
           <span className="mb-1 flex items-center gap-2">
             <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
             {note.isPinned && (
-              <Star className="h-4 w-4 shrink-0 fill-current text-primary" aria-label="Pinned" />
+              <Pin className="h-4 w-4 shrink-0 fill-current text-primary" aria-label="Pinned" />
+            )}
+            {note.isStarred && (
+              <Star className="h-4 w-4 shrink-0 fill-current text-primary" aria-label="Starred" />
             )}
           </span>
           <span className="mb-2 block truncate text-sm text-muted-foreground">{preview}</span>
@@ -168,18 +181,47 @@ const NotesList: React.FC<NotesListProps> = ({
         </div>
       </div>
 
+      {/* Starred replaced a separate page. Keeping it as a filter here means
+          one place to find notes instead of two. */}
+      <div
+        className="flex gap-1 border-b border-border px-3 py-2"
+        role="group"
+        aria-label="Filter notes"
+      >
+        {([
+          { id: 'all' as const, label: 'All notes', count: notes.length },
+          { id: 'starred' as const, label: 'Starred', count: starredCount },
+        ]).map(option => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setFilter(option.id)}
+            aria-pressed={filter === option.id}
+            className={cn(
+              'min-h-11 flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors',
+              filter === option.id
+                ? 'bg-accent text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
+          >
+            {option.label}
+            <span className="ml-1.5 text-xs tabular-nums opacity-70">{option.count}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {/* The tree is the real folder structure on disk. It sits above the
             note list rather than replacing it, because notes are still loaded
             from the notes bundle until Markdown becomes the source of truth. */}
-        {!searchQuery && <WorkspaceTree />}
+        {!searchQuery && filter === 'all' && <WorkspaceTree />}
 
         {searchQuery && (
           <p
             className="surface-elevated px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             role="status"
           >
-            {filteredNotes.length} {filteredNotes.length === 1 ? 'result' : 'results'}
+            {visibleNotes.length} {visibleNotes.length === 1 ? 'result' : 'results'}
           </p>
         )}
 
@@ -197,14 +239,24 @@ const NotesList: React.FC<NotesListProps> = ({
           </section>
         )}
 
-        {searchQuery && filteredNotes.length > 0 && (
-          <ul>{filteredNotes.map(renderNoteItem)}</ul>
+        {searchQuery && visibleNotes.length > 0 && (
+          <ul>{visibleNotes.map(renderNoteItem)}</ul>
         )}
 
-        {filteredNotes.length === 0 && (
-          <div className="flex h-40 flex-col items-center justify-center text-muted-foreground">
-            <FileText className="h-6 w-6" aria-hidden="true" />
-            <p className="mt-2 text-sm">{searchQuery ? 'No matching notes' : 'No notes yet'}</p>
+        {visibleNotes.length === 0 && (
+          <div className="flex h-40 flex-col items-center justify-center px-4 text-center text-muted-foreground">
+            {filter === 'starred' && !searchQuery ? (
+              <>
+                <Star className="h-6 w-6" aria-hidden="true" />
+                <p className="mt-2 text-sm">No starred notes</p>
+                <p className="mt-1 text-xs">Star a note to keep it in this filter.</p>
+              </>
+            ) : (
+              <>
+                <FileText className="h-6 w-6" aria-hidden="true" />
+                <p className="mt-2 text-sm">{searchQuery ? 'No matching notes' : 'No notes yet'}</p>
+              </>
+            )}
           </div>
         )}
       </div>

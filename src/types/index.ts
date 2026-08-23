@@ -11,7 +11,17 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   tags: NoteTag[];
+  /**
+   * Pinned notes sit in their own section at the top of the notes bar. The
+   * count is capped, because a pinned section that holds everything is just
+   * the list again.
+   */
   isPinned: boolean;
+  /**
+   * Starred notes are a filter over the whole list, with no cap. Starring is
+   * how you mark a note important; pinning is how you keep it in reach.
+   */
+  isStarred: boolean;
 }
 
 export interface VisionBoardItem {
