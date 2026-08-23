@@ -4,6 +4,20 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📏 Sidebar sizes are remembered
+
+- Drag a sidebar to the width you want and it stays there, on that screen,
+  between sessions. Each screen keeps its own width, so a wide Notes sidebar
+  does not force a wide To-Do sidebar.
+- Widths are stored in pixels rather than as a share of the window, so a
+  sidebar reopens the size you left it rather than the same fraction of a
+  different window.
+- The To-Do sidebar now matches the Notes sidebar: same background and the same
+  starting width, level with the divider in the header.
+- The calendar starts much narrower. The calendar itself is only about 380
+  pixels wide, so most of the space it used to take was empty padding around it.
+  Its split is remembered too.
+
 ### 🗃️ Working with notes in the tree
 
 - A folder's menu now has New note here, so a note lands in the folder you

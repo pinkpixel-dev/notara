@@ -10,7 +10,7 @@ import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNavDividerX } from '@/hooks/use-nav-divider-x';
+import { useSidebarPane } from '@/hooks/use-sidebar-pane';
 
 const HomePage: React.FC = () => {
   const { activeNote, setActiveNote, notesStatus } = useNotes();
@@ -21,10 +21,9 @@ const HomePage: React.FC = () => {
   // root, which is what the Create Note button and the File menu use.
   const [newNoteDirectory, setNewNoteDirectory] = useState('');
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
-  // Null until the header has been measured. The panes are held back until
-  // then: a panel reads its opening width once, at mount, and cannot be
-  // corrected afterwards.
-  const navDividerX = useNavDividerX();
+  // Held back until the header has been measured. A panel reads its opening
+  // width once, at mount, and cannot be corrected afterwards.
+  const sidebar = useSidebarPane();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -115,22 +114,18 @@ const HomePage: React.FC = () => {
 
   return (
     <AppLayout>
-      {navDividerX === null ? null : (
+      {!sidebar.ready ? null : (
       <WorkspacePanes
         listLabel="Notes"
         detailLabel="Editor"
         activePane={activePane}
         onPaneChange={setActivePane}
-        /* Opens level with the header's divider, so the one vertical line runs
-           straight down the page. Falls back to a fixed width when there is no
-           divider to line up with, which is the mobile layout. A sidebar is a
-           fixed-ish width rather than a share of the window, so a wider monitor
-           hands the extra room to the editor, not to a column of note titles. */
-        listDefaultPx={navDividerX && navDividerX > 0 ? navDividerX : 270}
-        listMinPx={240}
+        listDefaultPx={sidebar.listDefaultPx}
+        listMinPx={sidebar.listMinPx}
         listDefaultSize={20}
         listMinSize={15}
         listMaxSize={70}
+        storageKey="notes"
         list={
           <NotesSidebar
             activeNoteId={activeNote?.id || null}

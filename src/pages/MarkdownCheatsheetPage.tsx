@@ -20,6 +20,7 @@ const MarkdownCheatsheetPage: React.FC = () => {
         listDefaultSize={65}
         listMinSize={50}
         listMaxSize={80}
+        storageKey="cheatsheet"
         list={
           <div className="h-full overflow-y-auto px-4 py-6 sm:px-6">
             <div className="mx-auto max-w-5xl">

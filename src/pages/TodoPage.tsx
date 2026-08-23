@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { v4 as uuidv4 } from 'uuid';
 import type { TodoItem, TodoList } from '@/types';
 import WorkspacePanes, { WorkspacePaneId } from '@/components/layout/WorkspacePanes';
+import { useSidebarPane } from '@/hooks/use-sidebar-pane';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -20,6 +21,7 @@ import { Label } from '@/components/ui/label';
 const TodoPage: React.FC = () => {
   const { todoLists, addTodoList, updateTodoList, deleteTodoList, addTodoItem, updateTodoItem, deleteTodoItem } = useTodo();
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
+  const sidebar = useSidebarPane();
   const [isAddingList, setIsAddingList] = useState(false);
   const [isEditingList, setIsEditingList] = useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -186,16 +188,20 @@ const TodoPage: React.FC = () => {
 
   return (
     <AppLayout>
+      {!sidebar.ready ? null : (
       <WorkspacePanes
         listLabel="Lists"
         detailLabel="Tasks"
         activePane={activePane}
         onPaneChange={setActivePane}
+        listDefaultPx={sidebar.listDefaultPx}
+        listMinPx={sidebar.listMinPx}
         listDefaultSize={30}
         listMinSize={15}
         listMaxSize={40}
+        storageKey="todo"
         list={
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col surface-content">
           <div className="flex justify-between items-center p-4 border-b border-border/30">
             <h2 className="text-xl font-bold">To-Do Lists</h2>
             <Button onClick={() => setIsAddingList(true)} size="sm">
@@ -269,7 +275,7 @@ const TodoPage: React.FC = () => {
           
           {/* Right panel content */}
           {selectedList ? (
-            <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col">
               <div className="flex justify-between items-center p-4 border-b border-border/30">
                 <div>
                   <h2 className="text-xl font-bold">{selectedList.title}</h2>
@@ -464,6 +470,7 @@ const TodoPage: React.FC = () => {
         </div>
         }
       />
+      )}
 
       <TodoDialogs
         isAddingList={isAddingList}

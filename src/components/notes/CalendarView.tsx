@@ -257,10 +257,14 @@ const CalendarView: React.FC = () => {
       <ResizablePanelGroup
         direction="horizontal"
         className="flex-1 w-full min-h-0"
+        autoSaveId="notara-calendar-panes"
       >
         <ResizablePanel
-          defaultSize={58}
-          minSize={40}
+          /* The calendar content is capped at 380 pixels wide, so more than a
+             third of a wide window was empty padding around it. The minimum
+             stays above the 320 pixel floor the content needs. */
+          defaultSize={30}
+          minSize={24}
           className="surface-content rounded-lg border border-border min-w-[320px]"
         >
           <div className="p-4 h-full flex flex-col items-center pt-8">
@@ -306,7 +310,7 @@ const CalendarView: React.FC = () => {
 
         <ResizableHandle withHandle className="bg-border/30 hover:bg-primary/50 transition-colors" />
 
-        <ResizablePanel defaultSize={42} minSize={28} className="bg-card/30 rounded-lg p-4 border border-border/50 flex flex-col min-w-[300px]">
+        <ResizablePanel defaultSize={70} minSize={28} className="bg-card/30 rounded-lg p-4 border border-border/50 flex flex-col min-w-[300px]">
           <Tabs
             value={eventsTab}
             onValueChange={(value) => setEventsTab(value as 'upcoming' | 'selected')}

@@ -34,7 +34,7 @@ const VisionBoardPage: React.FC = () => {
       <div className="h-full min-h-0">
         <div className="flex flex-col h-full w-full">
           <div className="flex-none p-4 border-b border-border flex justify-between items-center">
-            <h2 className="text-xl font-bold">Vision Boards</h2>
+            <h2 className="text-2xl font-bold">Vision Board</h2>
             <Button onClick={() => setIsCreatingBoard(true)}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Vision Board

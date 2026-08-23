@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -7,6 +7,7 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { usePersistedPaneSize } from '@/hooks/use-persisted-pane-size';
 
 export type WorkspacePaneId = "list" | "detail";
 
@@ -43,6 +44,14 @@ interface WorkspacePanesProps {
    * remains the fallback until the group has been measured.
    */
   listDefaultPx?: number;
+  /**
+   * Name this pane is remembered under.
+   *
+   * The width the user drags to is stored per pane, so each screen keeps its
+   * own and none of them reset between sessions. Leave it unset for a pane that
+   * should always open at its default.
+   */
+  storageKey?: string;
 }
 
 /**
@@ -66,6 +75,7 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
   listMaxSize = 70,
   listMinPx = 240,
   listDefaultPx,
+  storageKey,
 }) => {
   const isMobile = useIsMobile();
   const groupRef = useRef<HTMLDivElement>(null);
@@ -80,6 +90,7 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
    */
   const userHasResized = useRef(false);
   const [groupWidth, setGroupWidth] = useState(0);
+  const { saved: savedWidth, persist: persistWidth } = usePersistedPaneSize(storageKey);
 
   /*
    * Measured rather than read off the window, because the group is not the full
@@ -116,9 +127,19 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
 
   const effectiveMin = groupWidth > 0 ? asPercent(listMinPx) : listMinSize;
 
+  /*
+   * A width the user chose beats every computed default.
+   *
+   * It is read synchronously on the first render, so it is already available
+   * when the panel mounts and reads its opening size. Only a workspace that has
+   * never been resized falls through to `listDefaultPx`, which is where the
+   * notes sidebar picks up its alignment with the header divider.
+   */
+  const openingWidth = savedWidth ?? listDefaultPx;
+
   const requestedDefault =
-    groupWidth > 0 && listDefaultPx !== undefined
-      ? asPercent(listDefaultPx)
+    groupWidth > 0 && openingWidth !== undefined
+      ? asPercent(openingWidth)
       : listDefaultSize;
 
   // The floor wins over the requested width. A default narrower than the
@@ -138,11 +159,30 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
    * changes what that pixel width is as a percentage.
    */
   useEffect(() => {
-    if (isMobile || userHasResized.current || groupWidth <= 0 || listDefaultPx === undefined) {
+    if (isMobile || userHasResized.current || groupWidth <= 0 || openingWidth === undefined) {
       return;
     }
     listPanelRef.current?.resize(effectiveDefault);
-  }, [effectiveDefault, groupWidth, isMobile, listDefaultPx]);
+  }, [effectiveDefault, groupWidth, isMobile, openingWidth]);
+
+  /**
+   * Stores the width as the user drags.
+   *
+   * Percentages are converted back to pixels here, so the pane reopens at the
+   * size it was left at rather than at the same fraction of a different window.
+   * Only a drag is recorded: the layout callback also fires for the opening
+   * size and for window resizes, and writing those back would overwrite the
+   * user's choice with a value they never picked.
+   */
+  const handleLayout = useCallback(
+    (sizes: number[]) => {
+      if (!userHasResized.current || groupWidth <= 0 || sizes.length === 0) {
+        return;
+      }
+      persistWidth((sizes[0] / 100) * groupWidth);
+    },
+    [groupWidth, persistWidth]
+  );
 
 
   if (isMobile) {
@@ -199,7 +239,11 @@ const WorkspacePanes: React.FC<WorkspacePanesProps> = ({
           beats a pane that opens at the wrong size and cannot be corrected,
           because `defaultSize` is read once at mount. */}
       {groupWidth > 0 && (
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full"
+          onLayout={handleLayout}
+        >
           <ResizablePanel
             ref={listPanelRef}
             defaultSize={effectiveDefault}
