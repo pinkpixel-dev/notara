@@ -98,11 +98,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               src="/logo.png"
               alt=""
               aria-hidden="true"
-              className="h-7 w-7 shrink-0 object-contain"
+              className="h-9 w-9 shrink-0 object-contain"
             />
-            {/* The wordmark is the first thing to go when width runs short. The
-                logo alone still identifies the app. */}
-            <span className="hidden font-poppins text-base font-semibold tracking-tight lg:inline">
+            {/* Deliberately a step above the menu's `text-sm`, so the brand
+                reads as the brand rather than as another menu entry. The
+                wordmark is still the first thing to go when width runs short;
+                the logo alone identifies the app. */}
+            <span className="hidden font-poppins text-lg font-semibold tracking-tight lg:inline">
               Notara
             </span>
           </Link>
@@ -111,8 +113,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <AppMenuBar />
 
         {/* Decorative, so it is hidden from assistive technology. The nav
-            landmark inside SectionTabs is what announces the boundary. */}
-        <span aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-border md:block" />
+            landmark inside SectionTabs is what announces the boundary. The
+            side margins are what set the sections apart from the File menu
+            rather than letting them read as one long row of controls. */}
+        <span aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-border md:mx-2 md:block" />
 
         <SectionTabs />
 
