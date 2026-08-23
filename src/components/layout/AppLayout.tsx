@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, BookOpen, Settings, Menu, Tag, Star } from 'lucide-react';
+import { Search, BookOpen, Settings, Tag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { ResizablePanelGroup } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
 import AppMenuBar from './AppMenuBar';
 import StorageStatusBadge from './StorageStatusBadge';
@@ -48,45 +48,39 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   }, [handleSearchNotes]);
 
   return (
-    <div className="h-screen flex overflow-hidden font-poppins">
+    /* A two-column grid keeps the main area beside the sidebar at every width.
+       The column width comes from the same token the sidebar renders at, so
+       the two can never disagree. Grid columns are not transitioned, because
+       animating a layout property is both janky and against the design rules. */
+    <div
+      className="grid h-screen w-full overflow-hidden surface-app font-poppins"
+      style={{
+        gridTemplateColumns: `${
+          isSidebarOpen ? 'var(--app-sidebar-width)' : 'var(--app-sidebar-width-collapsed)'
+        } minmax(0, 1fr)`,
+      }}
+    >
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <main className={cn(
-        "flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300",
-        isSidebarOpen ? "ml-64" : "ml-0"
-      )}>
-        <header className="glass-panel px-4 py-3 flex justify-between items-center border-b border-border/30 bg-card/70">
-          <div className="flex items-center gap-3">
-            {!isSidebarOpen && (
-              <Button
-                onClick={() => setIsSidebarOpen(true)}
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-secondary/50 transition-colors hover:scale-105"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            )}
+      <main className="flex min-w-0 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border surface-toolbar px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2">
             <AppMenuBar />
             <StorageStatusBadge />
-
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   asChild
                   variant="ghost"
                   size="icon"
-                  className={cn(
-                    "rounded-full hover:bg-secondary/50 transition-all hover:scale-105",
-                    isOnTagsPage && "bg-secondary/60 text-primary"
-                  )}
+                  className={cn('h-11 w-11', isOnTagsPage && 'bg-accent text-primary')}
                   aria-label="Open tags"
                 >
-                  <Link to="/tags">
-                    <Tag className="h-5 w-5" />
+                  <Link to="/tags" aria-current={isOnTagsPage ? 'page' : undefined}>
+                    <Tag className="h-5 w-5" aria-hidden="true" />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -99,14 +93,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   asChild
                   variant="ghost"
                   size="icon"
-                  className={cn(
-                    "rounded-full hover:bg-secondary/50 transition-all hover:scale-105",
-                    isOnStarredPage && "bg-secondary/60 text-primary"
-                  )}
+                  className={cn('h-11 w-11', isOnStarredPage && 'bg-accent text-primary')}
                   aria-label="Open starred notes"
                 >
-                  <Link to="/starred">
-                    <Star className="h-5 w-5" />
+                  <Link to="/starred" aria-current={isOnStarredPage ? 'page' : undefined}>
+                    <Star className="h-5 w-5" aria-hidden="true" />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -118,60 +109,21 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-secondary/50 transition-all hover:scale-105"
+                  className="h-11 w-11"
                   aria-label="Search notes"
+                  aria-keyshortcuts="Control+K Meta+K"
                   onClick={handleSearchNotes}
                 >
-                  <Search className="h-5 w-5" />
+                  <Search className="h-5 w-5" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Search</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-secondary/50 transition-all hover:scale-105"
-                >
-                  <a
-                    href="https://github.com/pinkpixel/notara#readme"
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Open documentation"
-                  >
-                    <BookOpen className="h-5 w-5" />
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Docs</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link to="/settings">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full hover:bg-secondary/50 transition-all hover:scale-105"
-                    aria-label="Open settings"
-                  >
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>Settings</TooltipContent>
+              <TooltipContent>Search notes</TooltipContent>
             </Tooltip>
           </div>
         </header>
 
-        <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="h-full animate-fade-in"
-          >
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="h-full">
             {children}
           </ResizablePanelGroup>
         </div>

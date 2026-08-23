@@ -70,50 +70,47 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Legacy Cosmic Theme Colors (preserved for compatibility)
-        cosmos: {
-          cosmic: "#121624",
-          nebula: "#9b87f5",
-          stardust: "#8B5CF6",
-          aurora: "#0EA5E9",
-          nova: "#D946EF",
-          solar: "#F97316",
-        },
-        // New Semantic Accent System
+        // Semantic accent system. Only the steps the themes consume.
         "accent-blue": {
-          50: "hsl(var(--accent-blue-50))",
-          100: "hsl(var(--accent-blue-100))",
           500: "hsl(var(--accent-blue-500))",
           600: "hsl(var(--accent-blue-600))",
-          900: "hsl(var(--accent-blue-900))",
         },
         "accent-pink": {
-          50: "hsl(var(--accent-pink-50))",
-          100: "hsl(var(--accent-pink-100))",
           500: "hsl(var(--accent-pink-500))",
           600: "hsl(var(--accent-pink-600))",
-          900: "hsl(var(--accent-pink-900))",
         },
         "accent-orange": {
-          50: "hsl(var(--accent-orange-50))",
-          100: "hsl(var(--accent-orange-100))",
           500: "hsl(var(--accent-orange-500))",
           600: "hsl(var(--accent-orange-600))",
-          900: "hsl(var(--accent-orange-900))",
         },
         "accent-purple": {
-          50: "hsl(var(--accent-purple-50))",
-          100: "hsl(var(--accent-purple-100))",
           500: "hsl(var(--accent-purple-500))",
           600: "hsl(var(--accent-purple-600))",
-          900: "hsl(var(--accent-purple-900))",
         },
         "accent-green": {
-          50: "hsl(var(--accent-green-50))",
-          100: "hsl(var(--accent-green-100))",
           500: "hsl(var(--accent-green-500))",
           600: "hsl(var(--accent-green-600))",
-          900: "hsl(var(--accent-green-900))",
+        },
+        // Status colors. Never the only signal for a state.
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        // Surface roles. See DOCS/DESIGN-SYSTEM.md.
+        surface: {
+          app: "hsl(var(--surface-app))",
+          sidebar: "hsl(var(--surface-sidebar))",
+          toolbar: "hsl(var(--surface-toolbar))",
+          content: "hsl(var(--surface-content))",
+          elevated: "hsl(var(--surface-elevated))",
+          input: "hsl(var(--surface-input))",
+          pinboard: "hsl(var(--surface-pinboard))",
+          border: "hsl(var(--surface-border))",
+          "border-strong": "hsl(var(--surface-border-strong))",
         },
       },
       borderRadius: {
@@ -138,68 +135,30 @@ export default {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
-        "twinkle": {
-          "0%": { opacity: "0.3" },
-          "50%": { opacity: "1" },
-          "100%": { opacity: "0.3" },
-        },
-        "float": {
-          "0%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
-          "100%": { transform: "translateY(0px)" },
-        },
-        "slide-in": {
-          "0%": { transform: "translateX(-10px)", opacity: "0" },
-          "100%": { transform: "translateX(0)", opacity: "1" },
-        },
         "slide-up": {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "0%": { transform: "translateY(8px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
-        "pulse": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
-        },
-        "scale": {
-          "0%": { transform: "scale(0.95)" },
-          "100%": { transform: "scale(1)" },
-        },
-        // New micro-interaction keyframes
-        "hover-lift": {
-          "0%": { transform: "translateY(0px) scale(1)" },
-          "100%": { transform: "translateY(-2px) scale(1.02)" },
-        },
-        "magnetic-pull": {
-          "0%": { transform: "scale(1)" },
-          "50%": { transform: "scale(1.05)" },
-          "100%": { transform: "scale(1.02)" },
-        },
-        "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 5px hsl(var(--accent) / 0.3)" },
-          "50%": { boxShadow: "0 0 20px hsl(var(--accent) / 0.6)" },
-        },
-        "glass-shimmer": {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+        "slide-down": {
+          "0%": { transform: "translateY(-8px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s ease-out",
-        "fade-out": "fade-out 0.5s ease-out",
-        "twinkle": "twinkle 3s ease-in-out infinite",
-        "twinkle-slow": "twinkle 5s ease-in-out infinite",
-        "float": "float 6s ease-in-out infinite",
-        "slide-in": "slide-in 0.3s ease-out",
-        "slide-up": "slide-up 0.3s ease-out",
-        "pulse": "pulse 3s ease-in-out infinite",
-        "scale": "scale 0.2s ease-out",
-        // New micro-interaction animations
-        "hover-lift": "hover-lift 0.2s ease-out",
-        "magnetic-pull": "magnetic-pull 0.3s ease-out",
-        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
-        "glass-shimmer": "glass-shimmer 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.2s ease-out",
+        "fade-out": "fade-out 0.2s ease-out",
+        "slide-up": "slide-up 0.2s ease-out",
+        "slide-down": "slide-down 0.2s ease-out",
+      },
+      width: {
+        sidebar: "var(--app-sidebar-width)",
+        "sidebar-collapsed": "var(--app-sidebar-width-collapsed)",
+      },
+      spacing: {
+        sidebar: "var(--app-sidebar-width)",
+        "sidebar-collapsed": "var(--app-sidebar-width-collapsed)",
       },
     },
   },

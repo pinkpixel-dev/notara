@@ -1,224 +1,27 @@
-/* Import Fonts */
+/* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
 
-/* Then include Tailwind directives */
+/* Surface tokens, theme definitions, and accent selection */
+@import './styles/tokens.css';
+
+/* Component styles. Every rule in these files is a descendant selector, so
+   they stay above single-class utilities regardless of import position. */
+@import './styles/markdown.css';
+@import './styles/calendar.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
-
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-
-    --primary: 258 90% 74%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --ring: 258 90% 74%;
-
-    --radius: 0.5rem;
-
-    /* Cosmic Theme Colors */
-    --cosmos-stardust: 258 90% 74%;
-    --cosmos-nebula: 210 90% 45%;
-    --cosmos-aurora: 170 90% 45%;
-    --cosmos-solar: 35 90% 55%;
-    --cosmos-nova: 300 90% 60%;
-
-    /* Accent Color System - Default Blue */
-    --accent-blue-50: 214 100% 97%;
-    --accent-blue-100: 214 95% 93%;
-    --accent-blue-500: 217 91% 60%;
-    --accent-blue-600: 221 83% 53%;
-    --accent-blue-900: 224 76% 48%;
-
-    --accent-pink-50: 327 73% 97%;
-    --accent-pink-100: 326 78% 95%;
-    --accent-pink-500: 330 81% 60%;
-    --accent-pink-600: 333 71% 51%;
-    --accent-pink-900: 336 84% 17%;
-
-    --accent-orange-50: 34 100% 97%;
-    --accent-orange-100: 32 98% 83%;
-    --accent-orange-500: 25 95% 53%;
-    --accent-orange-600: 21 90% 48%;
-    --accent-orange-900: 15 86% 30%;
-
-    --accent-purple-50: 270 100% 98%;
-    --accent-purple-100: 269 100% 95%;
-    --accent-purple-500: 258 90% 66%;
-    --accent-purple-600: 262 83% 58%;
-    --accent-purple-900: 263 69% 42%;
-
-    --accent-green-50: 138 76% 97%;
-    --accent-green-100: 140 84% 92%;
-    --accent-green-500: 142 76% 36%;
-    --accent-green-600: 142 72% 29%;
-    --accent-green-900: 140 100% 14%;
-
-    /* Glass system defaults (0 = transparent, 100 = frosted) */
-    --glass-alpha: 0.546;
-    --glass-subtle-alpha: 0.406;
-    --glass-border-alpha: 0.339;
-    --glass-blur: 20px;
-    --glass-saturate: 176%;
-    --glass-shadow-alpha: 0.269;
-
-    /* Background depth layers for glass contrast */
-    --app-bg-gradient:
-      linear-gradient(140deg, hsl(var(--background)), hsl(var(--secondary)));
-    --app-bg-texture:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.03) 1px, transparent 0);
-    --app-bg-texture-size: 18px 18px;
-  }
-
-  /* Cosmic Theme (Default) */
-  .theme-cosmic {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --primary: 258 90% 74%;
-    --ring: 258 90% 74%;
-    --cosmos-highlight: 258 90% 74%;
-    --app-bg-gradient:
-      radial-gradient(120% 120% at 12% 2%, hsl(var(--primary) / 0.13) 0%, transparent 62%),
-      linear-gradient(145deg, hsl(var(--background)), hsl(var(--secondary)));
-    --app-bg-texture:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.04) 1px, transparent 0);
-  }
-
-  /* Minimal Light Theme */
-  .theme-light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: hsl(var(--accent-blue-500));
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: hsl(var(--accent-blue-500));
-    --app-bg-gradient:
-      linear-gradient(145deg, hsl(var(--background)), hsl(var(--secondary)));
-    --app-bg-texture:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.035) 1px, transparent 0);
-  }
-
-  /* Midnight Theme */
-  .theme-midnight {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: hsl(var(--accent-blue-500));
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: hsl(var(--accent-blue-500));
-    --app-bg-gradient:
-      radial-gradient(120% 120% at 14% 2%, hsl(220 16% 30% / 0.08) 0%, transparent 62%),
-      linear-gradient(145deg, hsl(220 12% 8%), hsl(220 10% 12%));
-    --app-bg-texture:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.028) 1px, transparent 0);
-  }
-
-  /* Aurora Theme */
-  .theme-aurora {
-    color-scheme: dark;
-    --background: 218 43% 12%;
-    --foreground: 210 40% 96%;
-
-    --card: 220 38% 20%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 220 34% 24%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 258 90% 70%;
-    --primary-foreground: 220 42% 12%;
-
-    --secondary: 220 28% 30%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 220 20% 28%;
-    --muted-foreground: 220 10% 80%;
-
-    --accent: 220 24% 34%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62% 48%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 30% 40%;
-    --input: 220 24% 34%;
-
-    --ring: 258 90% 74%;
-
-    --sidebar-background: 220 34% 18%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 258 90% 70%;
-    --sidebar-primary-foreground: 220 35% 12%;
-    --sidebar-accent: 220 24% 30%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 220 26% 36%;
-    --sidebar-ring: 258 90% 70%;
-    --app-bg-gradient:
-      radial-gradient(120% 120% at 15% 0%, hsl(258 90% 70% / 0.24) 0%, transparent 62%),
-      radial-gradient(110% 110% at 85% 10%, hsl(195 85% 62% / 0.16) 0%, transparent 68%),
-      linear-gradient(140deg, hsl(219 46% 10%), hsl(223 40% 16%));
-    --app-bg-texture:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.035) 1px, transparent 0);
-  }
-}
 
 @layer base {
   * {
     @apply border-border;
   }
 
-  html, body {
+  html,
+  body {
     height: 100%;
     overflow: hidden;
   }
@@ -226,10 +29,18 @@
   body {
     @apply bg-background text-foreground font-sans overflow-hidden;
     font-family: 'Inter', 'system-ui', '-apple-system', sans-serif;
-    background-image: var(--app-bg-gradient), var(--app-bg-texture);
-    background-size: cover, var(--app-bg-texture-size);
-    background-attachment: fixed;
-    transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  /* A visible focus ring on every keyboard-focused control. Never removed,
+     never faded in. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   /* Typography utilities */
@@ -240,291 +51,64 @@
   .font-legacy {
     font-family: 'Poppins', sans-serif;
   }
-
-  #root {
-    height: 100%;
-  }
 }
 
-.hover-glow:hover {
-  filter: drop-shadow(0 0 5px hsl(var(--primary)));
+/* ==========================================================================
+   Surface utilities
+
+   One class per surface role from DOCS/DESIGN-SYSTEM.md. Use these instead of
+   improvising background colors with alpha values.
+   ========================================================================== */
+
+.surface-app {
+  background-color: hsl(var(--surface-app));
 }
 
-.cosmic-glow {
-  box-shadow: 0 0 15px 2px hsl(var(--primary) / 0.3);
+.surface-sidebar {
+  background-color: hsl(var(--surface-sidebar));
 }
 
-.btn-glow {
-  box-shadow: 0 0 10px 1px hsl(var(--primary) / 0.3);
+.surface-toolbar {
+  background-color: hsl(var(--surface-toolbar));
 }
 
-.btn-glow:hover {
-  box-shadow: 0 0 15px 3px hsl(var(--primary) / 0.4);
+.surface-content {
+  background-color: hsl(var(--surface-content));
 }
 
-.nebula-glow {
-  box-shadow: 0 0 15px 2px hsl(var(--cosmos-nebula) / 0.3);
+.surface-elevated {
+  background-color: hsl(var(--surface-elevated));
 }
 
-.nova-glow {
-  box-shadow: 0 0 15px 2px hsl(var(--cosmos-nova) / 0.3);
+.surface-input {
+  background-color: hsl(var(--surface-input));
 }
 
-.solar-glow {
-  box-shadow: 0 0 15px 2px hsl(var(--cosmos-solar) / 0.3);
+/* The pinboard is the only surface that keeps a texture. The dot grid is
+   there to support placement, not decoration. */
+.surface-pinboard {
+  background-color: hsl(var(--surface-pinboard));
+  background-image: var(--pinboard-texture);
+  background-size: var(--pinboard-texture-size);
 }
 
-.star {
-  background-color: white;
-  border-radius: 50%;
-  opacity: 0.7;
-  position: absolute;
-}
+/* ==========================================================================
+   Motion
 
-.star-small {
-  width: 1px;
-  height: 1px;
-}
+   Named transitions on transform and opacity only. No transition-all, no
+   layout property animation.
+   ========================================================================== */
 
-.star-medium {
-  width: 2px;
-  height: 2px;
-}
-
-.star-large {
-  width: 3px;
-  height: 3px;
-  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-slow {
-  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.2s ease-out;
 }
 
 .animate-slide-down {
-  animation: slideDown 0.3s ease-out;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* ===== NEW DESIGN SYSTEM UTILITIES ===== */
-
-/* Glass Effects */
-.glass-panel {
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  background: hsl(var(--card) / var(--glass-alpha));
-  border: 1px solid hsl(var(--border) / var(--glass-border-alpha));
-  box-shadow:
-    0 16px 40px hsl(var(--background) / var(--glass-shadow-alpha)),
-    inset 0 1px 0 hsl(0 0% 100% / 0.06);
-}
-
-.glass-subtle {
-  backdrop-filter: blur(calc(var(--glass-blur) * 0.8)) saturate(calc(var(--glass-saturate) - 20%));
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.8)) saturate(calc(var(--glass-saturate) - 20%));
-  background: hsl(var(--card) / var(--glass-subtle-alpha));
-  border: 1px solid hsl(var(--border) / calc(var(--glass-border-alpha) * 0.8));
-}
-
-/* Enhanced Glass Effects */
-.app-glass .glass-panel {
-  background-image:
-    radial-gradient(circle at 20% 20%, hsla(258, 90%, 74%, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, hsla(210, 90%, 45%, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, hsla(300, 90%, 60%, 0.04) 0%, transparent 50%);
-}
-
-/* App-wide glass surface styling */
-.app-glass .bg-card,
-.app-glass .bg-card\/80,
-.app-glass [class*='bg-card'],
-.app-glass .bg-background,
-.app-glass .bg-secondary,
-.app-glass .bg-muted,
-.app-glass .bg-background\/50 {
-  background: hsl(var(--card) / var(--glass-alpha)) !important;
-  background-image:
-    linear-gradient(180deg, hsl(var(--foreground) / 0.02), hsl(var(--background) / 0.02)),
-    var(--app-bg-texture) !important;
-  background-size: cover, var(--app-bg-texture-size) !important;
-  border-color: hsl(var(--border) / var(--glass-border-alpha)) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow:
-    0 18px 42px hsl(var(--background) / var(--glass-shadow-alpha)),
-    inset 0 1px 0 hsl(0 0% 100% / 0.05);
-}
-
-.app-glass .bg-card.border-r {
-  border-right-color: hsl(var(--border) / var(--glass-border-alpha)) !important;
-}
-
-.app-glass [data-panel],
-.app-glass [data-panel-id] {
-  background: hsl(var(--card) / calc(var(--glass-alpha) * 0.95)) !important;
-  border-color: hsl(var(--border) / calc(var(--glass-border-alpha) * 0.9)) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-.app-glass [role="dialog"],
-.app-glass [role="menu"],
-.app-glass [role="listbox"] {
-  background: hsl(var(--card) / calc(var(--glass-alpha) + 0.12)) !important;
-  border-color: hsl(var(--border) / var(--glass-border-alpha)) !important;
-  backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(calc(var(--glass-saturate) + 10%));
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(calc(var(--glass-saturate) + 10%));
-  box-shadow: 0 24px 48px hsl(var(--background) / calc(var(--glass-shadow-alpha) + 0.05));
-}
-
-.app-glass input,
-.app-glass textarea,
-.app-glass select {
-  background: hsl(var(--background) / calc(var(--glass-subtle-alpha) + 0.2)) !important;
-  border-color: hsl(var(--border) / calc(var(--glass-border-alpha) * 0.9)) !important;
-  backdrop-filter: blur(calc(var(--glass-blur) * 0.7));
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.7));
-}
-
-.app-glass .hover\:bg-accent:hover,
-.app-glass .hover\:bg-secondary:hover {
-  background: hsl(var(--accent) / 0.4) !important;
-  border-color: hsl(var(--border) / var(--glass-border-alpha)) !important;
-}
-
-.app-glass .border,
-.app-glass [class*='border-'] {
-  border-color: hsl(var(--border) / var(--glass-border-alpha)) !important;
-}
-
-.app-glass .bg-red-900\/30 {
-  background: hsl(0 62% 40% / 0.35) !important;
-  backdrop-filter: blur(calc(var(--glass-blur) * 0.7));
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.7));
-}
-
-.app-glass [style*="background-color: rgb(0, 0, 0)"],
-.app-glass [style*="background: rgb(0, 0, 0)"],
-.app-glass [style*="background-color: rgba(0, 0, 0"],
-.app-glass .bg-black,
-.app-glass [class*="bg-gray-900"],
-.app-glass [class*="bg-slate-900"],
-.app-glass [class*="bg-zinc-900"] {
-  background: hsl(var(--card) / var(--glass-alpha)) !important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-/* Micro-interactions */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 25px hsl(var(--foreground) / 0.1);
-}
-
-.magnetic-button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.magnetic-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-}
-
-/* Accent Color Classes */
-.accent-blue { --primary: var(--accent-blue-500); --ring: var(--accent-blue-500); }
-.accent-pink { --primary: var(--accent-pink-500); --ring: var(--accent-pink-500); }
-.accent-orange { --primary: var(--accent-orange-500); --ring: var(--accent-orange-500); }
-.accent-purple { --primary: var(--accent-purple-500); --ring: var(--accent-purple-500); }
-.accent-green { --primary: var(--accent-green-500); --ring: var(--accent-green-500); }
-
-/* Pastel Tag Pills */
-.tag-pill {
-  @apply px-3 py-1 rounded-full text-xs font-medium transition-all duration-200;
-  background: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
-  border: 1px solid hsl(var(--primary) / 0.2);
-}
-
-.tag-pill:hover {
-  background: hsl(var(--primary) / 0.2);
-  box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
-  transform: translateY(-1px);
-}
-
-/* Enhanced Buttons */
-.btn-primary {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border: 1px solid transparent;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
-}
-
-.btn-ghost {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-  background: transparent;
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border) / 0.5);
-}
-
-.btn-ghost:hover {
-  background: hsl(var(--accent) / 0.5);
-  border-color: hsl(var(--primary));
-  transform: translateY(-1px);
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  animation: slideDown 0.2s ease-out;
 }
 
 @keyframes fadeIn {
@@ -536,168 +120,76 @@
   }
 }
 
-/* Markdown content styling */
-.markdown-content {
-  @apply text-foreground;
-}
-
-.markdown-content h1 {
-  @apply text-2xl font-bold mb-4;
-}
-
-.markdown-content h2 {
-  @apply text-xl font-bold mb-3;
-}
-
-.markdown-content h3 {
-  @apply text-lg font-bold mb-2;
-}
-
-.markdown-content p {
-  @apply mb-4;
-}
-
-.markdown-content ul {
-  @apply list-disc pl-5 mb-4;
-}
-
-.markdown-content ol {
-  @apply list-decimal pl-5 mb-4;
-}
-
-.markdown-content a {
-  @apply text-primary hover:underline;
-}
-
-.markdown-content blockquote {
-  @apply pl-4 border-l-4 border-primary/50 italic my-4;
-}
-
-.markdown-content pre {
-  @apply my-4 overflow-x-auto rounded-md border border-border/30;
-  background: #282c34;
-  padding: 1rem;
-}
-
-.markdown-code-block {
-  @apply my-4 overflow-x-auto rounded-md border border-border/30;
-}
-
-.markdown-content code {
-  @apply bg-muted px-1 py-0.5 rounded font-mono text-sm;
-}
-
-.markdown-content mark {
-  @apply px-1 rounded-sm;
-  background-color: #fef08a;
-  color: inherit;
-}
-
-.markdown-content u {
-  text-decoration: underline;
-  text-decoration-thickness: 0.12em;
-}
-
-.markdown-table-wrapper {
-  @apply my-4 overflow-x-auto rounded-md border border-border/40;
-}
-
-.markdown-content table {
-  @apply w-full border-collapse text-sm;
-}
-
-.markdown-content th,
-.markdown-content td {
-  @apply border border-border/40 px-3 py-2 text-left align-top;
-}
-
-.markdown-content thead tr {
-  @apply bg-muted/60;
-}
-
-.markdown-content tbody tr:nth-child(even) {
-  @apply bg-muted/30;
-}
-
-.markdown-image {
-  @apply max-w-full h-auto rounded-md border border-border/40 my-4;
-}
-
-/* Custom button variant for cosmic theme */
-.btn-cosmic {
-  @apply bg-gradient-to-r from-primary to-primary/70 text-white hover:from-primary/90 hover:to-primary transition-all shadow-lg;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--background));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
-}
-
-/* Add this new component for cosmic button variant */
-@layer components {
-  .btn-variant-cosmic {
-    @apply bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary hover:to-primary/70 transition-all shadow-md hover:shadow-lg hover:shadow-primary/20;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Calendar customizations */
-.calendar-wrapper .rdp-root {
-  --rdp-accent-color: #9b87f5;
-  --rdp-accent-background-color: #2d2d2d30;
-  --rdp-day-height: 3rem;
-  --rdp-day-width: 3rem;
-  --rdp-day_button-height: 3rem;
-  --rdp-day_button-width: 3rem;
-  margin: 0;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.calendar-wrapper .rdp-day {
-  font-size: 1rem;
+/* The "Enable Animations" preference in Settings, and the OS-level setting,
+   land on the same rules. */
+body.motion-off,
+body.motion-off *,
+body.motion-off *::before,
+body.motion-off *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
-.calendar-wrapper .rdp-day_button:hover:not([disabled]):not([data-selected]) {
-  background-color: var(--rdp-accent-background-color);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.calendar-wrapper .rdp-months {
-  justify-content: center;
+/* ==========================================================================
+   Scrollbars
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-.calendar-wrapper .rdp-month_caption {
-  font-size: 1.25rem;
-  padding: 0.5rem 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.calendar-wrapper .rdp-weekday {
-  font-size: 1rem;
-  font-weight: 500;
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--surface-border-strong));
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
-.calendar-wrapper .rdp-nav {
-  padding: 0 1rem;
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+  background-clip: content-box;
 }
 
-.calendar-wrapper .rdp-button_previous,
-.calendar-wrapper .rdp-button_next {
-  width: 32px;
-  height: 32px;
-}
-
-.calendar-wrapper .rdp-chevron {
-  width: 18px;
-  height: 18px;
+* {
+  scrollbar-color: hsl(var(--surface-border-strong)) transparent;
+  scrollbar-width: thin;
 }

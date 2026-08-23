@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { toast } from '@/hooks/use-toast';
 
 // Theme Types
-export type ThemeMode = 'cosmic' | 'light' | 'midnight' | 'aurora';
+export type ThemeMode = 'light' | 'midnight';
 export type AccentColor = 'blue' | 'pink' | 'orange' | 'purple' | 'green';
 export type VisualizationMode = 'constellation' | 'graph';
 
@@ -12,7 +12,6 @@ interface ThemeSettings {
   visualizationMode: VisualizationMode;
   animations: boolean;
   fontSize: 'small' | 'medium' | 'large';
-  glassIntensity: number;
 }
 
 interface ThemeContextType {
@@ -25,7 +24,6 @@ interface ThemeContextType {
   setVisualizationMode: (mode: VisualizationMode) => void;
   setAnimations: (enabled: boolean) => void;
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
-  setGlassIntensity: (value: number) => void;
 
   // Convenience functions
   resetToDefaults: () => void;
@@ -37,7 +35,8 @@ interface ThemeContextType {
     mode: ThemeMode;
     name: string;
     description: string;
-    preview: string;
+    /** Solid swatch color for the theme picker. */
+    swatch: string;
   }>;
   availableAccentColors: Array<{
     color: AccentColor;
@@ -54,36 +53,33 @@ const defaultSettings: ThemeSettings = {
   visualizationMode: 'constellation',
   animations: true,
   fontSize: 'medium',
-  glassIntensity: 70,
 };
 
 // Theme metadata
 const availableThemes = [
   {
-    mode: 'cosmic' as ThemeMode,
-    name: 'Cosmic',
-    description: 'Original cosmic theme with space-inspired colors and animations',
-    preview: 'linear-gradient(135deg, #121624, #9b87f5)',
+    mode: 'midnight' as ThemeMode,
+    name: 'Midnight',
+    description: 'Dark charcoal surfaces with crisp light text',
+    swatch: '#141416',
   },
   {
     mode: 'light' as ThemeMode,
     name: 'Light',
-    description: 'Clean, crisp white backgrounds with subtle accents',
-    preview: 'linear-gradient(135deg, #ffffff, #f8fafc)',
-  },
-  {
-    mode: 'midnight' as ThemeMode,
-    name: 'Midnight',
-    description: 'Sleek dark theme with vibrant accent colors',
-    preview: 'linear-gradient(135deg, #0f172a, #1e293b)',
-  },
-  {
-    mode: 'aurora' as ThemeMode,
-    name: 'Aurora',
-    description: 'Color-rich dark theme with subtle aurora gradients',
-    preview: 'linear-gradient(135deg, #101a35, #1f3559)',
+    description: 'Soft white surfaces with dark text',
+    swatch: '#f7f7f8',
   },
 ];
+
+/**
+ * Themes that no longer exist. Anyone whose stored setting names one is moved
+ * to Midnight, which is the closest surviving dark theme.
+ */
+const retiredThemes: Record<string, ThemeMode> = {
+  cosmic: 'midnight',
+  aurora: 'midnight',
+  frost: 'midnight',
+};
 
 const availableAccentColors = [
   {
@@ -131,9 +127,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       if (!saved) return defaultSettings;
 
       const parsed = JSON.parse(saved);
-      if (parsed?.mode === 'frost') {
-        parsed.mode = 'aurora';
+      if (typeof parsed?.mode === 'string' && parsed.mode in retiredThemes) {
+        parsed.mode = retiredThemes[parsed.mode];
       }
+
+      // glassIntensity was dropped with the glass surface system.
+      delete parsed?.glassIntensity;
 
       return { ...defaultSettings, ...parsed };
     } catch (error) {
@@ -148,38 +147,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       const root = document.documentElement;
       const body = document.body;
 
-      // Remove all theme classes
-      body.classList.remove(
-        'theme-cosmic', 'theme-light', 'theme-midnight', 'theme-aurora'
-      );
-
-      // Remove all accent classes
+      body.classList.remove('theme-light', 'theme-midnight');
       body.classList.remove(
         'accent-blue', 'accent-pink', 'accent-orange', 'accent-purple', 'accent-green'
       );
 
-      // Apply theme mode class
-      switch (settings.mode) {
-        case 'cosmic':
-          body.classList.add('theme-cosmic'); // Default cosmic theme
-          break;
-        case 'light':
-          body.classList.add('theme-light');
-          break;
-        case 'midnight':
-          body.classList.add('theme-midnight');
-          break;
-        case 'aurora':
-          body.classList.add('theme-aurora');
-          break;
-      }
-
-      body.classList.add('app-glass');
-
-      // Apply accent color class
+      body.classList.add(`theme-${settings.mode}`);
       body.classList.add(`accent-${settings.accentColor}`);
 
-      // Apply font size
       root.classList.remove('text-sm', 'text-base', 'text-lg');
       switch (settings.fontSize) {
         case 'small':
@@ -193,21 +168,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           break;
       }
 
-      // Apply animation preference
-      if (!settings.animations) {
-        root.style.setProperty('--animation-duration', '0ms');
-      } else {
-        root.style.removeProperty('--animation-duration');
-      }
-
-      // Apply glass intensity (0 = transparent, 100 = frosted)
-      const normalizedIntensity = Math.max(0, Math.min(100, settings.glassIntensity)) / 100;
-      root.style.setProperty('--glass-alpha', (normalizedIntensity * 0.78).toFixed(3));
-      root.style.setProperty('--glass-subtle-alpha', (normalizedIntensity * 0.58).toFixed(3));
-      root.style.setProperty('--glass-border-alpha', (0.08 + normalizedIntensity * 0.37).toFixed(3));
-      root.style.setProperty('--glass-blur', `${Math.round(normalizedIntensity * 28)}px`);
-      root.style.setProperty('--glass-saturate', `${Math.round(120 + normalizedIntensity * 80)}%`);
-      root.style.setProperty('--glass-shadow-alpha', (0.08 + normalizedIntensity * 0.27).toFixed(3));
+      // The stylesheet keys off this class so the preference applies to every
+      // transition and entrance animation, not just a handful of components.
+      body.classList.toggle('motion-off', !settings.animations);
     };
 
     applyTheme();
@@ -262,11 +225,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     });
   };
 
-  const setGlassIntensity = (value: number) => {
-    const clampedValue = Math.max(0, Math.min(100, value));
-    setSettings(prev => ({ ...prev, glassIntensity: clampedValue }));
-  };
-
   const resetToDefaults = () => {
     setSettings(defaultSettings);
     toast({
@@ -291,14 +249,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       // Validate the imported settings
       if (typeof imported === 'object' && imported !== null) {
         const validSettings: ThemeSettings = {
-          mode: availableThemes.some(t => t.mode === imported.mode) ? imported.mode : defaultSettings.mode,
+          mode: availableThemes.some(t => t.mode === imported.mode)
+            ? imported.mode
+            : retiredThemes[imported.mode] ?? defaultSettings.mode,
           accentColor: availableAccentColors.some(c => c.color === imported.accentColor) ? imported.accentColor : defaultSettings.accentColor,
           visualizationMode: ['constellation', 'graph'].includes(imported.visualizationMode) ? imported.visualizationMode : defaultSettings.visualizationMode,
           animations: typeof imported.animations === 'boolean' ? imported.animations : defaultSettings.animations,
           fontSize: ['small', 'medium', 'large'].includes(imported.fontSize) ? imported.fontSize : defaultSettings.fontSize,
-          glassIntensity: typeof imported.glassIntensity === 'number'
-            ? Math.max(0, Math.min(100, imported.glassIntensity))
-            : defaultSettings.glassIntensity,
         };
 
         setSettings(validSettings);
@@ -327,7 +284,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setVisualizationMode,
     setAnimations,
     setFontSize,
-    setGlassIntensity,
     resetToDefaults,
     exportSettings,
     importSettings,

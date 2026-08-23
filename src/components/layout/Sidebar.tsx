@@ -3,189 +3,189 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   FileText, Star, Image, MessageSquare, CheckSquare,
-  Calendar, ChevronLeft, Plus, Settings, FileCode, BookOpen,
-  Tag
+  Calendar, PanelLeftClose, PanelLeftOpen, Settings, FileCode, BookOpen, Sparkle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
+const navItems = [
+  { name: 'Notes', icon: FileText, path: '/' },
+  { name: 'To-Do', icon: CheckSquare, path: '/todos' },
+  { name: 'Calendar', icon: Calendar, path: '/calendar' },
+  { name: 'Vision Board', icon: Image, path: '/vision-board' },
+  { name: 'Constellations', icon: Sparkle, path: '/constellations' },
+  { name: 'AI Assistant', icon: MessageSquare, path: '/ai-assistant' },
+];
+
+const utilityItems = [
+  { name: 'Settings', icon: Settings, to: '/settings' as const },
+  { name: 'Markdown Cheatsheet', icon: FileCode, to: '/markdown-cheatsheet' as const },
+];
+
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
 
-  const navItems = [
-    { name: 'Notes', icon: FileText, path: '/' },
-    { name: 'Constellations', icon: Star, path: '/constellations' },
-    { name: 'Vision Board', icon: Image, path: '/vision-board' },
-    { name: 'AI Assistant', icon: MessageSquare, path: '/ai-assistant' },
-    { name: 'To-Do', icon: CheckSquare, path: '/todos' },
-    { name: 'Calendar', icon: Calendar, path: '/calendar' },
-    { name: 'Tags', icon: Tag, path: '/tags' },
-    { name: 'Starred Notes', icon: Star, path: '/starred' }
-  ];
-
   return (
     <aside
-      className={cn(
-        "fixed top-0 left-0 z-40 h-screen transition-all duration-300 border-r border-border/30 backdrop-blur-md bg-card/80",
-        isOpen ? "w-64" : "w-20"
-      )}
+      className="flex h-full min-h-0 w-full flex-col surface-sidebar border-r border-border"
+      aria-label="Main navigation"
     >
-      <div className={cn("h-full flex flex-col", !isOpen && "items-center")}>
-        <div className="flex items-center justify-between p-4 border-b border-border/30 w-full">
-          {isOpen ? (
-            <>
-              <Link to="/" className="flex items-center space-x-5">
-                <div className="w-16 h-16 flex items-center justify-center">
-                  <img
-                    src="/logo.png"
-                    alt="Notara Logo"
-                    className="w-14 h-14 object-cover"
-                    style={{ filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.5))' }}
-                  />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white"
-                  style={{
-                    filter: "drop-shadow(0 0 2px rgba(255, 255, 255, 0.52))",
-                  }}
-                >
-                  Notara
-              </h2>
-              </Link>
-              <Button
-                onClick={() => setIsOpen(false)}
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-secondary/50 transition-colors hover:scale-105"
+      <div
+        className={cn(
+          'flex shrink-0 items-center border-b border-border p-3',
+          isOpen ? 'justify-between gap-2' : 'justify-center'
+        )}
+      >
+        {isOpen ? (
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1 hover:bg-accent"
+          >
+            <img src="/logo.png" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 object-contain" />
+            <span className="truncate text-lg font-semibold tracking-tight">Notara</span>
+          </Link>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/"
+                className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-accent"
+                aria-label="Notara home"
               >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            </>
-          ) : (
+                <img src="/logo.png" alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Notara home</TooltipContent>
+          </Tooltip>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
-              onClick={() => setIsOpen(true)}
+              onClick={() => setIsOpen(!isOpen)}
               variant="ghost"
               size="icon"
-              className="w-16 h-16 flex items-center justify-center rounded-full hover:bg-secondary/40 transition-colors"
+              className={cn('h-11 w-11 shrink-0', !isOpen && 'hidden')}
+              aria-label="Collapse sidebar"
+              aria-expanded={isOpen}
             >
-                <img
-                  src="/logo.png"
-                  alt="Notara Logo"
-                  className="h-14 w-14 object-cover"
-                  style={{ filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.52))' }}
-                />
+              <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
             </Button>
-          )}
+          </TooltipTrigger>
+          <TooltipContent side="right">Collapse sidebar</TooltipContent>
+        </Tooltip>
+      </div>
+
+      {!isOpen && (
+        <div className="flex shrink-0 justify-center border-b border-border p-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setIsOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11"
+                aria-label="Expand sidebar"
+                aria-expanded={false}
+              >
+                <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
         </div>
+      )}
 
-        <nav className="flex-1 overflow-y-auto px-3 py-2">
-          <div className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-
-              return (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover-grow group",
-                    isActive
-                      ? "bg-primary/20 text-primary border-gradient"
-                      : "hover:bg-secondary/30 hover:text-primary",
-                    !isOpen && "justify-center px-2"
-                  )}
-                >
-                  <item.icon className={cn(
-                    "w-5 h-5 transition-all",
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
-                  )} />
-                  {isOpen && (
-                    <span className={cn(
-                      "font-medium transition-all",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
-                    )}>{item.name}</span>
-                  )}
-
-                  {isActive && isOpen && (
-                    <div className="ml-auto w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
-        </nav>
-
-        <div
-          className={cn(
-            "p-4 border-t border-border/30",
-            isOpen
-              ? "flex w-full items-center justify-start gap-3"
-              : "w-full flex flex-col items-center gap-2"
-          )}
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
+      <nav className="min-h-0 flex-1 overflow-y-auto p-2">
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const link = (
               <Link
-                to="/settings"
-                className="group flex h-11 w-11 items-center justify-center rounded-full bg-secondary/30 backdrop-blur transition-all hover:bg-secondary/50 hover:scale-105"
-                aria-label="Open settings"
-              >
-                <Settings className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
-                <span className="sr-only">Settings</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-sm">Settings</div>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a
-                href="https://github.com/pinkpixel/notara#readme"
-                target="_blank"
-                rel="noreferrer"
-                className="group flex h-11 w-11 items-center justify-center rounded-full bg-secondary/30 backdrop-blur transition-all hover:bg-secondary/50 hover:scale-105"
-                aria-label="Open documentation"
-              >
-                <BookOpen className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
-                <span className="sr-only">Documentation</span>
-              </a>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-sm">Docs</div>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to="/markdown-cheatsheet"
+                to={item.path}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  "group flex h-11 w-11 items-center justify-center rounded-full bg-secondary/30 backdrop-blur transition-all hover:bg-secondary/50 hover:scale-105",
-                  location.pathname === '/markdown-cheatsheet' && "ring-2 ring-primary/50"
+                  'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-accent text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  !isOpen && 'justify-center px-0'
                 )}
-                aria-label="Open markdown cheatsheet"
               >
-                <FileCode
-                  className={cn(
-                    "h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary",
-                    location.pathname === '/markdown-cheatsheet' && "text-primary"
-                  )}
-                />
-                <span className="sr-only">Markdown Cheatsheet</span>
+                <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                {isOpen ? (
+                  <span className="truncate">{item.name}</span>
+                ) : (
+                  <span className="sr-only">{item.name}</span>
+                )}
+                {isActive && isOpen && (
+                  <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                )}
+              </Link>
+            );
+
+            return (
+              <li key={item.name}>
+                {isOpen ? (
+                  link
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>{link}</TooltipTrigger>
+                    <TooltipContent side="right">{item.name}</TooltipContent>
+                  </Tooltip>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div
+        className={cn(
+          'flex shrink-0 gap-1 border-t border-border p-2',
+          isOpen ? 'flex-row items-center' : 'flex-col items-center'
+        )}
+      >
+        {utilityItems.map((item) => (
+          <Tooltip key={item.name}>
+            <TooltipTrigger asChild>
+              <Link
+                to={item.to}
+                aria-current={location.pathname === item.to ? 'page' : undefined}
+                className={cn(
+                  'flex h-11 w-11 items-center justify-center rounded-md transition-colors',
+                  location.pathname === item.to
+                    ? 'bg-accent text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <item.icon className="h-5 w-5" aria-hidden="true" />
+                <span className="sr-only">{item.name}</span>
               </Link>
             </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-sm">Markdown Cheatsheet</div>
-            </TooltipContent>
+            <TooltipContent side={isOpen ? 'top' : 'right'}>{item.name}</TooltipContent>
           </Tooltip>
-        </div>
+        ))}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a
+              href="https://github.com/pinkpixel-dev/notara#readme"
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
+              <span className="sr-only">Documentation</span>
+            </a>
+          </TooltipTrigger>
+          <TooltipContent side={isOpen ? 'top' : 'right'}>Documentation</TooltipContent>
+        </Tooltip>
       </div>
     </aside>
   );

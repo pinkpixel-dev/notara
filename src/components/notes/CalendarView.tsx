@@ -261,7 +261,7 @@ const CalendarView: React.FC = () => {
         <ResizablePanel
           defaultSize={58}
           minSize={40}
-          className="bg-card/50 rounded-lg border border-border/50 backdrop-blur-sm shadow-lg min-w-[400px]"
+          className="surface-content rounded-lg border border-border min-w-[320px]"
         >
           <div className="p-4 h-full flex flex-col items-center pt-8">
             <div className="calendar-wrapper w-full max-w-[380px]">

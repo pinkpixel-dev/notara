@@ -4,14 +4,29 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🎨 Interface
+
+- Rebuilt the styling on semantic surface tokens. Each theme now assigns one color per surface role (app, sidebar, toolbar, content, elevated, input, pinboard) instead of stacking translucent layers.
+- Removed the glass surface system, including the app-wide blur overrides, the frosted panel classes, and the glow utilities.
+- Removed every app gradient and the page background texture. The pinboard keeps its dot grid, which is there to help you place items.
+- Fixed the collapsed sidebar, which used to sit on top of the main area and hide about 80 pixels of it. The shell is now a grid whose column width comes from the same token the sidebar renders at, so the two can no longer disagree.
+- Icon buttons now hold a 44 pixel touch target, and every one has an accessible name.
+- The Enable Animations switch now actually stops transitions and entrance animations. It previously set a variable nothing read.
+- Notara now respects the operating system's reduced motion setting.
+
 ### 💥 Breaking changes
 
+- Removed the Cosmic and Aurora themes. Both were built entirely from gradient backgrounds, which the flat direction does not allow. If you were using either one, Notara moves you to Midnight automatically.
+- Removed the Glass Intensity setting. It has nothing left to adjust now that glass surfaces are gone.
 - Removed the optional Supabase account system and its authentication routes.
 - Removed the unfinished GitHub, Google Drive, and Dropbox integrations.
 - Removed legacy OAuth functions, proxy code, environment variables, and stored integration credentials.
 
 ### 🧹 Maintenance
 
+- Split `src/index.css` into `src/styles/tokens.css`, `src/styles/markdown.css`, and `src/styles/calendar.css`, bringing it under the 500-line limit.
+- Removed the unused legacy Tailwind colors, keyframes, and animations left over from the cosmic theme.
+- Deleted the unreferenced `ThemeSelector` and `ThemeSwitcher` components. The Settings page had already replaced both.
 - Removed the `@supabase/supabase-js` and `idb` dependencies.
 - Moved the remaining Pollinations controls into an AI & Data settings tab.
 - Updated the in-app version source to read from `package.json`.

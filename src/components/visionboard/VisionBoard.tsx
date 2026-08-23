@@ -338,19 +338,13 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
 
   return (
     <div
-      className="h-full w-full relative overflow-auto bg-background"
+      className="surface-pinboard h-full w-full relative overflow-auto"
       onMouseMove={handleMouseMove}
       onMouseUp={handleDragEnd}
       onMouseLeave={handleDragEnd}
       style={{
         minHeight: '600px',
         minWidth: '100%',
-        backgroundImage: `
-          radial-gradient(circle at 20px 20px, hsl(var(--muted)) 1px, transparent 0),
-          radial-gradient(circle at 80px 80px, hsl(var(--muted)) 1px, transparent 0)
-        `,
-        backgroundSize: '100px 100px',
-        backgroundOpacity: '0.3',
         userSelect: draggedItem ? 'none' : 'auto',
         cursor: draggedItem ? 'grabbing' : 'default'
       }}
@@ -424,7 +418,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
           >
             {item.type === 'text' ? (
               <div
-                className="relative bg-card/80 backdrop-blur-sm p-3 rounded-lg shadow-md border"
+                className="relative surface-elevated p-3 rounded-lg border border-border"
                 style={{
                   width: item.size?.width ?? 280,
                   height: item.size?.height ?? 180,
@@ -512,7 +506,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
                   <textarea
                     value={editingTextContent}
                     onChange={e => setEditingTextContent(e.target.value)}
-                    className="w-full h-[calc(100%-2.25rem)] p-2 rounded bg-background/60 border border-border/40 resize-none"
+                    className="w-full h-[calc(100%-2.25rem)] p-2 rounded surface-input border border-border resize-none"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -528,7 +522,7 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
                 )}
 
                 <div
-                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm bg-background/70 border border-border/50"
+                  className="absolute right-1 bottom-1 w-4 h-4 cursor-nwse-resize rounded-sm surface-elevated border border-border"
                   onMouseDown={(e) => handleResizeStart(e, item)}
                   title="Resize"
                 />

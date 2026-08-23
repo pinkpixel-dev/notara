@@ -1,0 +1,55 @@
+/* ==========================================================================
+   react-day-picker overrides
+   ========================================================================== */
+
+.calendar-wrapper .rdp-root {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--surface-hover));
+  --rdp-day-height: 3rem;
+  --rdp-day-width: 3rem;
+  --rdp-day_button-height: 3rem;
+  --rdp-day_button-width: 3rem;
+  margin: 0;
+}
+
+.calendar-wrapper .rdp-day {
+  font-size: 1rem;
+}
+
+.calendar-wrapper .rdp-day_button:hover:not([disabled]):not([data-selected]) {
+  background-color: var(--rdp-accent-background-color);
+}
+
+.calendar-wrapper .rdp-day_button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.calendar-wrapper .rdp-months {
+  justify-content: center;
+}
+
+.calendar-wrapper .rdp-month_caption {
+  font-size: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.calendar-wrapper .rdp-weekday {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.calendar-wrapper .rdp-nav {
+  padding: 0 1rem;
+}
+
+.calendar-wrapper .rdp-button_previous,
+.calendar-wrapper .rdp-button_next {
+  width: 44px;
+  height: 44px;
+}
+
+.calendar-wrapper .rdp-chevron {
+  width: 18px;
+  height: 18px;
+}

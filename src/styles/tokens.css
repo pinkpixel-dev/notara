@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Notara surface tokens
+
+   Every theme assigns one color per surface role. Components consume the role
+   tokens (or the shadcn aliases mapped onto them) instead of improvising
+   alpha values. See DOCS/DESIGN-SYSTEM.md for the role table.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* ---- Layout ---- */
+    --app-sidebar-width: 16rem;
+    --app-sidebar-width-collapsed: 4.5rem;
+    --radius: 0.5rem;
+
+    /* ---- Accent color system ---- */
+    --accent-blue-500: 217 91% 60%;
+    --accent-blue-600: 221 83% 53%;
+
+    --accent-pink-500: 330 81% 60%;
+    --accent-pink-600: 333 71% 51%;
+
+    --accent-orange-500: 25 95% 53%;
+    --accent-orange-600: 21 90% 48%;
+
+    --accent-purple-500: 258 90% 66%;
+    --accent-purple-600: 262 83% 58%;
+
+    --accent-green-500: 142 65% 45%;
+    --accent-green-600: 142 68% 36%;
+
+    --primary: var(--accent-pink-500);
+    --primary-foreground: 0 0% 100%;
+
+    /* ---- Pinboard texture (the one texture exception) ---- */
+    --pinboard-texture:
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.07) 1px, transparent 0);
+    --pinboard-texture-size: 24px 24px;
+  }
+
+  /* ==== Midnight: the default theme, and the fallback before the theme
+     provider has applied a class to the body. ============================= */
+  :root,
+  .theme-midnight {
+    color-scheme: dark;
+
+    --surface-app: 240 5% 8%;
+    --surface-sidebar: 240 5% 11%;
+    --surface-toolbar: 240 5% 11%;
+    --surface-content: 240 5% 10%;
+    --surface-elevated: 240 5% 14%;
+    --surface-input: 240 5% 15%;
+    --surface-hover: 240 5% 17%;
+    --surface-pinboard: 240 5% 9%;
+
+    --surface-border: 240 4% 20%;
+    --surface-border-strong: 240 4% 30%;
+
+    --foreground: 0 0% 96%;
+    --muted-foreground: 240 5% 64%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 65% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 6% 10%;
+  }
+
+  /* ==== Light ============================================================ */
+  .theme-light {
+    color-scheme: light;
+
+    --surface-app: 240 10% 97%;
+    --surface-sidebar: 240 10% 95%;
+    --surface-toolbar: 0 0% 100%;
+    --surface-content: 0 0% 100%;
+    --surface-elevated: 0 0% 100%;
+    --surface-input: 0 0% 100%;
+    --surface-hover: 240 6% 93%;
+    --surface-pinboard: 240 10% 96%;
+
+    --surface-border: 240 6% 88%;
+    --surface-border-strong: 240 6% 76%;
+
+    /* Dark dots on a near-white board need more alpha to stay readable. */
+    --pinboard-texture:
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.16) 1px, transparent 0);
+
+    --foreground: 240 10% 10%;
+    --muted-foreground: 240 4% 42%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 68% 33%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 90% 42%;
+    --warning-foreground: 0 0% 100%;
+  }
+
+  /* ==== shadcn aliases mapped onto the surface roles ======================
+     Existing components use bg-card, bg-popover, border-border and friends.
+     These aliases point those utilities at the role tokens, so a new theme
+     only has to define the roles above.
+
+     These are declared on BOTH :root and body on purpose. A var() reference is
+     substituted using the values computed on the element that declares it, and
+     the theme class lives on <body>. Declaring them only on :root would freeze
+     every alias at the default theme's colors, because :root never sees the
+     theme class. :root still gets them so the page is styled before the theme
+     provider runs.
+     ====================================================================== */
+  :root,
+  body {
+    --background: var(--surface-app);
+    --card: var(--surface-content);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-elevated);
+    --popover-foreground: var(--foreground);
+
+    --secondary: var(--surface-elevated);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--surface-elevated);
+    --accent: var(--surface-hover);
+    --accent-foreground: var(--foreground);
+
+    --border: var(--surface-border);
+    --input: var(--surface-border);
+    --ring: var(--primary);
+
+    --sidebar-background: var(--surface-sidebar);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--surface-hover);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--surface-border);
+    --sidebar-ring: var(--primary);
+  }
+
+  /* ==== Accent selection ================================================= */
+  .accent-blue { --primary: var(--accent-blue-500); }
+  .accent-pink { --primary: var(--accent-pink-500); }
+  .accent-orange { --primary: var(--accent-orange-500); }
+  .accent-purple { --primary: var(--accent-purple-500); }
+  .accent-green { --primary: var(--accent-green-500); }
+
+  /* Orange and green need their darker step in the light theme, where white
+     button text sits on the accent against a near-white page. */
+  .theme-light.accent-orange { --primary: var(--accent-orange-600); }
+  .theme-light.accent-green { --primary: var(--accent-green-600); }
+
+
+}

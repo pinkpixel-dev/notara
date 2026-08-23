@@ -11,7 +11,7 @@ const MarkdownCheatsheetPage: React.FC = () => {
       <ResizablePanel defaultSize={65} minSize={50}>
         <div className="h-full overflow-y-auto px-6 py-6">
           <div className="mx-auto max-w-5xl">
-          <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-cosmos-nebula to-cosmos-aurora bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-6 text-center">
             Markdown Cheat Sheet
           </h1>
           <p className="text-muted-foreground text-center mb-8">
@@ -559,8 +559,8 @@ Not visible in rendered Markdown
       <ResizableHandle withHandle className="bg-border/30" />
 
       <ResizablePanel defaultSize={35} minSize={25}>
-        <div className="h-full overflow-y-auto bg-card/50 backdrop-blur-xl border-l border-border/40 px-5 py-6 space-y-6">
-          <Card className="glass-panel">
+        <div className="h-full overflow-y-auto surface-content border-l border-border px-5 py-6 space-y-6">
+          <Card className="surface-elevated">
             <CardHeader>
               <CardTitle className="text-lg">Quick Reference</CardTitle>
             </CardHeader>
@@ -588,7 +588,7 @@ Not visible in rendered Markdown
             </CardContent>
           </Card>
 
-          <Card className="glass-panel">
+          <Card className="surface-elevated">
             <CardHeader>
               <CardTitle className="text-lg">Keyboard Shortcuts</CardTitle>
             </CardHeader>
@@ -616,7 +616,7 @@ Not visible in rendered Markdown
             </CardContent>
           </Card>
 
-          <Card className="glass-panel">
+          <Card className="surface-elevated">
             <CardHeader>
               <CardTitle className="text-lg">Templates & Tips</CardTitle>
             </CardHeader>

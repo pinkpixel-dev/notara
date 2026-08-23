@@ -398,7 +398,7 @@ const ConstellationView: React.FC = () => {
 
   // Similarity controls component
   const SimilarityControls = () => (
-    <Card className="absolute top-4 right-4 w-64 sm:w-72 bg-card/95 backdrop-blur-md border-border/50 shadow-lg">
+    <Card className="absolute top-4 right-4 w-64 sm:w-72 surface-elevated border-border">
       <CardContent className="p-4">
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5a4 4 0 0 1 7 0"/><path d="M8 12a4 4 0 0 0 8 0"/></svg>
@@ -446,14 +446,7 @@ const ConstellationView: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full relative bg-background overflow-hidden"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 25% 25%, hsl(var(--muted)) 1px, transparent 0),
-          radial-gradient(circle at 75% 75%, hsl(var(--muted)) 1px, transparent 0)
-        `,
-        backgroundSize: '100px 100px'
-      }}
+      className="w-full h-full relative surface-app overflow-hidden"
     >
       <canvas
         ref={canvasRef}
@@ -476,7 +469,7 @@ const ConstellationView: React.FC = () => {
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-4 right-4 sm:left-4 sm:right-auto sm:max-w-md">
-        <div className="bg-card/90 backdrop-blur-sm p-3 rounded-lg border border-border/50 shadow-lg">
+        <div className="surface-elevated p-3 rounded-lg border border-border">
           <div className="text-sm space-y-2">
             <p className="font-medium text-foreground flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>

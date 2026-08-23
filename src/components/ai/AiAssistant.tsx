@@ -2009,7 +2009,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
       <SummaryHistoryDialog />
 
       <div className="grid h-full gap-4 xl:grid-cols-[minmax(0,2.25fr)_minmax(300px,1fr)]">
-        <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/80 backdrop-blur-xl shadow-xl">
+        <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border surface-content">
           <div className="flex items-center gap-3 border-b border-border/40 bg-card/40 px-4 py-3 sm:px-6">
             <MessageSquare className="h-5 w-5 text-primary" />
             <div className="flex flex-col">
@@ -2076,8 +2076,8 @@ Focus on finding meaningful relationships and insights rather than just summariz
                 <div
                   className={`max-w-[80%] p-3 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl ${
                     message.sender === 'user'
-                      ? 'bg-gradient-to-r from-primary to-primary/80 text-white cosmic-glow'
-                      : 'bg-secondary/80 backdrop-blur-md text-secondary-foreground'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground'
                   }`}
                 >
                   <div className="prose prose-sm dark:prose-invert transition-all duration-200">
@@ -2134,7 +2134,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
 
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-secondary/80 backdrop-blur-sm text-secondary-foreground px-4 py-2 rounded-lg shadow-lg">
+                <div className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg border border-border">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
                     <div className="w-2 h-2 rounded-full bg-current animate-pulse" style={{ animationDelay: '0.2s' }} />
@@ -2147,44 +2147,44 @@ Focus on finding meaningful relationships and insights rather than just summariz
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-border/40 bg-card/70 backdrop-blur-md px-4 py-3 sm:px-6 sm:py-4">
+          <div className="border-t border-border surface-toolbar px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex flex-wrap gap-2 mb-3">
               <Button
-                variant="cosmic"
+                variant="secondary"
                 size="sm"
                 onClick={handleGenerateFocusPrompt}
                 disabled={isProcessing}
-                className="text-xs gap-1 transition-all hover:scale-105 btn-glow"
+                className="gap-1 text-xs"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L7 7.5V13l-2 1.5L10 21.5l5-7 5 7 5-7-5-7 5-7L12 2z"/></svg>
                 Generate Focus Prompt
               </Button>
               <Button
-                variant="cosmic"
+                variant="secondary"
                 size="sm"
                 onClick={handleSummarizeNotes}
                 disabled={isProcessing}
-                className="text-xs gap-1 transition-all hover:scale-105 btn-glow"
+                className="gap-1 text-xs"
               >
                 <FileText className="w-3 h-3" />
                 Summarize Notes
               </Button>
               <Button
-                variant="cosmic"
+                variant="secondary"
                 size="sm"
                 onClick={handleAnalyzeConnections}
                 disabled={isProcessing || (visionBoards.length === 0 && notes.length < 2)}
-                className="text-xs gap-1 transition-all hover:scale-105 btn-glow"
+                className="gap-1 text-xs"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                 Analyze Connections
               </Button>
               <Button
-                variant="cosmic"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowImagePrompt(!showImagePrompt)}
                 disabled={isProcessing}
-                className="text-xs gap-1 transition-all hover:scale-105 btn-glow"
+                className="gap-1 text-xs"
               >
                 <ImageIcon className="w-3 h-3" />
                 Generate Image
@@ -2207,7 +2207,6 @@ Focus on finding meaningful relationships and insights rather than just summariz
                         onClick={handleGenerateImage}
                         disabled={isProcessing || !imagePrompt.trim()}
                         size="sm"
-                        className="cosmic-glow"
                       >
                         <Check className="w-4 h-4" />
                       </Button>
@@ -2262,7 +2261,6 @@ Focus on finding meaningful relationships and insights rather than just summariz
               <Button
                 onClick={handleSendMessage}
                 disabled={isProcessing || !inputMessage.trim()}
-                className="cosmic-glow transition-transform hover:scale-105"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </Button>
@@ -2270,7 +2268,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
           </div>
         </section>
 
-        <aside className="hidden xl:flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/60 backdrop-blur-xl shadow-xl">
+        <aside className="hidden xl:flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border surface-content">
           <div className="flex items-center justify-between border-b border-border/30 px-6 py-4">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">Session Dashboard</h3>
@@ -2280,7 +2278,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
-            <Card className="glass-panel shadow-none">
+            <Card className="surface-elevated shadow-none">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Session stats</CardTitle>
               </CardHeader>
@@ -2306,7 +2304,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
               </CardContent>
             </Card>
 
-            <Card className="glass-panel shadow-none">
+            <Card className="surface-elevated shadow-none">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Recent messages</CardTitle>
               </CardHeader>
@@ -2334,7 +2332,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
               </CardContent>
             </Card>
 
-            <Card className="glass-panel shadow-none">
+            <Card className="surface-elevated shadow-none">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Saved chats</CardTitle>
               </CardHeader>
@@ -2389,7 +2387,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
               </CardContent>
             </Card>
 
-            <Card className="glass-panel shadow-none">
+            <Card className="surface-elevated shadow-none">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Latest summaries</CardTitle>
               </CardHeader>

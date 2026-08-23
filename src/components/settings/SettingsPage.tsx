@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Share2, X } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, Share2, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/context/ThemeContext';
 import { APP_VERSION } from '@/lib/app-info';
@@ -20,7 +19,7 @@ const SettingsPage: React.FC = () => {
   const [spellCheck, setSpellCheck] = useState(true);
   const {
     settings, setThemeMode, setAccentColor, setFontSize, setAnimations,
-    setGlassIntensity, resetToDefaults, availableThemes, availableAccentColors,
+    resetToDefaults, availableThemes, availableAccentColors,
   } = useTheme();
   const navigate = useNavigate();
 
@@ -79,13 +78,22 @@ const SettingsPage: React.FC = () => {
                         <button
                           type="button"
                           key={theme.mode}
-                          className={`rounded-lg border-2 p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          aria-pressed={settings.mode === theme.mode}
+                          className={`rounded-lg border-2 p-3 text-left transition-colors ${
                             settings.mode === theme.mode ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                           }`}
                           onClick={() => setThemeMode(theme.mode)}
                         >
-                          <span className="mb-2 block h-12 w-full rounded-md" style={{ background: theme.preview }} />
-                          <span className="block text-sm font-medium">{theme.name}</span>
+                          <span
+                            className="mb-2 block h-12 w-full rounded-md border border-border"
+                            style={{ backgroundColor: theme.swatch }}
+                          />
+                          <span className="block text-sm font-medium">
+                            {theme.name}
+                            {settings.mode === theme.mode && (
+                              <span className="ml-2 text-xs font-normal text-primary">Selected</span>
+                            )}
+                          </span>
                           <span className="block text-xs text-muted-foreground">{theme.description}</span>
                         </button>
                       ))}
@@ -99,14 +107,23 @@ const SettingsPage: React.FC = () => {
                         <button
                           type="button"
                           key={color.color}
-                          className={`h-8 w-8 rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                            settings.accentColor === color.color ? 'border-foreground' : 'border-border'
-                          }`}
-                          style={{ backgroundColor: color.hexValue }}
+                          aria-pressed={settings.accentColor === color.color}
+                          className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-transparent transition-colors hover:border-border"
                           onClick={() => setAccentColor(color.color)}
                           title={color.name}
                           aria-label={`Use ${color.name} accent color`}
-                        />
+                        >
+                          <span
+                            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
+                              settings.accentColor === color.color ? 'border-foreground' : 'border-border'
+                            }`}
+                            style={{ backgroundColor: color.hexValue }}
+                          >
+                            {settings.accentColor === color.color && (
+                              <Check className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />
+                            )}
+                          </span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -123,24 +140,13 @@ const SettingsPage: React.FC = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="glass-intensity">Glass Intensity</Label>
-                      <span className="text-xs text-muted-foreground">
-                        {settings.glassIntensity === 0 ? 'Transparent' : settings.glassIntensity === 100 ? 'Frosted' : `${settings.glassIntensity}%`}
-                      </span>
-                    </div>
-                    <Slider
-                      id="glass-intensity" min={0} max={100} step={1}
-                      value={[settings.glassIntensity]}
-                      onValueChange={(value) => setGlassIntensity(value[0] ?? 0)}
-                      aria-label="Glass intensity"
-                    />
-                    <p className="text-xs text-muted-foreground">Adjusts glass surfaces from transparent to frosted across the app.</p>
-                  </div>
-
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="animations">Enable Animations</Label>
+                    <div className="space-y-1 pr-4">
+                      <Label htmlFor="animations">Enable Animations</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Turn this off to stop transitions and entrance animations.
+                      </p>
+                    </div>
                     <Switch id="animations" checked={settings.animations} onCheckedChange={setAnimations} />
                   </div>
                 </CardContent>
