@@ -18,6 +18,8 @@ pub fn run() {
             commands::move_workspace_entry,
             commands::delete_workspace_entry,
             commands::preview_workspace_deletion,
+            commands::write_workspace_note,
+            commands::workspace_note_revision,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

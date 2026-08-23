@@ -8,7 +8,7 @@
 import { readDir } from '@tauri-apps/plugin-fs';
 import type { RootDirectoryHandle } from '@/lib/filesystem';
 import {
-  IGNORED_DIRECTORIES,
+  isIgnoredDirectory,
   isMarkdownFile,
   joinRelative,
   markdownTitle,
@@ -82,7 +82,7 @@ const scanTauriDirectory = async (
       continue;
     }
     if (entry.isDirectory) {
-      if (IGNORED_DIRECTORIES.has(entry.name)) {
+      if (isIgnoredDirectory(entry.name, directory)) {
         continue;
       }
       await scanTauriDirectory(absoluteRoot, joinRelative(directory, entry.name), depth + 1, state);
@@ -111,7 +111,7 @@ const scanBrowserDirectory = async (
 
   for await (const [name, entry] of entriesOf(handle)) {
     if (entry.kind === 'directory') {
-      if (IGNORED_DIRECTORIES.has(name)) {
+      if (isIgnoredDirectory(name, directory)) {
         continue;
       }
       await scanBrowserDirectory(

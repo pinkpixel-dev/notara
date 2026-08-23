@@ -47,8 +47,39 @@ export const emptySidecarState = (): WorkspaceSidecarState => ({
   lastActiveFile: null,
 });
 
-/** Directory names a scan never descends into. */
-export const IGNORED_DIRECTORIES = new Set(['.notara', '.git', 'node_modules']);
+/**
+ * Directory names a scan never descends into, at any depth.
+ *
+ * Dot directories are handled separately by `isIgnoredDirectory`, so this only
+ * needs the undotted names worth skipping wherever they appear.
+ */
+export const IGNORED_DIRECTORIES = new Set(['node_modules']);
+
+/**
+ * Directory names that are Notara's own storage rather than the user's notes.
+ *
+ * `data/` holds `notes.json`, the AI conversation history, the settings, and
+ * the old `note-{uuid}.md` mirrors. It is skipped only at the workspace root,
+ * because that is the one place Notara writes it. A folder the user happens to
+ * name `data` further down is theirs and stays visible.
+ */
+export const APP_DIRECTORIES = new Set(['data']);
+
+/**
+ * Decides whether a scan should skip a directory.
+ *
+ * `parentPath` is the workspace-relative path of the directory holding this
+ * entry, so the empty string means the entry sits at the workspace root.
+ */
+export const isIgnoredDirectory = (name: string, parentPath: string): boolean => {
+  if (name.startsWith('.')) {
+    return true;
+  }
+  if (IGNORED_DIRECTORIES.has(name)) {
+    return true;
+  }
+  return parentPath === '' && APP_DIRECTORIES.has(name);
+};
 
 /** Extensions a scan treats as notes. */
 export const MARKDOWN_EXTENSIONS = ['.md', '.markdown'];

@@ -12,6 +12,7 @@ use tauri::{AppHandle, Runtime, State};
 use tauri_plugin_fs::FsExt;
 
 use super::dirs::{self, DeletionPreview};
+use super::files::{self, NoteWriteResult};
 use super::guard::{canonical_root, SIDECAR_DIRECTORY};
 use super::state::ApprovedWorkspace;
 
@@ -124,4 +125,33 @@ pub fn preview_workspace_deletion(
     relative_path: String,
 ) -> Result<DeletionPreview, String> {
     dirs::preview_deletion(&workspace.require()?, &relative_path)
+}
+
+/// Writes a note file, replacing it atomically.
+///
+/// `expected_revision` is the revision the interface last read for this file.
+/// Sending it turns an edit that landed underneath Notara into a refusal the
+/// user can answer, rather than a silent overwrite. A new note sends nothing.
+#[tauri::command]
+pub fn write_workspace_note(
+    workspace: State<'_, ApprovedWorkspace>,
+    relative_path: String,
+    contents: String,
+    expected_revision: Option<String>,
+) -> Result<NoteWriteResult, String> {
+    files::write_note(
+        &workspace.require()?,
+        &relative_path,
+        &contents,
+        expected_revision.as_deref(),
+    )
+}
+
+/// Reads a note's current revision without reading the note itself.
+#[tauri::command]
+pub fn workspace_note_revision(
+    workspace: State<'_, ApprovedWorkspace>,
+    relative_path: String,
+) -> Result<Option<String>, String> {
+    files::note_revision(&workspace.require()?, &relative_path)
 }
