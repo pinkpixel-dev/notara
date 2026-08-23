@@ -4,6 +4,14 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🖼️ Vision board
+
+- The board no longer prints its own name across the top-left corner. The tab
+  above it already says which board you are looking at, and the heading sat on
+  top of that corner of the canvas.
+- The board tabs now announce which one is selected, instead of showing it only
+  through colour.
+
 ### 📏 Sidebar sizes are remembered
 
 - Drag a sidebar to the width you want and it stays there, on that screen,

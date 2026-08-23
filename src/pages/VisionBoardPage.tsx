@@ -47,6 +47,11 @@ const VisionBoardPage: React.FC = () => {
                 {visionBoards.map(board => (
                   <button
                     key={board.id}
+                    /* The board name used to be repeated as a heading on the
+                       canvas. With that gone the tab is the only thing naming
+                       the open board, so it has to say which one is selected
+                       rather than showing it through colour alone. */
+                    aria-pressed={selectedVisionBoardId === board.id}
                     className={`px-4 py-2 rounded-md whitespace-nowrap mr-2 ${
                       selectedVisionBoardId === board.id
                         ? 'bg-primary text-primary-foreground'

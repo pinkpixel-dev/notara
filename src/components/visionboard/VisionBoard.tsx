@@ -354,11 +354,6 @@ const VisionBoard: React.FC<VisionBoardProps> = ({ id }) => {
       {/* Content container with min-width to ensure space for items */}
       <div className="relative" style={{ minWidth: '100%', minHeight: '100%' }}>
 
-        {/* Board title */}
-        <div className="absolute top-4 left-4 z-10">
-          <h2 className="text-2xl font-bold">{visionBoard.name}</h2>
-        </div>
-
         {/* Control panel */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           <Button
