@@ -1,0 +1,321 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FolderPlus, RefreshCw, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useWorkspace } from '@/context/WorkspaceContextTypes';
+import { useNotes } from '@/context/NotesContextTypes';
+import { buildNoteTree } from '@/lib/notes/tree';
+import { flattenDirectories } from '@/lib/workspace/tree';
+import type { Note } from '@/types';
+import WorkspaceDirectoryDialogs, { type DirectoryAction } from '../WorkspaceDirectoryDialogs';
+import NotesEmptyState from '../NotesEmptyState';
+import FolderNode from './FolderNode';
+import NoteRow from './NoteRow';
+
+/** Which slice of the notes the sidebar is showing. */
+type NoteFilter = 'all' | 'starred';
+
+interface NotesSidebarProps {
+  activeNoteId: string | null;
+  onSelectNote: (note: Note) => void;
+  onDeleteNote: (note: Note) => void;
+}
+
+/**
+ * The notes sidebar.
+ *
+ * One list, not two. Folders come from the workspace scan, notes sit inside the
+ * folder their file is in, and pinned notes are lifted to the top. This replaces
+ * the old arrangement where a directory tree sat above a separate flat list of
+ * the same notes, which showed everything twice.
+ *
+ * Searching and the Starred filter both drop the tree and show flat results.
+ * Folders are how you browse; when you already know what you are looking for,
+ * grouping just adds rows between you and it.
+ */
+const NotesSidebar: React.FC<NotesSidebarProps> = ({
+  activeNoteId,
+  onSelectNote,
+  onDeleteNote,
+}) => {
+  const { notes, notesStatus, togglePin } = useNotes();
+  const { scan, scanStatus, canManageDirectories, refresh } = useWorkspace();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<NoteFilter>('all');
+  const [folderAction, setFolderAction] = useState<DirectoryAction>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const focusSearchInput = useCallback(() => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('notara:focus-note-search', focusSearchInput);
+    return () => window.removeEventListener('notara:focus-note-search', focusSearchInput);
+  }, [focusSearchInput]);
+
+  const query = searchQuery.trim().toLowerCase();
+
+  const matches = useMemo(() => {
+    if (query === '') {
+      return notes;
+    }
+    return notes.filter(
+      (note) =>
+        note.title?.toLowerCase().includes(query) ||
+        note.content?.toLowerCase().includes(query) ||
+        note.tags.some((tag) => tag.name.toLowerCase().includes(query))
+    );
+  }, [notes, query]);
+
+  const starredCount = useMemo(
+    () => notes.filter((note) => note.isStarred).length,
+    [notes]
+  );
+
+  // Every directory the scan found, so a folder with nothing in it still shows.
+  const directoryPaths = useMemo(
+    () =>
+      scan
+        ? flattenDirectories(scan.root)
+            .map((directory) => directory.path)
+            .filter((path) => path !== '')
+        : [],
+    [scan]
+  );
+
+  const tree = useMemo(() => buildNoteTree(matches, directoryPaths), [matches, directoryPaths]);
+
+  const isFlat = query !== '' || filter === 'starred';
+  const flatNotes = useMemo(
+    () =>
+      isFlat
+        ? [...(filter === 'starred' ? matches.filter((note) => note.isStarred) : matches)].sort(
+            (left, right) =>
+              new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+          )
+        : [],
+    [filter, isFlat, matches]
+  );
+
+  const handleUnpin = useCallback(
+    (note: Note) => {
+      void togglePin(note.id);
+    },
+    [togglePin]
+  );
+
+  const isEmpty = isFlat ? flatNotes.length === 0 : tree.total === 0 && directoryPaths.length === 0;
+
+  return (
+    <div className="flex h-full flex-col surface-content">
+      <div className="border-b border-border p-3">
+        <div className="relative">
+          <label htmlFor="note-search" className="sr-only">
+            Search notes
+          </label>
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            id="note-search"
+            ref={searchInputRef}
+            type="search"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setSearchQuery('');
+              }
+            }}
+            className="min-h-11 w-full rounded-md surface-input border border-border py-2 pl-9 pr-10 text-sm"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="flex items-center gap-1 border-b border-border px-3 py-2"
+        role="group"
+        aria-label="Filter notes"
+      >
+        {(
+          [
+            { id: 'all' as const, label: 'All notes', count: notes.length },
+            { id: 'starred' as const, label: 'Starred', count: starredCount },
+          ]
+        ).map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setFilter(option.id)}
+            aria-pressed={filter === option.id}
+            className={cn(
+              'min-h-11 flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors',
+              filter === option.id
+                ? 'bg-accent text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
+          >
+            {option.label}
+            <span className="ml-1.5 text-xs tabular-nums opacity-70">{option.count}</span>
+          </button>
+        ))}
+
+        {canManageDirectories && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label="New folder in the workspace root"
+                onClick={() => setFolderAction({ kind: 'create', parentPath: '' })}
+              >
+                <FolderPlus className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>New folder</TooltipContent>
+          </Tooltip>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              aria-label="Rescan the workspace folder"
+              onClick={() => void refresh()}
+            >
+              <RefreshCw
+                className={cn('h-4 w-4', scanStatus === 'scanning' && 'animate-spin')}
+                aria-hidden="true"
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Rescan folder</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {isFlat ? (
+          <>
+            {query !== '' && (
+              <p
+                className="surface-elevated px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                role="status"
+              >
+                {flatNotes.length} {flatNotes.length === 1 ? 'result' : 'results'}
+              </p>
+            )}
+            <ul>
+              {flatNotes.map((note) => (
+                <NoteRow
+                  key={note.id}
+                  note={note}
+                  depth={0}
+                  isActive={activeNoteId === note.id}
+                  onSelect={onSelectNote}
+                  onUnpin={handleUnpin}
+                  onDelete={onDeleteNote}
+                />
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            {/* Pinned notes sit above the folders and are not repeated inside
+                them. Unpinning a note drops it back where its file lives. */}
+            {tree.pinned.length > 0 && (
+              <ul aria-label="Pinned notes">
+                {tree.pinned.map((note) => (
+                  <NoteRow
+                    key={note.id}
+                    note={note}
+                    depth={0}
+                    isActive={activeNoteId === note.id}
+                    onSelect={onSelectNote}
+                    onUnpin={handleUnpin}
+                    onDelete={onDeleteNote}
+                  />
+                ))}
+              </ul>
+            )}
+
+            <ul>
+              {tree.folders.map((folder) => (
+                <FolderNode
+                  key={folder.path}
+                  folder={folder}
+                  depth={0}
+                  activeNoteId={activeNoteId}
+                  onSelectNote={onSelectNote}
+                  onUnpinNote={handleUnpin}
+                  onDeleteNote={onDeleteNote}
+                  onFolderAction={setFolderAction}
+                />
+              ))}
+            </ul>
+
+            {tree.uncategorized.length > 0 && (
+              <section aria-label="Uncategorized notes">
+                {/* Only worth a heading when there are folders to tell it apart
+                    from. In a flat workspace it is just the list of notes. */}
+                {tree.folders.length > 0 && (
+                  <h3 className="surface-elevated px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Uncategorized
+                  </h3>
+                )}
+                <ul>
+                  {tree.uncategorized.map((note) => (
+                    <NoteRow
+                      key={note.id}
+                      note={note}
+                      depth={0}
+                      isActive={activeNoteId === note.id}
+                      onSelect={onSelectNote}
+                      onUnpin={handleUnpin}
+                      onDelete={onDeleteNote}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
+        )}
+
+        {isEmpty &&
+          (isFlat ? (
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground" role="status">
+              {filter === 'starred' && query === ''
+                ? 'No starred notes yet. Star a note to keep it here.'
+                : 'No matching notes'}
+            </p>
+          ) : (
+            <NotesEmptyState status={notesStatus} />
+          ))}
+      </div>
+
+      <WorkspaceDirectoryDialogs action={folderAction} onClose={() => setFolderAction(null)} />
+    </div>
+  );
+};
+
+export default NotesSidebar;

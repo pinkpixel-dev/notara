@@ -44,9 +44,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const canManageDirectories =
     rootHandle?.kind === 'tauri' && rootHandle.source === 'workspace';
 
-  const runScan = useCallback(async () => {
+  /** Rescans the workspace. Returns what it found, or null if the scan failed. */
+  const runScan = useCallback(async (): Promise<WorkspaceScan | null> => {
     if (!rootHandle || status !== 'ready') {
-      return;
+      return null;
     }
 
     setScanStatus('scanning');
@@ -59,11 +60,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           ? 'This folder nests deeper than Notara scans. Some directories were skipped.'
           : null
       );
+      return result;
     } catch (error) {
       console.error('Failed to scan the workspace', error);
       setScan(null);
       setScanStatus('error');
       setLastError((error as Error)?.message ?? 'Unable to read the workspace folder.');
+      return null;
     }
   }, [rootHandle, status]);
 
@@ -85,9 +88,25 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (cancelled) {
         return;
       }
+
+      // The root stays in the set for anything still keyed on it, but it is no
+      // longer drawn as a node, so it can no longer be what makes the tree look
+      // open.
       setExpandedDirectories(new Set(['', ...saved.expandedDirectories]));
       stateLoadedRef.current = true;
-      await runScan();
+
+      const result = await runScan();
+
+      // A workspace with nothing saved opens with its top-level folders already
+      // expanded. Otherwise the first thing the user sees is a column of closed
+      // folders rather than their notes.
+      if (!cancelled && result && saved.expandedDirectories.length === 0) {
+        setExpandedDirectories((current) => {
+          const next = new Set(current);
+          result.root.directories.forEach((directory) => next.add(directory.path));
+          return next;
+        });
+      }
     };
 
     void load();
@@ -237,6 +256,19 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [canManageDirectories]
   );
 
+  /**
+   * The refresh the rest of the app gets.
+   *
+   * `runScan` returns its result, which only the loader below needs. This has to
+   * be its own stable callback rather than an arrow inside the context value:
+   * that value is rebuilt whenever a folder is expanded, and an identity that
+   * changed with it would restart every effect depending on `refresh`, which
+   * includes the one that reads every note in the workspace.
+   */
+  const refresh = useCallback(async (): Promise<void> => {
+    await runScan();
+  }, [runScan]);
+
   const value = useMemo<WorkspaceContextValue>(
     () => ({
       scanStatus,
@@ -244,7 +276,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lastError,
       expandedDirectories,
       canManageDirectories,
-      refresh: runScan,
+      refresh,
       toggleDirectory,
       setDirectoryExpanded,
       revealPath,
@@ -263,8 +295,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       moveEntry,
       previewDeletion,
       renameEntry,
+      refresh,
       revealPath,
-      runScan,
       scan,
       scanStatus,
       setDirectoryExpanded,

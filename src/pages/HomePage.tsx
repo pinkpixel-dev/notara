@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import WorkspacePanes, { WorkspacePaneId } from '@/components/layout/WorkspacePanes';
 import { useNotes } from '@/context/NotesContextTypes';
-import NotesList from '@/components/notes/NotesList';
+import NotesSidebar from '@/components/notes/sidebar/NotesSidebar';
+import DeleteNoteDialog from '@/components/notes/DeleteNoteDialog';
 import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,9 @@ import { Plus, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
-  const { notes, notesStatus, activeNote, setActiveNote, deleteNote } = useNotes();
+  const { activeNote, setActiveNote, notesStatus } = useNotes();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,9 +50,13 @@ const HomePage: React.FC = () => {
     setIsCreatingNote(false);
   };
 
-  const handleDeleteNote = (id: string) => {
-    deleteNote(id);
+  // Deleting a note removes a real file, so it goes through a confirmation
+  // that names the path rather than happening on a single click.
+  const handleDeleteNote = (note: Note) => {
+    setNoteAwaitingDelete(note);
   };
+
+  const hasWorkspace = notesStatus !== 'no-workspace';
 
   const editor = isCreatingNote ? (
     <NoteEditor
@@ -70,13 +76,26 @@ const HomePage: React.FC = () => {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
         <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
       </div>
-      <p className="mb-6 max-w-md text-muted-foreground">
-        Get started by creating a note or selecting one from the list.
-      </p>
-      <Button onClick={handleCreateNote}>
-        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-        Create Note
-      </Button>
+
+      {/* A note is a file, so there is nowhere to put one until a folder is
+          chosen. Offering Create Note here would let the user write something
+          and only find out it cannot be saved once they tried. */}
+      {hasWorkspace ? (
+        <>
+          <p className="mb-6 max-w-md text-muted-foreground">
+            Get started by creating a note or selecting one from the list.
+          </p>
+          <Button onClick={handleCreateNote}>
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+            Create Note
+          </Button>
+        </>
+      ) : (
+        <p className="max-w-md text-muted-foreground">
+          Choose a folder for your notes to get started. Notara saves each note as
+          a Markdown file in that folder.
+        </p>
+      )}
     </div>
   );
 
@@ -91,9 +110,7 @@ const HomePage: React.FC = () => {
         listMinSize={20}
         listMaxSize={70}
         list={
-          <NotesList
-            notes={notes}
-            notesStatus={notesStatus}
+          <NotesSidebar
             activeNoteId={activeNote?.id || null}
             onSelectNote={handleSelectNote}
             onDeleteNote={handleDeleteNote}

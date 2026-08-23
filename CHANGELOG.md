@@ -4,6 +4,32 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 🗂️ One notes sidebar
+
+- The notes bar used to show a folder tree and then, underneath it, a separate
+  flat list of the same notes. It is one list now. Notes sit inside the folder
+  their file is in.
+- Notes show as two lines, the title and when you last changed them, so a folder
+  of twenty is still something you can scan. Folders show a count of the notes
+  listed under them.
+- The workspace folder is no longer a row you have to open first. Your own
+  top-level folders are the top level, and notes sitting loose at the root are
+  grouped under Uncategorized at the bottom.
+- Folders you have not opened before start expanded, so you land on your notes
+  instead of a column of closed folders. Notara still remembers what you open
+  and close after that.
+- The PINNED section and its cards are gone. A pinned note is lifted to the top
+  of the sidebar with a pin icon you can click to unpin it. While it is pinned
+  it is not repeated inside its folder, and unpinning drops it straight back
+  where its file lives. Pinning still never moves the file.
+- Searching or switching to Starred drops the folders and shows a flat list.
+  Folders are for browsing; when you already know what you want, groups are just
+  rows in the way.
+- Deleting a note now asks first and shows you the file path it is about to
+  remove. A note is a real file, and there is no undo for it.
+- The editor no longer offers Create Note before you have chosen a folder. There
+  was nowhere to save it, and you only found out after writing it.
+
 ### 📄 Markdown files are the notes now
 
 - Your notes are plain Markdown files in the folder you picked. Opening a note
