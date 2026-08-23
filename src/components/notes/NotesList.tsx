@@ -4,12 +4,21 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Search, Star, Pin, X, FileText } from 'lucide-react';
 import WorkspaceTree from './WorkspaceTree';
+import NotesEmptyState from './NotesEmptyState';
+import type { NoteFilesStatus } from '@/context/notes/useNoteFiles';
 
 /** Which slice of the notes the bar is showing. */
 type NoteFilter = 'all' | 'starred';
 
 interface NotesListProps {
   notes: Note[];
+  /**
+   * Where the workspace load has got to.
+   *
+   * An empty list means different things depending on this, so the empty state
+   * needs it to say anything useful.
+   */
+  notesStatus: NoteFilesStatus;
   activeNoteId: string | null;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (id: string) => void;
@@ -17,6 +26,7 @@ interface NotesListProps {
 
 const NotesList: React.FC<NotesListProps> = ({
   notes,
+  notesStatus,
   activeNoteId,
   onSelectNote,
   onDeleteNote
@@ -243,22 +253,23 @@ const NotesList: React.FC<NotesListProps> = ({
           <ul>{visibleNotes.map(renderNoteItem)}</ul>
         )}
 
-        {visibleNotes.length === 0 && (
-          <div className="flex h-40 flex-col items-center justify-center px-4 text-center text-muted-foreground">
-            {filter === 'starred' && !searchQuery ? (
-              <>
-                <Star className="h-6 w-6" aria-hidden="true" />
-                <p className="mt-2 text-sm">No starred notes</p>
-                <p className="mt-1 text-xs">Star a note to keep it in this filter.</p>
-              </>
-            ) : (
-              <>
-                <FileText className="h-6 w-6" aria-hidden="true" />
-                <p className="mt-2 text-sm">{searchQuery ? 'No matching notes' : 'No notes yet'}</p>
-              </>
-            )}
-          </div>
-        )}
+        {visibleNotes.length === 0 &&
+          (filter === 'starred' && !searchQuery ? (
+            <div className="flex h-40 flex-col items-center justify-center px-4 text-center text-muted-foreground">
+              <Star className="h-6 w-6" aria-hidden="true" />
+              <p className="mt-2 text-sm">No starred notes</p>
+              <p className="mt-1 text-xs">Star a note to keep it in this filter.</p>
+            </div>
+          ) : searchQuery ? (
+            <div className="flex h-40 flex-col items-center justify-center px-4 text-center text-muted-foreground">
+              <FileText className="h-6 w-6" aria-hidden="true" />
+              <p className="mt-2 text-sm">No matching notes</p>
+            </div>
+          ) : (
+            /* No search and no filter, so the reason the list is empty is about
+               the workspace itself and only that component can explain it. */
+            <NotesEmptyState status={notesStatus} />
+          ))}
       </div>
     </div>
   );

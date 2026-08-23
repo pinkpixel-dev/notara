@@ -10,7 +10,7 @@ import { Plus, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
-  const { notes, activeNote, setActiveNote, deleteNote } = useNotes();
+  const { notes, notesStatus, activeNote, setActiveNote, deleteNote } = useNotes();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
   const location = useLocation();
@@ -93,6 +93,7 @@ const HomePage: React.FC = () => {
         list={
           <NotesList
             notes={notes}
+            notesStatus={notesStatus}
             activeNoteId={activeNote?.id || null}
             onSelectNote={handleSelectNote}
             onDeleteNote={handleDeleteNote}

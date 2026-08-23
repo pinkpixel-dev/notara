@@ -58,9 +58,9 @@ const TagsPage: React.FC = () => {
     setIsEditingTag(true);
   };
   
-  const handleDeleteTag = (id: string) => {
+  const handleDeleteTag = async (id: string) => {
     if (confirm('Are you sure you want to delete this tag? It will be removed from all notes.')) {
-      deleteTag(id);
+      await deleteTag(id);
     }
   };
   

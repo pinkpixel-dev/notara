@@ -5,7 +5,25 @@ export interface NoteTag {
 }
 
 export interface Note {
+  /**
+   * The note's workspace-relative file path, which is also its identity.
+   *
+   * Notes are Markdown files, so the file is the note. A path is unique within
+   * a workspace by definition, so nothing has to invent an id or write one
+   * into the user's frontmatter. Moving or renaming a note changes its id, and
+   * every place holding one refreshes from the value the write returns.
+   */
   id: string;
+  /** The same value as `id`, named for what it is when the path is the point. */
+  path: string;
+  /**
+   * The file's revision when Notara last read or wrote it.
+   *
+   * Sent with the next save so an edit that landed underneath Notara is
+   * refused rather than overwritten. Null for a note not yet on disk.
+   */
+  revision: string | null;
+  /** Taken from the file name. Renaming the title renames the file. */
   title: string;
   content: string;
   createdAt: string;

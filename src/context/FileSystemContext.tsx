@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import type { NotesBundle, RootDirectoryHandle } from '@/lib/filesystem';
 import { fileSystemHelpers } from '@/lib/filesystem';
-import { buildNoteMarkdown, noteMarkdownFileName } from '@/lib/filesystem/note-markdown';
 import {
   AI_CONVERSATIONS_JSON_PATH,
   inferFileExtension,
@@ -17,7 +16,6 @@ import {
   LEGACY_TODOS_PATH,
   LEGACY_VISION_BOARDS_PATH,
   NOTES_JSON_PATH,
-  NOTE_MARKDOWN_DIRECTORY,
   REQUIRED_DIRECTORIES,
   sanitizeFileSegment,
   TAGS_JSON_PATH,
@@ -228,36 +226,18 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setStatus('no-directory');
   }, [prepareHandle]);
 
-  const syncNoteMarkdownFiles = useCallback(async (notes: Note[]) => {
-    if (!rootHandle) {
-      return;
-    }
-    try {
-      await fileSystemHelpers.ensurePath(rootHandle, NOTE_MARKDOWN_DIRECTORY);
-      const desiredFiles = new Map<string, string>();
-      notes.forEach((note) => {
-        desiredFiles.set(noteMarkdownFileName(note), buildNoteMarkdown(note));
-      });
-
-      const existingFiles = await fileSystemHelpers.listDirectoryEntries(rootHandle, NOTE_MARKDOWN_DIRECTORY);
-
-      await Promise.all(
-        Array.from(desiredFiles.entries()).map(([fileName, contents]) =>
-          fileSystemHelpers.writeText(rootHandle, [...NOTE_MARKDOWN_DIRECTORY, fileName], contents)
-        )
-      );
-
-      await Promise.all(
-        existingFiles
-          .filter((name) => !desiredFiles.has(name) && name.endsWith('.md'))
-          .map((name) => fileSystemHelpers.deleteEntry(rootHandle, [...NOTE_MARKDOWN_DIRECTORY, name]))
-      );
-    } catch (error) {
-      console.error('Failed to sync markdown files', error);
-      setLastError((error as Error).message ?? 'Failed to write note files');
-    }
-  }, [rootHandle]);
-
+  /**
+   * Writes the workspace's tags and vision boards.
+   *
+   * Notes are not written here any more. Each note is a Markdown file that
+   * saves itself, so rewriting the whole set from a snapshot would undo
+   * edits made outside Notara since that snapshot was taken.
+   *
+   * The `note-{uuid}.md` mirror this used to keep is gone with it. That
+   * mirror deleted any Markdown file in its directory that it had not
+   * generated, which is not something that may ever run in a folder the
+   * user owns.
+   */
   const saveNotesBundle = useCallback(
     async (bundle: NotesBundle) => {
       if (!rootHandle) {
@@ -265,20 +245,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
       try {
         await Promise.all([
-          fileSystemHelpers.writeJSON(rootHandle, NOTES_JSON_PATH, bundle.notes),
           fileSystemHelpers.writeJSON(rootHandle, TAGS_JSON_PATH, bundle.tags),
           fileSystemHelpers.writeJSON(rootHandle, SIDECAR_VISION_BOARDS_PATH, bundle.visionBoards),
-          // Legacy bundle for backwards compatibility
-          fileSystemHelpers.writeJSON(rootHandle, LEGACY_NOTES_BUNDLE_PATH, bundle),
         ]);
-        await syncNoteMarkdownFiles(bundle.notes);
       } catch (error) {
         console.error('Failed to write notes bundle', error);
         setLastError((error as Error).message ?? 'Failed to save notes');
         throw error;
       }
     },
-    [rootHandle, syncNoteMarkdownFiles]
+    [rootHandle]
   );
 
   const loadNotesBundle = useCallback(async (): Promise<NotesBundle | null> => {

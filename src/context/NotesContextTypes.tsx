@@ -1,6 +1,8 @@
 import React, { createContext } from 'react';
 import { Note, NoteTag, VisionBoard } from '../types';
 import type { NotesBundle } from '@/lib/filesystem';
+import type { NoteFilesStatus } from './notes/useNoteFiles';
+import type { NoteLoadFailure } from '@/lib/notes/load';
 
 /**
  * How many notes may be pinned at once.
@@ -18,24 +20,52 @@ export interface NotesContextType {
   tags: NoteTag[];
   visionBoards: VisionBoard[];
   activeNote: Note | null;
-  addNote: (note: Partial<Note>) => Note;
-  updateNote: (id: string, note: Partial<Note>) => Note | null;
-  deleteNote: (id: string) => void;
+  /**
+   * Where the workspace load has got to.
+   *
+   * Notes are files, so there is a real state between "no folder chosen" and
+   * "here are your notes" that the interface has to be able to show.
+   */
+  notesStatus: NoteFilesStatus;
+  /** Message from the last failed load or save, if any. */
+  notesError: string | null;
+  /** Files that could not be read, so the interface can name them. */
+  noteFailures: NoteLoadFailure[];
+  /** Rescans the workspace folder and reloads every note from disk. */
+  reloadNotes: () => Promise<void>;
+  /**
+   * Creates a note as a new Markdown file and returns it.
+   *
+   * Async because the file has to be written before the note exists. The
+   * returned note carries the path that was actually used, which can differ
+   * from the requested title when the filesystem would not accept it.
+   */
+  addNote: (note: Partial<Note>) => Promise<Note>;
+  /**
+   * Writes changes to a note's file.
+   *
+   * Changing the title renames the file, so the returned note may have a
+   * different `id` and `path` than the one passed in.
+   */
+  updateNote: (id: string, note: Partial<Note>) => Promise<Note | null>;
+  deleteNote: (id: string) => Promise<void>;
   /**
    * Pins or unpins a note. Pinning past `PIN_LIMIT` is refused rather than
    * silently dropping an older pin, because a pin the user chose should never
    * disappear without being told.
    */
-  togglePin: (id: string) => PinResult;
-  toggleStar: (id: string) => void;
+  togglePin: (id: string) => Promise<PinResult>;
+  toggleStar: (id: string) => Promise<void>;
   addTag: (tag: Partial<NoteTag>) => void;
   updateTag: (id: string, tag: Partial<NoteTag>) => void;
-  deleteTag: (id: string) => void;
+  /** Removes a tag and rewrites every note file that carried it. */
+  deleteTag: (id: string) => Promise<void>;
   setActiveNote: (note: Note | null) => void;
   addVisionBoard: (visionBoard: Partial<VisionBoard>) => VisionBoard;
   updateVisionBoard: (id: string, visionBoard: Partial<VisionBoard>) => void;
   deleteVisionBoard: (id: string) => void;
   getCurrentBundle: () => NotesBundle;
+  /** Writes tags and vision boards. Notes save themselves, one file at a time. */
   persistBundle: (bundle?: NotesBundle) => Promise<void>;
 }
 
@@ -47,4 +77,4 @@ export const useNotes = (): NotesContextType => {
     throw new Error('useNotes must be used within a NotesProvider');
   }
   return context;
-}; 
+};

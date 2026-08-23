@@ -72,39 +72,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     };
 
     try {
-      let savedNote: Note | null = null;
-      let updatedNotes: Note[] = notes;
-
-      if (isNew) {
-        const created = addNote(saveData);
-        savedNote = created;
-        updatedNotes = [...notes, created];
-      } else if (note) {
-        const updated = updateNote(note.id, saveData);
-        if (updated) {
-          savedNote = updated;
-          updatedNotes = notes.map((existing) => (existing.id === note.id ? updated : existing));
-        }
-      }
+      // The note writes its own file, so there is no bundle to assemble here.
+      // A title change renames that file, which means the saved note can come
+      // back carrying a different path than the one that went in.
+      const savedNote = isNew
+        ? await addNote(saveData)
+        : note
+          ? await updateNote(note.id, saveData)
+          : null;
 
       if (!savedNote) {
         throw new Error('Nothing to save yet');
       }
 
-      const bundle: NotesBundle = {
-        notes: updatedNotes,
-        tags: availableTags,
-        visionBoards,
-      };
-
-      await persistBundle(bundle);
-
       toast({
-        title: status === 'ready' ? 'Note saved' : 'Saved locally',
-        description:
-          status === 'ready'
-            ? 'Your changes were written to Notara app storage.'
-            : 'Storage is not ready yet, so the note was only saved in memory.',
+        title: 'Note saved',
+        description: `Written to ${savedNote.path}.`,
       });
 
       if (onSave) {
@@ -123,19 +106,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     }
   }, [
     addNote,
-    availableTags,
     isNew,
     isPinned,
     isStarred,
     note,
-    notes,
     onSave,
-    persistBundle,
     selectedTags,
-    status,
     title,
     updateNote,
-    visionBoards,
     content,
   ]);
 
@@ -143,9 +121,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     toast({ title: 'Pin limit reached', description: reason, variant: 'destructive' });
   };
 
-  const handleTogglePin = useCallback(() => {
+  const handleTogglePin = useCallback(async () => {
     if (!isNew && note) {
-      const result = togglePin(note.id);
+      // Pinning a saved note rewrites its file, so this waits for the write
+      // rather than flipping the control and hoping.
+      const result = await togglePin(note.id);
       if (!result.ok) {
         refusePin(result.reason);
         return;
@@ -164,11 +144,25 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, isNew = false, onSave, on
     setIsPinned((pinned) => !pinned);
   }, [isNew, isPinned, note, notes, togglePin]);
 
-  const handleToggleStar = useCallback(() => {
+  const handleToggleStar = useCallback(async () => {
     setIsStarred((starred) => !starred);
 
-    if (!isNew && note) {
-      toggleStar(note.id);
+    if (isNew || !note) {
+      return;
+    }
+
+    // Starring writes the note's file. If that fails the control goes back to
+    // where it was, so it never shows a state the file does not have.
+    try {
+      await toggleStar(note.id);
+    } catch (error) {
+      console.error('Failed to update the note', error);
+      setIsStarred((starred) => !starred);
+      toast({
+        title: 'Could not update the note',
+        description: error instanceof Error ? error.message : 'Unable to write the note file.',
+        variant: 'destructive',
+      });
     }
   }, [isNew, note, toggleStar]);
 

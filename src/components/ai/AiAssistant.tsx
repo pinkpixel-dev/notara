@@ -389,9 +389,20 @@ const AiAssistant: React.FC = () => {
 
     if (options?.saveAsNote !== false) {
       const markdown = formatConversationMarkdown(title, snapshot.messages);
-      addNote({
+      // `handleSaveConversation` is synchronous and returns a boolean its
+      // callers rely on, so the note write is not awaited here. The failure is
+      // reported rather than swallowed, which is the part that matters.
+      void addNote({
         title: `AI Chat • ${title}`,
         content: markdown,
+      }).catch((error) => {
+        console.error('Failed to save the conversation as a note', error);
+        toast({
+          title: 'Could not save the conversation as a note',
+          description:
+            error instanceof Error ? error.message : 'Unable to write the note file.',
+          variant: 'destructive',
+        });
       });
     }
 
@@ -1190,13 +1201,13 @@ ${constellationContent}
   };
 
   // Save AI response as a note
-  const handleSaveAsNote = (content: string) => {
+  const handleSaveAsNote = async (content: string) => {
     // Extract a title from the content (first few words)
     const titleMatch = content.match(/^# (.+)$/m) || content.match(/^(.{1,50})\b/);
     const title = titleMatch ? titleMatch[1] : 'AI Generated Note';
 
     // Create a new note
-    const newNote = addNote({
+    const newNote = await addNote({
       title,
       content,
       isPinned: false,

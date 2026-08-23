@@ -47,11 +47,23 @@ export const TagSettings = () => {
     toast({ title: 'Tag updated', description: 'We saved your changes to this tag.' });
   };
 
-  const handleDeleteTag = (id: string) => {
+  const handleDeleteTag = async (id: string) => {
     const name = tags.find((tag) => tag.id === id)?.name ?? 'tag';
     if (!window.confirm(`Delete “${name}”? This removes it from every note.`)) return;
-    deleteTag(id);
-    toast({ title: 'Tag removed', description: `“${name}” will no longer appear on your notes.` });
+
+    // Removing a tag rewrites every note file that carried it, so the toast
+    // waits for those writes rather than announcing a result it cannot see.
+    try {
+      await deleteTag(id);
+      toast({ title: 'Tag removed', description: `“${name}” will no longer appear on your notes.` });
+    } catch (error) {
+      console.error('Failed to remove the tag', error);
+      toast({
+        title: 'Could not remove the tag',
+        description: error instanceof Error ? error.message : 'Some notes could not be updated.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAddTag = () => {

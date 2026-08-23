@@ -128,7 +128,7 @@ const AppMenuBar: React.FC = () => {
       const file = await fileHandle.getFile();
       const text = await file.text();
       const noteTitle = file.name.replace(/\.(md|markdown|txt)$/i, '');
-      const newNote = addNote({ title: noteTitle || 'Imported Note', content: text });
+      const newNote = await addNote({ title: noteTitle || 'Imported Note', content: text });
       setActiveNote(newNote);
       toast({
         title: 'Note imported',

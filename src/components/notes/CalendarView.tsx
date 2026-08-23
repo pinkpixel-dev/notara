@@ -41,7 +41,7 @@ const CalendarView: React.FC = () => {
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(0, 5);
 
-  const handleAddEvent = () => {
+  const handleAddEvent = async () => {
     if (!eventTitle.trim() || !date) return;
 
     // Parse hours and minutes
@@ -59,7 +59,7 @@ const CalendarView: React.FC = () => {
       0
     );
 
-    addNote({
+    await addNote({
       title: eventTitle,
       content: eventContent,
       tags: [],
@@ -73,7 +73,7 @@ const CalendarView: React.FC = () => {
     setIsAddingEvent(false);
   };
 
-  const handleEditEvent = () => {
+  const handleEditEvent = async () => {
     if (!eventTitle.trim() || !date || !currentEvent) return;
 
     // Parse hours and minutes
@@ -91,7 +91,7 @@ const CalendarView: React.FC = () => {
       0
     );
 
-    updateNote(currentEvent, {
+    await updateNote(currentEvent, {
       title: eventTitle,
       content: eventContent,
       createdAt: selectedDate.toISOString()
@@ -104,9 +104,9 @@ const CalendarView: React.FC = () => {
     setIsEditingEvent(false);
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
-      deleteNote(id);
+      await deleteNote(id);
     }
   };
 

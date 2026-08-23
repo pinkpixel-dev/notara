@@ -4,6 +4,52 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📄 Markdown files are the notes now
+
+- Your notes are plain Markdown files in the folder you picked. Opening a note
+  reads that file, and saving writes it back. There is no separate copy of your
+  notes hiding in a JSON file any more.
+- A note's title is its file name. Renaming the title renames the file, so the
+  folder always looks like what you see in Notara. Characters a filesystem will
+  not accept, such as a slash or a colon, are swapped for spaces, and you can
+  see the result straight away instead of finding out later.
+- Tags, pins, stars, and dates live in the note's frontmatter. Any other
+  frontmatter you or another app wrote is left exactly as it was, down to the
+  byte, including comments, key order, and quoting style.
+- A plain Markdown file with no frontmatter is a perfectly good note. Notara
+  does not add metadata to a file until there is something worth recording.
+- Notes you already had are moved out of the old storage into your workspace
+  the first time you open it. This runs once and never deletes the original,
+  so if anything looks wrong the old file is still sitting there.
+- A brand new empty folder gets the Welcome and Markdown Cheat Sheet notes as
+  real files you can edit or delete like any other note.
+
+### 🛟 Saving is safer
+
+- On the desktop, a save writes to a temporary file and then swaps it into
+  place in one step. If Notara is killed mid-save, you get either the old note
+  or the new one, never half of each.
+- The previous contents of a note are copied into `.notara/backups` before it
+  is replaced, so a save you regret is recoverable.
+- If a note changed outside Notara since you opened it, the save is refused
+  and says so instead of overwriting the other change.
+- Notara no longer keeps a mirror folder of `note-{uuid}.md` files. That mirror
+  deleted any Markdown file in its directory it had not written itself, which
+  is not something that should ever run near your own notes.
+
+### 🧹 A tidier notes bar
+
+- The workspace tree only shows your notes. Notara's own `data` folder, which
+  holds settings and the AI history, is hidden, along with any folder whose
+  name starts with a dot and `node_modules`. A folder you happen to name `data`
+  deeper inside your notes is yours and still shows.
+- The notes bar now explains why it is empty. Choosing a folder, still loading,
+  a folder Notara could not read, and a genuinely empty folder are four
+  different messages instead of one unhelpful "No notes yet".
+- Notes need a workspace folder now. Without one, Notara asks you to pick a
+  folder rather than quietly keeping notes in browser storage where you cannot
+  find them.
+
 ### ⭐ Pinned and starred notes
 
 - Pinning and starring are two separate things now. They used to be one flag
