@@ -1,0 +1,3 @@
+interface:
+  display_name: "Codex OAuth Integration"
+  short_description: "Build and audit secure Codex OAuth flows"

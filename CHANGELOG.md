@@ -2,6 +2,28 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## Unreleased
+
+### 💥 Breaking changes
+
+- Removed the optional Supabase account system and its authentication routes.
+- Removed the unfinished GitHub, Google Drive, and Dropbox integrations.
+- Removed legacy OAuth functions, proxy code, environment variables, and stored integration credentials.
+
+### 🧹 Maintenance
+
+- Removed the `@supabase/supabase-js` and `idb` dependencies.
+- Moved the remaining Pollinations controls into an AI & Data settings tab.
+- Updated the in-app version source to read from `package.json`.
+
+### 📝 Documentation
+
+- Added a repo-grounded local-first overhaul plan and phased roadmap.
+- Documented the current Supabase, OAuth, Pollinations, file, editor, reminder, UI, and accessibility boundaries.
+- Added architecture, storage, OpenAI, reminders, design, security, development, configuration, testing, troubleshooting, user, and contribution guides.
+- Rewrote the README to separate current behavior from planned features and remove unsupported claims.
+- Recorded the approved OpenAI text and image model catalog for future Settings selectors.
+
 ## [1.1.1] - 2026-03-26
 
 ### 🐛 Fixed

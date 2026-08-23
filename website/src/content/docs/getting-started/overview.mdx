@@ -65,13 +65,11 @@ natural.
 
 ## Local-first by default
 
-Notara no longer assumes a Supabase backend or a mandatory sign-in flow. In the current release:
+Notara has no account or cloud-sync system. In the current development branch:
 
 - desktop builds automatically write into the Tauri app-data workspace
 - browser builds use browser storage when local files are unavailable
-- optional Supabase auth only activates if `VITE_ENABLE_AUTH=true`
-- optional integration adapters for GitHub, Google Drive, and Dropbox remain in the codebase as a
-  legacy subsystem rather than a required workflow
+- the app opens directly without sign-in
 
 ## Technology snapshot
 

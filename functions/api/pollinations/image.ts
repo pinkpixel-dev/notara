@@ -72,7 +72,7 @@ export const onRequestPost = async ({ request, env }: PagesFunctionArgs<Pollinat
     return new Response(
       JSON.stringify({
         error: "Pollinations API key required",
-        message: "Provide an API key from https://enter.pollinations.ai in Settings → Integrations.",
+        message: "Provide an API key from https://enter.pollinations.ai in Settings → AI & Data.",
       }),
       {
         status: 401,

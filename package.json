@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/notara",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "Feature-rich note-taking application and markdown editor with AI assistant.",
   "type": "module",
   "scripts": {
@@ -46,7 +46,6 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.56.2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
@@ -56,7 +55,6 @@
     "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.3.0",
-    "idb": "^8.0.3",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.544.0",
     "next-themes": "^0.4.6",

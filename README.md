@@ -1,353 +1,124 @@
 <div align="center">
-  <img src="public/logo.png" alt="Notara Logo" width="300" height="300">
+  <img src="public/logo.png" alt="Notara logo" width="220" height="220">
 </div>
 
-# ✨ Notara
+# Notara
 
-> **Dream it, Pixel it** - A feature-rich note-taking application and markdown editor with AI assistant
+Notara is a local-first note workspace for Markdown notes, tasks, calendar organization, vision boards, and optional AI tools. It runs as a React web app and a Tauri desktop app for Linux and Windows.
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/pinkpixel-dev/notara)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
-[![Made with Love](https://img.shields.io/badge/made%20with-❤️-red.svg)](https://pinkpixel.dev)
+Version 2.0.0 is in development on the local-first overhaul branch. Version 1.1.1 remains the latest published download.
 
-![Notara Screenshot](screenshot.png)
+[![Version](https://img.shields.io/badge/version-2.0.0-555.svg)](https://github.com/pinkpixel-dev/notara)
+[![License](https://img.shields.io/badge/license-Apache%202.0-555.svg)](LICENSE)
 
-## 🌟 Features
+![Notara screenshot](screenshot.png)
 
-### 📝 **Smart Note-Taking**
+## Current features
 
-- **Markdown Editor**: Rich text editing with live preview
-- **Formatting Toolbar**: One-click headings, lists, quotes, code blocks, inline styles, colour accents, and highlights without leaving the keyboard
-- **Enhanced Preview**: GitHub-flavoured tables, syntax-highlighted code, clickable links, and embedded images right beside the editor
-- **One-Click Saves**: Save button and File menu write notes instantly, with `Ctrl/Cmd+S` for active note and `Ctrl/Cmd+Shift+S` for Save All
-- **Tag Organization**: Color-coded tags plus a Settings ▸ Tags hub for adding, renaming, recolouring, and deleting tags with usage counts
-- **Pinned Notes**: Star your most important notes for quick access right from the editor header or note list
-- **Search & Filter**: Find notes instantly with powerful search
+- Markdown notes with source and preview views
+- Formatting toolbar, tags, pinning, and search
+- Task lists with dates, times, and nested items
+- Calendar organization based on notes and tasks
+- Vision boards with movable image and text items
+- Constellation view for note relationships
+- Local Tauri app-data storage and browser storage
+- Pollinations text and image tools
+- Linux, Windows, Docker, and hosted web build paths
 
-### ✅ **Todo Management**
+## Important current limitations
 
-- **Hierarchical Tasks**: Create todos with sub-items
-- **Time Scheduling**: Assign times to tasks and lists
-- **Daily Organization**: Organize todos by date
-- **Progress Tracking**: Check off completed items
+- Desktop builds use a fixed app-data workspace. They do not select an arbitrary folder.
+- Open Markdown imports content into a new note. Save does not update the source file.
+- JSON is the current note source. Markdown files are generated mirrors.
+- Split editor view, Save As, external-change detection, reminders, and notifications do not exist yet.
+- Notara has no account system or cloud-sync integration.
+- Current AI uses Pollinations. OpenAI is planned but not implemented.
+- The hosted web layout has known small-screen and keyboard-access gaps.
 
-### 🎨 **Visual Organization**
+Read the [overhaul plan](DOCS/OVERHAUL-PLAN.md) and [roadmap](DOCS/ROADMAP.md) for the accepted direction.
 
-- **Vision Boards**: Create visual mood boards with draggable, resizable image/text cards, inline text editing, and color grouping filters
-- **Calendar View**: Organize notes and todos temporally with Upcoming + Selected Date tabs and a quick Today jump
-- **Constellations**: Visualize connections between your content
-- **Glass Theme**: App-wide glass styling with adjustable transparency/frost intensity and modern Aurora mode
-- **Refined Navigation**: Starred notes live in the main nav with footer icon chips for settings, docs, and the markdown cheat sheet, plus a persistent header icon for quick tag management
+## Install for development
 
-### 🤖 **AI Assistant**
+### Requirements
 
-- **Writing Support**: AI-powered content generation and editing
-- **Generate Images**: AI-generated images on demand for your notes, documents, and boards
-- **Seamless Pollinations Proxy**: Requests route through `/api/pollinations/*` so the browser avoids CORS issues and uses your configured API key/model selections
-- **Note Summaries**: Automatic summarization of long notes
-- **Creative Prompts**: Generate ideas and writing inspiration
-- **Context Awareness**: AI understands your existing content
-- **Session Continuity**: Active chat stays intact while navigating during a session
-- **Save Workflows**: Save chats to archive + markdown notes, and save generated images into Vision Boards/local media
+- Node.js 18 or newer
+- npm
+- Git
+- Rust toolchain for Tauri development
 
-### 💾 **Local File Storage**
-
-- **Automatic Desktop Storage**: Tauri builds now save into Notara's app-data workspace automatically, with no folder-picking required
-- **Automatic & Manual Backups**: Notes, tags, todos, and vision boards write through to disk as you work or whenever you press Save
-- **Readable Local Files**: Desktop data is stored as JSON and markdown files inside Notara's local workspace
-
-### 🔄 **Local-First Workspace**
-
-- **On-Disk Sync**: Desktop builds work against readable JSON files in Notara's local app-data workspace
-- **Cloud-Agnostic**: No external auth or Supabase project required—set `VITE_ENABLE_AUTH=true` only if you purposely want Supabase sign-in
-- **Browser Fallback**: Web builds still use browser storage when local files are unavailable
-- **Portable Data**: Copy the Notara workspace directory anywhere to migrate your vault
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js** 18+
-- **npm** or **yarn**
-- **Git**
-- **Rust** toolchain for desktop builds
-- Linux desktop build deps for Tauri on Debian/Ubuntu:
-  ```bash
-  sudo apt-get update
-  sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
-  ```
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/pinkpixel-dev/notara.git
-   cd notara
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Set up environment variables**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Only the Pollinations token is optional if you want authenticated AI image requests:
-
-   ```env
-   VITE_POLLINATIONS_API_TOKEN=optional_pollinations_token
-   VITE_ENABLE_AUTH=false
-   ```
-
-   > **Optional**: Add `VITE_POLLINATIONS_API_TOKEN` when you have a Pollinations key and want the AI assistant to include an `Authorization` header. Cloudflare Pages deployments should mirror this value via `wrangler secret put POLLINATIONS_API_TOKEN`. Set `VITE_ENABLE_AUTH=true` (and supply Supabase keys) only if you intend to use the legacy authentication flows.
-
-4. **Start development server**
-
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. **Open your browser**
-
-   Navigate to `http://localhost:3489`
-
-## 📦 Downloads
-
-Direct download links for `v1.1.1`:
-
-- [Linux `.deb`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.deb)
-- [Linux `.rpm`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.1-1.x86_64.rpm)
-- [Linux `AppImage`](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.AppImage)
-- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_x64-setup.exe)
-
-Available installation options:
-
-- Tauri Linux packages: `.deb`, `.rpm`, and `AppImage`
-- Windows NSIS installer
-- Docker container for the web runtime
-- Cloudflare Pages deployment for hosted web installs
-
-## 🏗️ Build & Deploy
-
-### Development Build
+Debian and Ubuntu Tauri builds also need:
 
 ```bash
-npm run build:dev
+sudo apt-get update
+sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 ```
 
-### Production Build
+### Setup
 
 ```bash
-npm run build
+git clone https://github.com/pinkpixel-dev/notara.git
+cd notara
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-### Desktop Development
+Open `http://localhost:3489`.
+
+The environment file currently contains only the optional Pollinations token used during the OpenAI transition.
+
+## Desktop development
 
 ```bash
 npm run tauri:dev
 ```
 
-### Linux Desktop Bundles
-
-Build Linux installers locally:
+Build Linux packages:
 
 ```bash
 npm run tauri:build:linux
 ```
 
-Artifacts are written to:
+Artifacts are written under `src-tauri/target/release/bundle/`.
 
-- `src-tauri/target/release/bundle/deb/`
-- `src-tauri/target/release/bundle/rpm/`
-- `src-tauri/target/release/bundle/appimage/`
+Current desktop data normally lives here on Linux:
 
-Desktop data is written to Notara's Tauri app-data folder. On Linux this is typically:
+```text
+~/.local/share/dev.pinkpixel.notara/workspace/
+```
 
-- `~/.local/share/dev.pinkpixel.notara/workspace/`
+`XDG_DATA_HOME` can change the base path.
 
-If `XDG_DATA_HOME` is set, Tauri will use that location instead of `~/.local/share`.
+## Current downloads
 
-If you are building on a rolling-release Linux distro, AppImage packaging may fail because `linuxdeploy` can lag behind newer system linker formats. The included GitHub Actions workflow builds Linux bundles on `ubuntu-22.04`, which is the most reliable path for AppImage output.
+- [Linux DEB](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.deb)
+- [Linux RPM](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.1-1.x86_64.rpm)
+- [Linux AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.AppImage)
+- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_x64-setup.exe)
 
-Notara now sets `NO_STRIP=YES` for the Linux Tauri packaging script to work around `linuxdeploy` strip failures on newer distros such as Arch.
-
-### Docker
-
-Build a Docker image:
+## Docker
 
 ```bash
 docker build -t notara:latest .
+docker run --rm -p 3489:3489 notara:latest
 ```
 
-Run the container:
+Open `http://localhost:3489`.
 
-```bash
-docker run --rm -p 3489:3489 \
-  -e POLLINATIONS_API_TOKEN=your_optional_pollinations_token \
-  notara:latest
-```
+The current Docker runtime can proxy Pollinations when `POLLINATIONS_API_TOKEN` is present. This path will change during the OpenAI phase.
 
-Then open:
+## Documentation
 
-- `http://localhost:3489`
+The [documentation index](DOCS/INDEX.md) links the product, architecture, development, security, and troubleshooting guides.
 
-The Docker image serves the built SPA and also provides `/api/pollinations/text` and `/api/pollinations/image`, so the web app keeps its AI functionality inside the container. If you do not pass `POLLINATIONS_API_TOKEN`, users can still provide their own Pollinations key in Settings.
+The separate Astro documentation site is in `website/`. Its visual revamp is planned after the application design system is stable.
 
-### Windows Installer via GitHub Actions
+## Contributing
 
-This repository now includes a GitHub Actions workflow at `.github/workflows/windows-installer.yml`.
+Read [DOCS/CONTRIBUTING.md](DOCS/CONTRIBUTING.md) before changing code. Do not commit to `main`, push, deploy, or publish without direct authorization.
 
-- Trigger it manually from the Actions tab, or
-- Push a tag like `v1.1.1`
+## License
 
-The workflow builds an NSIS Windows installer and uploads it as both:
+Notara is licensed under the [Apache License 2.0](LICENSE).
 
-- a GitHub Actions artifact
-- a draft GitHub release asset for tagged builds
-
-### Deploy to Cloudflare
-
-```bash
-npm run deploy
-```
-
-Ensure the following secrets exist in your Cloudflare Pages project before deploying:
-
-- `POLLINATIONS_API_TOKEN` _(optional but recommended if you rely on authenticated Pollinations requests)_
-
-### Deploy docs website to Cloudflare Pages
-
-The docs site in [`website/`](/home/sizzlebop/PINKPIXEL/PROJECTS/CURRENT/notara/website) now has its own Wrangler Pages config at [`website/wrangler.jsonc`](/home/sizzlebop/PINKPIXEL/PROJECTS/CURRENT/notara/website/wrangler.jsonc), so it can be built and deployed independently from the root app.
-
-```bash
-cd website
-npx wrangler whoami
-npm run deploy
-```
-
-Useful website-local commands:
-
-- `npm run cf:dev` builds the docs and serves the output through Cloudflare Pages locally
-- `npm run deploy` creates a Pages deployment for the `notara-docs` project
-- `npm run deploy:production` deploys the docs to the `main` production branch
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-- **React** 19.1.1 - Modern React with hooks
-- **TypeScript** - Type safety and developer experience
-- **Vite** - Fast build tool and dev server
-- **React Router** 7.9.2 - Client-side routing
-- **TailwindCSS** - Utility-first CSS framework
-- **shadcn/ui** - High-quality React components
-- **Radix UI** - Accessible component primitives
-- **Prism React Renderer** - Fast, themeable syntax highlighting for markdown code blocks
-
-### Storage & Integrations
-
-- **Tauri AppData Storage** - Desktop persistence in Notara's local workspace directory
-- **Browser Storage API** - Local IndexedDB fallback for web builds
-- **Pollinations Proxy** - Chat and image generation helper
-
-### State Management
-
-- **React Context** - Built-in state management
-- **React Query** - Server state management and caching
-
-### Routing & Navigation
-
-- **React Router** - Client-side routing
-
-## 📱 UI/UX Features
-
-- **🌙 Glass Theme**: Beautiful frosted glass effects
-- **📱 Responsive Design**: Works perfectly on all devices
-- **⚡ Fast Performance**: Optimized for speed and efficiency
-- **🎯 Intuitive Interface**: Clean and focused user experience
-- **🔍 Smart Search**: Instant search across all content
-- **📐 Resizable Panels**: Customize your workspace layout
-- **⌨️ Keyboard Shortcuts**: Quickly save (`Ctrl/Cmd+S`) or save everything (`Ctrl/Cmd+Shift+S`) without leaving the editor
-
-## 🔧 Development
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development setup and guidelines.
-
-### Key Scripts
-
-```bash
-npm run dev        # Start development server
-npm run build      # Build for production
-npm run lint       # Run ESLint
-npm run preview    # Preview production build
-npm run tauri:dev  # Run the Tauri desktop app in development
-npm run tauri:build:linux # Build .deb, .rpm, and AppImage bundles
-```
-
-### Desktop Notes
-
-- The Tauri desktop shell is configured and uses `public/icon.png` for installer icons.
-- Desktop builds now persist data automatically in the Tauri app-data workspace at `~/.local/share/dev.pinkpixel.notara/workspace/` on Linux, or the equivalent `XDG_DATA_HOME` path.
-- Pollinations-backed AI text and image requests now use Tauri's native HTTP client in desktop builds, so the assistant is no longer blocked on the web proxy routes.
-- The to-do list dialogs use an in-app calendar picker in desktop builds to avoid native WebKit date-picker freezes.
-
-### Docker Notes
-
-- The Docker runtime serves the prebuilt frontend from `dist/`.
-- A small Node server in `docker/server.mjs` handles SPA routing and the Pollinations proxy endpoints.
-- Docker does not provide the Tauri desktop filesystem features; use the Tauri builds when you want local desktop app storage under `~/.local/share/dev.pinkpixel.notara/workspace/`.
-
-## 📋 Roadmap
-
-- [ ] **Offline Support**: PWA capabilities with offline editing
-- [ ] **Export Options**: PDF, HTML, and other format exports
-- [ ] **Collaboration**: Share notes and collaborate in real-time
-- [ ] **Plugin System**: Extensible plugin architecture
-- [ ] **Mobile App**: Native iOS and Android applications
-- [ ] **Cloud Sync**: Bring-your-own backend integrations post-local-first launch
-- [ ] **Advanced AI**: More AI features and integrations
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## 🙋‍♂️ Support
-
-- **Website**: [pinkpixel.dev](https://pinkpixel.dev)
-- **Email**: [admin@pinkpixel.dev](mailto:admin@pinkpixel.dev)
-- **GitHub Issues**: [Report bugs or request features](https://github.com/pinkpixel-dev/notara/issues)
-- **Discord**: @sizzlebop
-
-## ✨ About Pink Pixel
-
-**Made with ❤️ by Pink Pixel**
-
-Pink Pixel specializes in creating beautiful, modern applications that enhance productivity and creativity.
-
-- 🌐 **Website**: [pinkpixel.dev](https://pinkpixel.dev)
-- 💜 **GitHub**: [github.com/pinkpixel-dev](https://github.com/pinkpixel-dev)
-- ☕ **Support**: [Buy me a coffee](https://www.buymeacoffee.com/pinkpixel)
-
----
-
-**Dream it, Pixel it** ✨
+Made with 💖 by [Pink Pixel](https://pinkpixel.dev)

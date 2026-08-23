@@ -700,7 +700,7 @@ covered in the calendar data, please mention that.
       const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
 
       if (!pollinationsToken) {
-        throw new Error('Pollinations API key is required for text generation. Add one in Settings → Integrations.');
+        throw new Error('Pollinations API key is required for text generation. Add one in Settings → AI & Data.');
       }
 
       const isDesktopRuntime = isTauriDesktopRuntime();
@@ -1528,7 +1528,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
       const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
 
       if (!pollinationsToken) {
-        throw new Error('Pollinations API key is required for image generation. Add one in Settings → Integrations.');
+        throw new Error('Pollinations API key is required for image generation. Add one in Settings → AI & Data.');
       }
 
       const response = await requestPollinationsImage(

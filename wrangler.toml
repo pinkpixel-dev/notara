@@ -18,8 +18,4 @@ VITE_APP_ENV = "development"
 
 # Secrets (configure these with `wrangler secret put <NAME>` and NEVER commit actual values)
 # Example:
-#   wrangler secret put VITE_SUPABASE_URL
-#   wrangler secret put VITE_SUPABASE_ANON_KEY
-#   wrangler secret put VITE_GITHUB_CLIENT_ID
-#   wrangler secret put VITE_GITHUB_CLIENT_SECRET
 #   wrangler secret put POLLINATIONS_API_TOKEN
