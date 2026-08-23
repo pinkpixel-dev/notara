@@ -13,6 +13,13 @@ All notable changes to the Notara project will be documented in this file.
 - Icon buttons now hold a 44 pixel touch target, and every one has an accessible name.
 - The Enable Animations switch now actually stops transitions and entrance animations. It previously set a variable nothing read.
 - Notara now respects the operating system's reduced motion setting.
+- Notara now works on phones. Below 768 pixels the sidebar becomes a drawer, and the notes list and editor become separate views with a switcher between them, instead of two columns fighting over a 375 pixel screen.
+- Tags and Starred Notes move into the drawer on small screens, where the header has no room for them. They stay in the header on desktop.
+- Note rows, to-do list rows, tag rows, and the tag picker are real buttons now. You can reach all of them with the keyboard, and screen readers announce them as controls.
+- Row actions like delete no longer appear only on hover. They are always visible on touch, and they show up on desktop when they take keyboard focus.
+- Every icon button has a name, so screen readers no longer announce a handful of unlabeled buttons.
+- Buttons support a loading state. Choosing a storage folder and sending an AI message now show a spinner and refuse a second press while the first is still running.
+- Controls hold a 44 pixel touch target on touch devices, without making the desktop layout roomier.
 - Added an Interface Font setting with Inter (the default), Poppins, Outfit, Geist, and Plus Jakarta Sans. The Notara wordmark stays on Poppins whichever you pick.
 - The notes list now opens at its narrowest width, leaving more room for the editor. Drag the divider to widen it.
 - Moved Tags and Starred Notes out of the sidebar and into the header, and dropped the duplicate Documentation and Settings buttons from the header.
@@ -29,6 +36,8 @@ All notable changes to the Notara project will be documented in this file.
 ### 🧹 Maintenance
 
 - Split `src/index.css` into `src/styles/tokens.css`, `src/styles/markdown.css`, and `src/styles/calendar.css`, bringing it under the 500-line limit.
+- Split the Markdown cheat sheet, to-do, and vision board files so every file touched in this work is under the 500-line limit, apart from the AI component that Phase 6 covers.
+- Added `WorkspacePanes`, one component that gives every two-pane screen the same desktop and mobile behavior instead of each page inventing its own.
 - Removed the unused legacy Tailwind colors, keyframes, and animations left over from the cosmic theme.
 - Deleted the unreferenced `ThemeSelector` and `ThemeSwitcher` components. The Settings page had already replaced both.
 - Removed the `@supabase/supabase-js` and `idb` dependencies.

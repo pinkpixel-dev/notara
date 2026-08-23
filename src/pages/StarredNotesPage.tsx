@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useNotes } from '@/context/NotesContextTypes';
-import { ResizablePanel } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
 import { Star, FileText, Calendar, Tag, Edit3, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -34,7 +33,7 @@ const StarredNotesPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <ResizablePanel defaultSize={100}>
+      <div className="h-full min-h-0">
         <div className="h-full flex flex-col">
           {/* Header */}
           <div className="flex justify-between items-center gap-4 p-4 sm:p-6 border-b border-border">
@@ -183,7 +182,7 @@ const StarredNotesPage: React.FC = () => {
             )}
           </div>
         </div>
-      </ResizablePanel>
+      </div>
     </AppLayout>
   );
 };

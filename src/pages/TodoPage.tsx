@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTodo } from '@/context/TodoContextTypes';
-import { format, isValid, parse, parseISO } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { format, parse, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar as DateCalendar } from '@/components/ui/calendar';
+import TodoDialogs from '@/components/todo/TodoDialogs';
 import { 
   Edit3, Trash2, ListChecks, ChevronDown, ChevronRight, 
   Plus, Calendar, Check, CheckCircle2, CircleDashed, Clock
@@ -13,62 +12,14 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { v4 as uuidv4 } from 'uuid';
 import type { TodoItem, TodoList } from '@/types';
-import { ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import WorkspacePanes, { WorkspacePaneId } from '@/components/layout/WorkspacePanes';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-const getTodoDateValue = (value: string): Date => {
-  const parsed = parseISO(value);
-  return isValid(parsed) ? parsed : new Date();
-};
-
-interface TodoDateFieldProps {
-  id: string;
-  value: string;
-  onChange: (nextValue: string) => void;
-}
-
-const TodoDateField: React.FC<TodoDateFieldProps> = ({ id, value, onChange }) => {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const selectedDate = getTodoDateValue(value);
-
-  return (
-    <div className="space-y-3">
-      <Button
-        id={id}
-        type="button"
-        variant="outline"
-        className="w-full justify-between text-left font-normal"
-        onClick={() => setIsCalendarOpen((open) => !open)}
-        aria-expanded={isCalendarOpen}
-      >
-        <span>{format(selectedDate, 'MMMM d, yyyy')}</span>
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-      </Button>
-
-      {isCalendarOpen ? (
-        <div className="rounded-lg border border-border/70 bg-card p-2">
-          <DateCalendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => {
-              if (!date) {
-                return;
-              }
-
-              onChange(format(date, 'yyyy-MM-dd'));
-              setIsCalendarOpen(false);
-            }}
-            className="w-full"
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-};
 
 const TodoPage: React.FC = () => {
   const { todoLists, addTodoList, updateTodoList, deleteTodoList, addTodoItem, updateTodoItem, deleteTodoItem } = useTodo();
+  const [activePane, setActivePane] = useState<WorkspacePaneId>('list');
   const [isAddingList, setIsAddingList] = useState(false);
   const [isEditingList, setIsEditingList] = useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -92,6 +43,15 @@ const TodoPage: React.FC = () => {
       setSelectedListId(todoLists[0].id);
     }
   }, [todoLists, selectedListId]);
+
+  const handleCreateList = () => {
+    if (!newTitle.trim()) return;
+    const newList = addTodoList({ title: newTitle, date: newDate, items: [] });
+    setNewTitle('');
+    setNewDate(new Date().toISOString().split('T')[0]);
+    setIsAddingList(false);
+    setSelectedListId(newList.id);
+  };
 
   const openEditDialog = (list: { id: string; title: string; date: string }) => {
     setEditingListId(list.id);
@@ -226,7 +186,15 @@ const TodoPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <ResizablePanel defaultSize={30} minSize={15} maxSize={40}>
+      <WorkspacePanes
+        listLabel="Lists"
+        detailLabel="Tasks"
+        activePane={activePane}
+        onPaneChange={setActivePane}
+        listDefaultSize={30}
+        listMinSize={15}
+        listMaxSize={40}
+        list={
         <div className="h-full flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-border/30">
             <h2 className="text-xl font-bold">To-Do Lists</h2>
@@ -241,51 +209,62 @@ const TodoPage: React.FC = () => {
                 No to-do lists yet. Click the "Add List" button to create one.
               </div>
             ) : (
-              <div className="space-y-1 p-2">
+              <ul className="space-y-1 p-2">
                 {todoLists.map(list => (
-                  <div 
-                    key={list.id} 
-                    className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedListId === list.id 
-                        ? 'bg-primary/20 text-primary-foreground' 
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => setSelectedListId(list.id)}
-                  >
-                    <div>
-                      <div className="font-medium">{list.title}</div>
-                      <div className="text-xs flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
+                  /* Selecting the list is a button, so the row is keyboard
+                     reachable. Edit and delete are siblings rather than nested
+                     buttons. */
+                  <li key={list.id} className="relative">
+                    <button
+                      type="button"
+                      aria-current={selectedListId === list.id ? 'true' : undefined}
+                      className={`min-h-11 w-full rounded-md p-3 pr-24 text-left transition-colors ${
+                        selectedListId === list.id
+                          ? 'bg-accent text-foreground'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        setSelectedListId(list.id);
+                        setActivePane('detail');
+                      }}
+                    >
+                      <span className="block truncate font-medium">{list.title}</span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
                         {format(parseISO(list.date), 'MMM d, yyyy')}
-                        <span className="mx-1">•</span>
-                        <CheckCircle2 className="h-3 w-3" />
+                        <span className="mx-1" aria-hidden="true">•</span>
+                        <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden="true" />
                         {list.items.filter(item => item.checked).length}/{list.items.length}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); openEditDialog(list); }}>
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive/80" 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteList(list.id); }}
+                      </span>
+                    </button>
+                    <div className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        aria-label={`Edit ${list.title}`}
+                        onClick={() => openEditDialog(list)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit3 className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+                        aria-label={`Delete ${list.title}`}
+                        onClick={() => handleDeleteList(list.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
-      </ResizablePanel>
-      
-      <ResizableHandle withHandle className="bg-border/30 hover:bg-primary/50 transition-colors" />
-      
-      <ResizablePanel defaultSize={70}>
+        }
+        detail={
         <div className="h-full border-l border-border/30 relative">
           
           {/* Right panel content */}
@@ -483,106 +462,31 @@ const TodoPage: React.FC = () => {
             </div>
           )}
         </div>
-      </ResizablePanel>
+        }
+      />
 
-      {/* Add List Dialog */}
-      <Dialog open={isAddingList} onOpenChange={setIsAddingList}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New To-Do List</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="list-title" className="text-sm font-medium">Title</label>
-              <Input id="list-title" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="List title" />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="list-date" className="text-sm font-medium">Date</label>
-              <TodoDateField id="list-date" value={newDate} onChange={setNewDate} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsAddingList(false);
-              setNewTitle('');
-              setNewDate(new Date().toISOString().split('T')[0]);
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              if (!newTitle.trim()) return;
-              const newList = addTodoList({ title: newTitle, date: newDate, items: [] });
-              setNewTitle('');
-              setNewDate(new Date().toISOString().split('T')[0]);
-              setIsAddingList(false);
-              setSelectedListId(newList.id);
-            }}>Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit List Dialog */}
-      <Dialog open={isEditingList} onOpenChange={setIsEditingList}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit To-Do List</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="edit-list-title" className="text-sm font-medium">Title</label>
-              <Input id="edit-list-title" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="List title" />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="edit-list-date" className="text-sm font-medium">Date</label>
-              <TodoDateField id="edit-list-date" value={newDate} onChange={setNewDate} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditingList(false)}>Cancel</Button>
-            <Button onClick={handleEditList}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Item Dialog */}
-      <Dialog open={isManagingItems} onOpenChange={setIsManagingItems}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isEditingItem ? 'Edit Item' : 'Add Item'}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="item-content" className="text-sm font-medium">Task</label>
-              <Input 
-                id="item-content" 
-                value={newItemContent} 
-                onChange={e => setNewItemContent(e.target.value)} 
-                placeholder="What needs to be done?" 
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="item-time" className="text-sm font-medium">Time (optional)</label>
-              <Input 
-                id="item-time" 
-                type="time" 
-                value={newItemTime} 
-                onChange={e => setNewItemTime(e.target.value)} 
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsManagingItems(false);
-              setIsEditingItem(false);
-              setNewItemContent('');
-              setNewItemTime('12:00');
-            }}>Cancel</Button>
-            <Button onClick={isEditingItem ? handleEditItem : handleAddItem}>
-              {isEditingItem ? 'Save Changes' : 'Add Item'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TodoDialogs
+        isAddingList={isAddingList}
+        setIsAddingList={setIsAddingList}
+        isEditingList={isEditingList}
+        setIsEditingList={setIsEditingList}
+        isManagingItems={isManagingItems}
+        setIsManagingItems={setIsManagingItems}
+        isEditingItem={isEditingItem}
+        setIsEditingItem={setIsEditingItem}
+        newTitle={newTitle}
+        setNewTitle={setNewTitle}
+        newDate={newDate}
+        setNewDate={setNewDate}
+        newItemContent={newItemContent}
+        setNewItemContent={setNewItemContent}
+        newItemTime={newItemTime}
+        setNewItemTime={setNewItemTime}
+        onCreateList={handleCreateList}
+        onEditList={handleEditList}
+        onAddItem={handleAddItem}
+        onEditItem={handleEditItem}
+      />
     </AppLayout>
   );
 };

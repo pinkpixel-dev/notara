@@ -11,7 +11,6 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { ResizablePanel } from '@/components/ui/resizable';
 
 const VisionBoardPage: React.FC = () => {
   const { visionBoards, addVisionBoard } = useNotes();
@@ -32,7 +31,7 @@ const VisionBoardPage: React.FC = () => {
   
   return (
     <AppLayout>
-      <ResizablePanel defaultSize={100}>
+      <div className="h-full min-h-0">
         <div className="flex flex-col h-full w-full">
           <div className="flex-none p-4 border-b border-border flex justify-between items-center">
             <h2 className="text-xl font-bold">Vision Boards</h2>
@@ -107,7 +106,7 @@ const VisionBoardPage: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </ResizablePanel>
+      </div>
     </AppLayout>
   );
 };

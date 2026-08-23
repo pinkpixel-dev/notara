@@ -1936,21 +1936,23 @@ Focus on finding meaningful relationships and insights rather than just summariz
               {summaryHistory.map(summary => {
                 const summaryType = summaryTypes.find(type => type.id === summary.summaryType);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={summary.id}
-                    className={`p-2 rounded-md cursor-pointer hover:bg-primary/10 transition-colors mb-2 ${
+                    aria-pressed={selectedSummary?.id === summary.id}
+                    className={`mb-2 w-full rounded-md p-2 text-left transition-colors hover:bg-primary/10 ${
                       selectedSummary?.id === summary.id ? 'bg-primary/20' : ''
                     }`}
                     onClick={() => setSelectedSummary(summary)}
                   >
-                    <div className="font-medium">{summaryType?.name || 'Summary'}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <span className="block font-medium">{summaryType?.name || 'Summary'}</span>
+                    <span className="block text-xs text-muted-foreground">
                       {new Date(summary.timestamp).toLocaleString()}
-                    </div>
-                    <div className="text-xs mt-1">
+                    </span>
+                    <span className="mt-1 block text-xs">
                       {summary.noteIds.length} notes
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -2260,9 +2262,14 @@ Focus on finding meaningful relationships and insights rather than just summariz
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={isProcessing || !inputMessage.trim()}
+                disabled={!inputMessage.trim()}
+                loading={isProcessing}
+                loadingLabel="Sending message"
+                aria-label="Send message"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                {!isProcessing && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                )}
               </Button>
             </div>
           </div>

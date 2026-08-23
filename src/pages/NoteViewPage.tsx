@@ -4,7 +4,6 @@ import { useNotes } from '@/context/NotesContextTypes';
 import AppLayout from '@/components/layout/AppLayout';
 import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
-import { ResizablePanel } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
@@ -33,7 +32,7 @@ const NoteViewPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <ResizablePanel defaultSize={100} minSize={30}>
+      <div className="h-full min-h-0">
         <div className="h-full">
           <div className="flex items-center p-2 border-b border-border">
             <Button 
@@ -57,7 +56,7 @@ const NoteViewPage: React.FC = () => {
             </div>
           )}
         </div>
-      </ResizablePanel>
+      </div>
     </AppLayout>
   );
 };

@@ -96,6 +96,26 @@
   background-size: var(--pinboard-texture-size);
 }
 
+/* On touch devices every control clears the 44px minimum. Pointer devices keep
+   their tighter density, so this does not bloat the desktop layout. */
+@media (pointer: coarse) {
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='option'] {
+    min-height: 44px;
+  }
+
+  /* The floor applies on both axes. A min-width only raises controls that are
+     narrower than the target; wider ones are unaffected. */
+  button,
+  [role='button'] {
+    min-width: 44px;
+  }
+}
+
 /* ==========================================================================
    Motion
 

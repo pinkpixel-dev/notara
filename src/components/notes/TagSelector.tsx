@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { NoteTag } from '@/types';
+import { Check } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -50,19 +51,23 @@ const TagSelector: React.FC<TagSelectorProps> = ({
               const isSelected = selectedTags.some(t => t.id === tag.id);
               
               return (
-                <div
+                <button
+                  type="button"
                   key={tag.id}
-                  className={`p-2 rounded-md cursor-pointer flex items-center transition-colors ${
+                  aria-pressed={isSelected}
+                  className={`flex min-h-11 w-full items-center rounded-md p-2 text-left transition-colors ${
                     isSelected ? 'bg-secondary' : 'hover:bg-secondary/50'
                   }`}
                   onClick={() => toggleTag(tag)}
                 >
-                  <div
-                    className="w-3 h-3 rounded-full mr-2"
+                  <span
+                    className="mr-2 h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: tag.color }}
+                    aria-hidden="true"
                   />
-                  <span className="text-sm">{tag.name}</span>
-                </div>
+                  <span className="truncate text-sm">{tag.name}</span>
+                  {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" aria-hidden="true" />}
+                </button>
               );
             })}
           </div>

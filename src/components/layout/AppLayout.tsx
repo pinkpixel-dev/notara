@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Search, BookOpen, Settings, Tag, Star } from 'lucide-react';
+import { Search, Menu, Tag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ResizablePanelGroup } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 import AppMenuBar from './AppMenuBar';
 import StorageStatusBadge from './StorageStatusBadge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,6 +16,8 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
   const isOnTagsPage = location.pathname.startsWith('/tags');
@@ -47,6 +50,14 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSearchNotes]);
 
+  // Leaving the mobile breakpoint should not strand an open drawer over the
+  // desktop layout.
+  useEffect(() => {
+    if (!isMobile) {
+      setIsDrawerOpen(false);
+    }
+  }, [isMobile]);
+
   return (
     /* A two-column grid keeps the main area beside the sidebar at every width.
        The column width comes from the same token the sidebar renders at, so
@@ -55,16 +66,44 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     <div
       className="grid h-screen w-full overflow-hidden surface-app"
       style={{
-        gridTemplateColumns: `${
-          isSidebarOpen ? 'var(--app-sidebar-width)' : 'var(--app-sidebar-width-collapsed)'
-        } minmax(0, 1fr)`,
+        gridTemplateColumns: isMobile
+          ? 'minmax(0, 1fr)'
+          : `${
+              isSidebarOpen ? 'var(--app-sidebar-width)' : 'var(--app-sidebar-width-collapsed)'
+            } minmax(0, 1fr)`,
       }}
     >
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      {isMobile ? (
+        <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <SheetContent side="left" className="w-[17rem] max-w-[85vw] p-0 surface-sidebar">
+            <SheetTitle className="sr-only">Main navigation</SheetTitle>
+            <Sidebar
+              isOpen
+              setIsOpen={setIsSidebarOpen}
+              variant="drawer"
+              onNavigate={() => setIsDrawerOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      )}
 
       <main className="flex min-w-0 flex-col overflow-hidden">
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border surface-toolbar px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
+            {isMobile && (
+              <Button
+                onClick={() => setIsDrawerOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label="Open navigation menu"
+                aria-expanded={isDrawerOpen}
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            )}
             <AppMenuBar />
             <StorageStatusBadge />
           </div>
@@ -76,7 +115,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   asChild
                   variant="ghost"
                   size="icon"
-                  className={cn('h-11 w-11', isOnTagsPage && 'bg-accent text-primary')}
+                  className={cn(
+                    'hidden h-11 w-11 md:inline-flex',
+                    isOnTagsPage && 'bg-accent text-primary'
+                  )}
                   aria-label="Open tags"
                 >
                   <Link to="/tags" aria-current={isOnTagsPage ? 'page' : undefined}>
@@ -93,7 +135,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                   asChild
                   variant="ghost"
                   size="icon"
-                  className={cn('h-11 w-11', isOnStarredPage && 'bg-accent text-primary')}
+                  className={cn(
+                    'hidden h-11 w-11 md:inline-flex',
+                    isOnStarredPage && 'bg-accent text-primary'
+                  )}
                   aria-label="Open starred notes"
                 >
                   <Link to="/starred" aria-current={isOnStarredPage ? 'page' : undefined}>
@@ -109,7 +154,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11"
+                  className="hidden h-11 w-11 md:inline-flex"
                   aria-label="Search notes"
                   aria-keyshortcuts="Control+K Meta+K"
                   onClick={handleSearchNotes}
@@ -122,11 +167,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            {children}
-          </ResizablePanelGroup>
-        </div>
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
       </main>
     </div>
   );

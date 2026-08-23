@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { HardDrive, ShieldAlert, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,31 +12,46 @@ const StorageStatusBadge: React.FC = () => {
       ? 'App storage'
       : rootHandle?.name || 'Notara';
 
+  // Picking a folder waits on the OS dialog, so the control has to show that
+  // something is happening and refuse a second press meanwhile.
+  const [isBusy, setIsBusy] = useState(false);
+
   const handleSelect = useCallback(async () => {
-    const connected = await selectDirectory();
-    if (connected) {
-      toast({
-        title: 'Storage ready',
-        description: 'Notara storage is ready to use.',
-      });
+    setIsBusy(true);
+    try {
+      const connected = await selectDirectory();
+      if (connected) {
+        toast({
+          title: 'Storage ready',
+          description: 'Notara storage is ready to use.',
+        });
+      }
+    } finally {
+      setIsBusy(false);
     }
   }, [selectDirectory]);
 
   const handleReconnect = useCallback(async () => {
-    const connected = await reconnectToPersisted();
-    if (connected) {
-      toast({
-        title: 'Storage reconnected',
-        description: 'Folder permissions restored.',
-      });
+    setIsBusy(true);
+    try {
+      const connected = await reconnectToPersisted();
+      if (connected) {
+        toast({
+          title: 'Storage reconnected',
+          description: 'Folder permissions restored.',
+        });
+      }
+    } finally {
+      setIsBusy(false);
     }
   }, [reconnectToPersisted]);
 
   if (status === 'unsupported') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/50 px-2 py-1 text-xs font-medium text-muted-foreground">
-        <ShieldAlert className="h-3.5 w-3.5" />
-        File access unavailable
+      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground">
+        <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="hidden sm:inline">File access unavailable</span>
+        <span className="sr-only sm:hidden">File access unavailable</span>
       </span>
     );
   }
@@ -46,10 +61,11 @@ const StorageStatusBadge: React.FC = () => {
       <Tooltip>
         <TooltipTrigger
           type="button"
-          className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-1 text-xs font-medium text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={`Storage: ${storageLabel}`}
+          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-colors"
         >
-          <HardDrive className="h-3.5 w-3.5" />
-          <span className="max-w-[10rem] truncate">{storageLabel}</span>
+          <HardDrive className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="hidden max-w-[10rem] truncate sm:inline">{storageLabel}</span>
         </TooltipTrigger>
         <TooltipContent>
           <p>Saving to Notara app storage.</p>
@@ -60,9 +76,17 @@ const StorageStatusBadge: React.FC = () => {
 
   if (status === 'needs-permission') {
     return (
-      <Button variant="outline" size="sm" onClick={handleReconnect} className="flex items-center gap-2">
-        <ShieldAlert className="h-4 w-4" />
-        Re-authorize
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleReconnect}
+        loading={isBusy}
+        loadingLabel="Re-authorizing folder access"
+        className="flex shrink-0 items-center gap-2"
+        aria-label="Re-authorize folder access"
+      >
+        {!isBusy && <ShieldAlert className="h-4 w-4 shrink-0" aria-hidden="true" />}
+        <span className="hidden whitespace-nowrap sm:inline">Re-authorize</span>
       </Button>
     );
   }
@@ -72,10 +96,11 @@ const StorageStatusBadge: React.FC = () => {
       <Tooltip>
         <TooltipTrigger
           type="button"
-          className="inline-flex items-center gap-1 rounded-full border border-destructive/60 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+          aria-label="Storage error"
+          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-destructive/60 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive"
         >
-          <ShieldAlert className="h-3.5 w-3.5" />
-          Storage error
+          <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="hidden sm:inline">Storage error</span>
         </TooltipTrigger>
         <TooltipContent>
           <p>{lastError || 'Unable to access the Notara folder.'}</p>
@@ -85,9 +110,17 @@ const StorageStatusBadge: React.FC = () => {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleSelect} className="flex items-center gap-2">
-      <FolderOpen className="h-4 w-4" />
-      Choose folder
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleSelect}
+      loading={isBusy}
+      loadingLabel="Opening folder picker"
+      className="flex shrink-0 items-center gap-2"
+      aria-label="Choose storage folder"
+    >
+      {!isBusy && <FolderOpen className="h-4 w-4 shrink-0" aria-hidden="true" />}
+      <span className="hidden whitespace-nowrap sm:inline">Choose folder</span>
     </Button>
   );
 };
