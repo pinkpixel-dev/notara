@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { AppFont, availableFonts, defaultFont, getFontStack, isAppFont } from '@/lib/fonts';
 
 // Theme Types
 export type ThemeMode = 'light' | 'midnight';
@@ -12,6 +13,7 @@ interface ThemeSettings {
   visualizationMode: VisualizationMode;
   animations: boolean;
   fontSize: 'small' | 'medium' | 'large';
+  fontFamily: AppFont;
 }
 
 interface ThemeContextType {
@@ -24,6 +26,7 @@ interface ThemeContextType {
   setVisualizationMode: (mode: VisualizationMode) => void;
   setAnimations: (enabled: boolean) => void;
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
+  setFontFamily: (font: AppFont) => void;
 
   // Convenience functions
   resetToDefaults: () => void;
@@ -44,6 +47,7 @@ interface ThemeContextType {
     cssClass: string;
     hexValue: string;
   }>;
+  availableFonts: typeof availableFonts;
 }
 
 // Default theme settings
@@ -53,6 +57,7 @@ const defaultSettings: ThemeSettings = {
   visualizationMode: 'constellation',
   animations: true,
   fontSize: 'medium',
+  fontFamily: defaultFont,
 };
 
 // Theme metadata
@@ -134,6 +139,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       // glassIntensity was dropped with the glass surface system.
       delete parsed?.glassIntensity;
 
+      if (!isAppFont(parsed?.fontFamily)) {
+        delete parsed?.fontFamily;
+      }
+
       return { ...defaultSettings, ...parsed };
     } catch (error) {
       console.error('Error loading theme settings:', error);
@@ -154,6 +163,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
       body.classList.add(`theme-${settings.mode}`);
       body.classList.add(`accent-${settings.accentColor}`);
+
+      root.style.setProperty('--app-font', getFontStack(settings.fontFamily));
 
       root.classList.remove('text-sm', 'text-base', 'text-lg');
       switch (settings.fontSize) {
@@ -225,6 +236,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     });
   };
 
+  const setFontFamily = (font: AppFont) => {
+    setSettings(prev => ({ ...prev, fontFamily: font }));
+    toast({
+      title: "Font updated",
+      description: `Now using ${availableFonts.find(f => f.id === font)?.name}`,
+    });
+  };
+
   const resetToDefaults = () => {
     setSettings(defaultSettings);
     toast({
@@ -256,6 +275,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           visualizationMode: ['constellation', 'graph'].includes(imported.visualizationMode) ? imported.visualizationMode : defaultSettings.visualizationMode,
           animations: typeof imported.animations === 'boolean' ? imported.animations : defaultSettings.animations,
           fontSize: ['small', 'medium', 'large'].includes(imported.fontSize) ? imported.fontSize : defaultSettings.fontSize,
+          fontFamily: isAppFont(imported.fontFamily) ? imported.fontFamily : defaultSettings.fontFamily,
         };
 
         setSettings(validSettings);
@@ -284,11 +304,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setVisualizationMode,
     setAnimations,
     setFontSize,
+    setFontFamily,
     resetToDefaults,
     exportSettings,
     importSettings,
     availableThemes,
     availableAccentColors,
+    availableFonts,
   };
 
   return (

@@ -47,7 +47,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1 hover:bg-accent"
           >
             <img src="/logo.png" alt="" aria-hidden="true" className="h-9 w-9 shrink-0 object-contain" />
-            <span className="truncate text-lg font-semibold tracking-tight">Notara</span>
+            <span className="truncate font-poppins text-lg font-semibold tracking-tight">Notara</span>
           </Link>
         ) : (
           <Tooltip>
@@ -175,7 +175,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <a
-              href="https://github.com/pinkpixel-dev/notara#readme"
+              href="https://notara.site"
               target="_blank"
               rel="noreferrer"
               className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"

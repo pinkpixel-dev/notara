@@ -53,7 +53,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
        the two can never disagree. Grid columns are not transitioned, because
        animating a layout property is both janky and against the design rules. */
     <div
-      className="grid h-screen w-full overflow-hidden surface-app font-poppins"
+      className="grid h-screen w-full overflow-hidden surface-app"
       style={{
         gridTemplateColumns: `${
           isSidebarOpen ? 'var(--app-sidebar-width)' : 'var(--app-sidebar-width-collapsed)'

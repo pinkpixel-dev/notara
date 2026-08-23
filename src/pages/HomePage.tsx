@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
   
   return (
     <AppLayout>
-      <ResizablePanel defaultSize={30} minSize={20} maxSize={70}>
+      <ResizablePanel defaultSize={20} minSize={20} maxSize={70}>
         <div className="h-full flex flex-col">
           <div className="flex-1 overflow-hidden">
             <NotesList
@@ -58,7 +58,7 @@ const HomePage: React.FC = () => {
       
       <ResizableHandle withHandle className="bg-border/30 hover:bg-primary/50 transition-colors" />
       
-      <ResizablePanel defaultSize={70}>
+      <ResizablePanel defaultSize={80}>
         <div className="h-full border-l border-border/30">
           {isCreatingNote ? (
             <NoteEditor

@@ -18,8 +18,8 @@ const SettingsPage: React.FC = () => {
   const [autoSave, setAutoSave] = useState(true);
   const [spellCheck, setSpellCheck] = useState(true);
   const {
-    settings, setThemeMode, setAccentColor, setFontSize, setAnimations,
-    resetToDefaults, availableThemes, availableAccentColors,
+    settings, setThemeMode, setAccentColor, setFontSize, setFontFamily, setAnimations,
+    resetToDefaults, availableThemes, availableAccentColors, availableFonts,
   } = useTheme();
   const navigate = useNavigate();
 
@@ -126,6 +126,23 @@ const SettingsPage: React.FC = () => {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="font-family">Interface Font</Label>
+                    <Select value={settings.fontFamily} onValueChange={setFontFamily}>
+                      <SelectTrigger id="font-family"><SelectValue placeholder="Select a font" /></SelectTrigger>
+                      <SelectContent>
+                        {availableFonts.map((font) => (
+                          <SelectItem key={font.id} value={font.id}>
+                            <span style={{ fontFamily: font.stack }}>{font.name}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Sets the font for the whole interface. The Notara wordmark always stays on Poppins.
+                    </p>
                   </div>
 
                   <div className="space-y-2">
