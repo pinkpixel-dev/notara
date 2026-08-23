@@ -54,59 +54,95 @@ const NoteRow: React.FC<NoteRowProps> = ({
   const dateLabel = Number.isNaN(updated.getTime()) ? '' : format(updated, 'd MMM yyyy');
 
   return (
-    <li className="group relative flex items-stretch">
+    /*
+     * The highlight lives on the row, not on the button inside it, so a selected
+     * note is shaded across its whole width including the indicators and the
+     * menu. Shading only the text button left a strip of unhighlighted row on
+     * the right of the selection.
+     */
+    <li
+      className={cn(
+        'group relative flex items-stretch transition-colors',
+        isActive ? 'bg-accent' : 'hover:bg-accent/60'
+      )}
+    >
       <button
         type="button"
         onClick={() => onSelect(note)}
         aria-current={isActive ? 'true' : undefined}
         style={{ paddingLeft: `${1.75 + depth * INDENT_REM}rem` }}
         className={cn(
-          'flex min-h-11 flex-1 flex-col justify-center gap-0.5 py-1.5 pr-2 text-left transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
-          isActive ? 'bg-accent' : 'hover:bg-accent/60'
+          'flex min-h-11 min-w-0 flex-1 flex-col justify-center gap-0.5 py-1.5 pr-2 text-left',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
         )}
       >
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span
-            className={cn(
-              'min-w-0 flex-1 truncate text-sm',
-              isActive ? 'text-foreground' : 'text-foreground/90'
-            )}
-          >
-            {title}
-          </span>
-          {note.isStarred && (
-            <Star
-              className="h-3.5 w-3.5 shrink-0 fill-current text-primary"
-              aria-label="Starred"
-            />
+        <span
+          className={cn(
+            'min-w-0 truncate text-sm',
+            isActive ? 'text-foreground' : 'text-foreground/90'
           )}
+        >
+          {title}
         </span>
         <span className="truncate text-xs text-muted-foreground">{dateLabel}</span>
       </button>
 
-      {/* A pinned row carries its own unpin control, so the way back is in the
-          same place as the thing it undid. Everything else lives in the menu,
-          which keeps the row to one visible action instead of a strip of
-          icons. */}
-      {note.isPinned && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={() => onTogglePin(note)}
-              aria-label={`Unpin ${title}`}
-              className={cn(
-                'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
-                'text-primary transition-colors hover:bg-accent'
-              )}
-            >
-              <Pin className="h-4 w-4 fill-current" aria-hidden="true" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>Unpin</TooltipContent>
-        </Tooltip>
-      )}
+      {/*
+       * Fixed columns for the star and the pin.
+       *
+       * Each slot is always rendered, empty or not, so a star sits under every
+       * other star and a pin under every other pin. Letting them collapse put a
+       * starred note's icon exactly where a pinned note's icon was on the row
+       * above, at a different offset again when a note had both.
+       *
+       * The width matches the touch floor on coarse pointers, where the global
+       * rule widens the buttons inside these slots to 44 pixels.
+       */}
+      <span
+        className={cn(
+          'flex w-9 shrink-0 items-center justify-center',
+          '[@media(pointer:coarse)]:w-11'
+        )}
+      >
+        {note.isStarred && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => onToggleStar(note)}
+                aria-label={`Remove star from ${title}`}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent-foreground/10"
+              >
+                <Star className="h-4 w-4 fill-current" aria-hidden="true" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Remove star</TooltipContent>
+          </Tooltip>
+        )}
+      </span>
+
+      <span
+        className={cn(
+          'flex w-9 shrink-0 items-center justify-center',
+          '[@media(pointer:coarse)]:w-11'
+        )}
+      >
+        {note.isPinned && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => onTogglePin(note)}
+                aria-label={`Unpin ${title}`}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent-foreground/10"
+              >
+                <Pin className="h-4 w-4 fill-current" aria-hidden="true" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Unpin</TooltipContent>
+          </Tooltip>
+        )}
+      </span>
 
       {/* Always there on touch. On pointer devices it appears on hover or when
           it takes focus, so it never becomes keyboard-unreachable. */}
@@ -117,7 +153,7 @@ const NoteRow: React.FC<NoteRowProps> = ({
             aria-label={`Actions for ${title}`}
             className={cn(
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
-              'text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+              'text-muted-foreground transition-colors hover:bg-accent-foreground/10 hover:text-foreground',
               'md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100',
               'data-[state=open]:opacity-100'
             )}
@@ -142,7 +178,6 @@ const NoteRow: React.FC<NoteRowProps> = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
     </li>
   );
 };
