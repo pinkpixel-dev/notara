@@ -115,3 +115,28 @@ export const uniqueNotePath = (
 
   return candidate(suffix);
 };
+
+/**
+ * Allocates a path for each title in one go.
+ *
+ * Each allocation counts against the ones before it, so a batch that contains
+ * the same title twice gets two different files instead of one file written
+ * twice. Calling `uniqueNotePath` in a loop cannot do this, because the notes
+ * it compares against do not include the batch still being written.
+ */
+export const uniqueNotePaths = (
+  directory: string,
+  titles: string[],
+  taken: Iterable<string>
+): string[] => {
+  const claimed = [...taken];
+  const allocated: string[] = [];
+
+  for (const title of titles) {
+    const path = uniqueNotePath(directory, title, claimed);
+    claimed.push(path);
+    allocated.push(path);
+  }
+
+  return allocated;
+};

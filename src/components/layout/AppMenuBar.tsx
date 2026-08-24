@@ -12,6 +12,8 @@ import {
   MenubarShortcut,
 } from '@/components/ui/menubar';
 import { toast } from '@/hooks/use-toast';
+import { pickMarkdownFiles } from '@/lib/notes/import';
+import { fileNameToTitle } from '@/lib/notes/naming';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useTodo } from '@/context/TodoContextTypes';
@@ -50,7 +52,7 @@ const execCommand = (command: string) => {
 };
 
 const AppMenuBar: React.FC = () => {
-  const { notes, tags, visionBoards, addNote, setActiveNote } = useNotes();
+  const { notes, tags, visionBoards, addNotes, setActiveNote } = useNotes();
   const { todoLists } = useTodo();
   const {
     status,
@@ -106,56 +108,67 @@ const AppMenuBar: React.FC = () => {
     }
   }, [flushCachedAiConversations, hasLinkedDirectory, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
 
-  const handleOpenMarkdown = useCallback(async () => {
-    if (typeof window === 'undefined' || !('showOpenFilePicker' in window)) {
-      toast({
-        title: 'Open unsupported',
-        description: 'Your browser does not support opening local files directly.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  /**
+   * Imports one or more Markdown files as new notes.
+   *
+   * The picker differs per runtime, which `pickMarkdownFiles` handles. Files
+   * that cannot be read, and notes that cannot be written, are both reported
+   * rather than dropped, because a partly finished import is worth knowing
+   * about in detail.
+   */
+  const handleImportMarkdown = useCallback(async () => {
     try {
-      const [fileHandle] = await (window as typeof window & { 
-        showOpenFilePicker: (options: {
-          multiple: boolean;
-          types: Array<{ description: string; accept: Record<string, string[]> }>;
-        }) => Promise<FileSystemFileHandle[]>;
-      }).showOpenFilePicker({
-        multiple: false,
-        types: [
-          {
-            description: 'Markdown Files',
-            accept: {
-              'text/markdown': ['.md', '.markdown'],
-              'text/plain': ['.txt'],
-            },
-          },
-        ],
-      });
-      const file = await fileHandle.getFile();
-      const text = await file.text();
-      const noteTitle = file.name.replace(/\.(md|markdown|txt)$/i, '');
-      const newNote = await addNote({ title: noteTitle || 'Imported Note', content: text });
-      setActiveNote(newNote);
-      toast({
-        title: 'Note imported',
-        description: `${file.name} added to your workspace.`,
-      });
-    } catch (error) {
-      const domError = error as DOMException;
-      if (domError?.name === 'AbortError') {
+      const selection = await pickMarkdownFiles();
+      if (!selection) {
         return;
       }
-      console.error('Failed to open markdown file', error);
+
+      const { created, failures } = await addNotes(
+        selection.sources.map((source) => ({
+          title: fileNameToTitle(source.name),
+          content: source.text,
+        }))
+      );
+
+      const unreadable = selection.failures.length;
+      const unwritable = failures.length;
+      const problems = unreadable + unwritable;
+
+      if (created.length > 0) {
+        setActiveNote(created[created.length - 1]);
+      }
+
+      if (created.length === 0 && problems > 0) {
+        toast({
+          title: 'Nothing was imported',
+          description: [...selection.failures, ...failures]
+            .map((failure) => ('name' in failure ? failure.name : failure.title))
+            .join(', '),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: `${created.length} note${created.length === 1 ? '' : 's'} imported`,
+        description:
+          problems > 0
+            ? `${problems} file${problems === 1 ? '' : 's'} could not be imported.`
+            : created.length === 1
+              ? `Added as ${created[0].path}.`
+              : 'Added to your workspace.',
+        variant: problems > 0 ? 'destructive' : undefined,
+      });
+    } catch (error) {
+      console.error('Failed to import Markdown files', error);
       toast({
         title: 'Import failed',
-        description: 'Unable to open the selected file. Please try again.',
+        description:
+          (error instanceof Error && error.message) || 'Unable to read the selected files.',
         variant: 'destructive',
       });
     }
-  }, [addNote, setActiveNote]);
+  }, [addNotes, setActiveNote]);
 
   const handleConnectDirectory = useCallback(async () => {
     const connected = await selectDirectory();
@@ -205,13 +218,13 @@ const AppMenuBar: React.FC = () => {
       // The File menu has always shown this shortcut. Nothing listened for it.
       if (event.key.toLowerCase() === 'o') {
         event.preventDefault();
-        void handleOpenMarkdown();
+        void handleImportMarkdown();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleOpenMarkdown, handleSaveActiveNote, handleSaveAll]);
+  }, [handleImportMarkdown, handleSaveActiveNote, handleSaveAll]);
 
   return (
     <Menubar className="bg-transparent border-none shadow-none p-0">
@@ -247,7 +260,7 @@ const AppMenuBar: React.FC = () => {
           {/* This copies the file's text into a new note in the workspace. It
               never opens the original in place, so it is named for what it
               does. Save As, which would make Open meaningful, is not built. */}
-          <MenubarItem onSelect={(event) => { event.preventDefault(); void handleOpenMarkdown(); }}>
+          <MenubarItem onSelect={(event) => { event.preventDefault(); void handleImportMarkdown(); }}>
             Import Markdown...
             <MenubarShortcut>Ctrl+O</MenubarShortcut>
           </MenubarItem>

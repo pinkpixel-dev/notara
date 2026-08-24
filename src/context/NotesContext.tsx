@@ -39,7 +39,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isInitialised, setIsInitialised] = useState(false);
 
   const files = useNoteFiles(tags);
-  const { notes, createNote, saveNote, moveNote: moveNoteFile, reloadNote: reloadNoteFile, removeNote } = files;
+  const { notes, createNote, createNotes, saveNote, moveNote: moveNoteFile, reloadNote: reloadNoteFile, removeNote } = files;
 
   const tagsRef = useRef(tags);
   tagsRef.current = tags;
@@ -153,6 +153,12 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return created;
     },
     [createNote]
+  );
+
+  const addNotes = useCallback(
+    (notes: Array<Partial<Note>>, directory = '') =>
+      createNotes(notes as NoteInput[], directory),
+    [createNotes]
   );
 
   const updateNote = useCallback(
@@ -321,6 +327,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       noteFailures: files.failures,
       reloadNotes: files.reload,
       addNote,
+      addNotes,
       updateNote,
       moveNote,
       reloadNote,
@@ -340,6 +347,7 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [
       activeNote,
       addNote,
+      addNotes,
       addTag,
       addVisionBoard,
       deleteNote,

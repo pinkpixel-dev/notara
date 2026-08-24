@@ -14,7 +14,7 @@ import { useWorkspace } from '@/context/WorkspaceContextTypes';
 import { loadNotesFromWorkspace, type NoteLoadFailure } from '@/lib/notes/load';
 import { metadataOf, noteFromFile, noteToFileContents } from '@/lib/notes/mapping';
 import { migrateNotesBundle } from '@/lib/notes/migrate';
-import { uniqueNotePath } from '@/lib/notes/naming';
+import { uniqueNotePath, uniqueNotePaths } from '@/lib/notes/naming';
 import { buildNoteFile } from '@/lib/markdown/note-frontmatter';
 import {
   deleteNoteFile,
@@ -40,6 +40,18 @@ export interface NoteInput {
   directory?: string;
 }
 
+/** A note in a batch that could not be written. */
+export interface NoteWriteFailure {
+  title: string;
+  message: string;
+}
+
+/** What a batch create managed, and what it did not. */
+export interface CreateNotesResult {
+  created: Note[];
+  failures: NoteWriteFailure[];
+}
+
 /** Options for a save that is not a plain edit. */
 export interface SaveOptions {
   /**
@@ -61,6 +73,11 @@ export interface NoteFilesApi {
   discoveredTags: NoteTag[];
   reload: () => Promise<void>;
   createNote: (input: NoteInput) => Promise<Note>;
+  /**
+   * Creates several notes at once, allocating every file name before writing
+   * any of them so a batch cannot collide with itself.
+   */
+  createNotes: (inputs: NoteInput[], directory?: string) => Promise<CreateNotesResult>;
   saveNote: (id: string, input: NoteInput, options?: SaveOptions) => Promise<Note | null>;
   /** Moves a note's file into another workspace folder. */
   moveNote: (id: string, directory: string) => Promise<Note | null>;
@@ -287,6 +304,74 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
     [requireWorkspace]
   );
 
+  /**
+   * Creates several notes in one pass.
+   *
+   * Every path is allocated before anything is written, against the existing
+   * notes and against the rest of the batch. Calling `createNote` in a loop
+   * cannot do that: the notes it compares against only update when React
+   * re-renders, so two files with the same name would be handed the same path
+   * and the second write would land on top of the first.
+   *
+   * A file that fails to write does not stop the rest. Import is usually a
+   * handful of files and losing the whole batch to one bad one is worse than
+   * reporting which one failed.
+   */
+  const createNotes = useCallback(
+    async (inputs: NoteInput[], directory = ''): Promise<CreateNotesResult> => {
+      const root = requireWorkspace();
+      const now = new Date().toISOString();
+
+      const drafts: Note[] = inputs.map((input) => ({
+        id: '',
+        path: '',
+        revision: null,
+        title: input.title?.trim() || 'Untitled',
+        content: input.content ?? '',
+        createdAt: input.createdAt ?? now,
+        updatedAt: now,
+        tags: input.tags ?? [],
+        isPinned: input.isPinned ?? false,
+        isStarred: input.isStarred ?? false,
+      }));
+
+      const paths = uniqueNotePaths(
+        directory,
+        drafts.map((draft) => draft.title),
+        notesRef.current.map((note) => note.path)
+      );
+
+      const created: Note[] = [];
+      const failures: NoteWriteFailure[] = [];
+
+      for (const [index, draft] of drafts.entries()) {
+        const contents = buildNoteFile(metadataOf(draft), draft.content);
+        try {
+          const written = await writeNoteFile(root, paths[index], contents, null);
+          const { note } = noteFromFile({
+            path: written.path,
+            contents,
+            revision: written.revision,
+            knownTags: knownTagsRef.current,
+          });
+          created.push(note);
+        } catch (error) {
+          failures.push({
+            title: draft.title,
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      if (created.length > 0) {
+        setNotes((previous) => [...previous, ...created]);
+      }
+
+      return { created, failures };
+    },
+    [requireWorkspace]
+  );
+
   const saveNote = useCallback(
     async (id: string, input: NoteInput, options?: SaveOptions): Promise<Note | null> => {
       const root = requireWorkspace();
@@ -421,6 +506,7 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
     discoveredTags,
     reload,
     createNote,
+    createNotes,
     saveNote,
     moveNote,
     reloadNote,

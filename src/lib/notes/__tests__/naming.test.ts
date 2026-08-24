@@ -4,6 +4,7 @@ import {
   fileNameToTitle,
   MAX_TITLE_LENGTH,
   titleToFileName,
+  uniqueNotePaths,
   uniqueNotePath,
 } from '../naming';
 
@@ -105,5 +106,54 @@ describe('uniqueNotePath', () => {
 
   it('sanitizes the title before looking for a collision', () => {
     expect(uniqueNotePath('', '1:1 ratios', ['1 1 ratios.md'])).toBe('1 1 ratios 2.md');
+  });
+});
+
+describe('uniqueNotePaths', () => {
+  it('allocates a path for each title', () => {
+    expect(uniqueNotePaths('', ['One', 'Two'], [])).toEqual(['One.md', 'Two.md']);
+  });
+
+  it('separates duplicates inside one batch', () => {
+    // The whole point: importing two files called Notes must not write one
+    // file twice. Calling uniqueNotePath in a loop would return Notes.md both
+    // times, because neither allocation knows about the other.
+    expect(uniqueNotePaths('', ['Notes', 'Notes', 'Notes'], [])).toEqual([
+      'Notes.md',
+      'Notes 2.md',
+      'Notes 3.md',
+    ]);
+  });
+
+  it('counts up past names already in the workspace', () => {
+    expect(uniqueNotePaths('', ['Notes'], ['Notes.md'])).toEqual(['Notes 2.md']);
+  });
+
+  it('respects both existing names and earlier allocations', () => {
+    expect(uniqueNotePaths('', ['Notes', 'Notes'], ['Notes.md'])).toEqual([
+      'Notes 2.md',
+      'Notes 3.md',
+    ]);
+  });
+
+  it('allocates inside a folder', () => {
+    expect(uniqueNotePaths('Work', ['Notes', 'Notes'], [])).toEqual([
+      'Work/Notes.md',
+      'Work/Notes 2.md',
+    ]);
+  });
+
+  it('does not collide with the same name in another folder', () => {
+    expect(uniqueNotePaths('Work', ['Notes'], ['Personal/Notes.md'])).toEqual([
+      'Work/Notes.md',
+    ]);
+  });
+
+  it('sanitizes titles before allocating', () => {
+    expect(uniqueNotePaths('', ['A/B', 'A/B'], [])).toEqual(['A B.md', 'A B 2.md']);
+  });
+
+  it('returns nothing for an empty batch', () => {
+    expect(uniqueNotePaths('', [], ['Notes.md'])).toEqual([]);
   });
 });

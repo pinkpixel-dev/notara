@@ -1,7 +1,7 @@
 import React, { createContext } from 'react';
 import { Note, NoteTag, VisionBoard } from '../types';
 import type { NotesBundle } from '@/lib/filesystem';
-import type { NoteFilesStatus, SaveOptions } from './notes/useNoteFiles';
+import type { CreateNotesResult, NoteFilesStatus, SaveOptions } from './notes/useNoteFiles';
 import type { NoteLoadFailure } from '@/lib/notes/load';
 
 /**
@@ -53,6 +53,18 @@ export interface NotesContextType {
       directory?: string;
     }
   ) => Promise<Note>;
+  /**
+   * Creates several notes at once, for importing.
+   *
+   * Every file name is allocated before anything is written, so importing two
+   * files with the same name produces two notes rather than one overwriting
+   * the other. A file that fails does not stop the rest; it comes back in
+   * `failures` instead.
+   */
+  addNotes: (
+    notes: Array<Partial<Note>>,
+    directory?: string
+  ) => Promise<CreateNotesResult>;
   /**
    * Writes changes to a note's file.
    *

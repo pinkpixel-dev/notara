@@ -4,6 +4,18 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📥 Import
+
+- Import Markdown takes several files at once instead of one at a time.
+- Import works in the desktop app. It used to go through a browser API that the
+  desktop webview does not have, so on desktop it only reported that opening
+  files was unsupported. It now uses the system file dialog there.
+- Importing two files with the same name gives you two notes. Before, both were
+  written to the same file name and the second landed on top of the first.
+- Files that cannot be read, and notes that cannot be written, are counted in
+  the result instead of being dropped quietly. One bad file no longer stops the
+  rest of the batch.
+
 ### 💾 Unsaved work
 
 - Notara warns before throwing away unsaved edits. Opening another note or
