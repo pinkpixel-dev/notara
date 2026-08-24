@@ -18,7 +18,7 @@ export const UTILITY_LINKS = [
     icon: MessageSquare,
     to: '/ai-assistant',
     /**
-     * Here rather than in the section tabs because Phase 6 turns this into a
+     * Here rather than in the section tabs because Phase 5 turns this into a
      * right-hand panel. Giving it a tab now means taking one away later.
      */
   },

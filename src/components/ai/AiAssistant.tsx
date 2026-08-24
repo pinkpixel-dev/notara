@@ -712,7 +712,7 @@ covered in the calendar data, please mention that.
    * The name and the callback are kept from the previous streaming transport so
    * the callers do not change. Text arrives in a single piece rather than in
    * chunks: the request is made in Rust, which is what keeps the API key out of
-   * this component, and incremental delivery needs the panel rework that Phase 6
+   * this component, and incremental delivery needs the panel rework that Phase 5
    * owns. Callers already handle a single call, because the desktop build was
    * non-streaming before this too.
    */
