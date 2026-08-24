@@ -6,6 +6,7 @@ import NotesSidebar from '@/components/notes/sidebar/NotesSidebar';
 import DeleteNoteDialog from '@/components/notes/DeleteNoteDialog';
 import MoveNoteDialog from '@/components/notes/MoveNoteDialog';
 import RenameNoteDialog from '@/components/notes/RenameNoteDialog';
+import UnsavedChangesDialog from '@/components/notes/UnsavedChangesDialog';
 import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,14 @@ const HomePage: React.FC = () => {
   const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
   const [noteAwaitingMove, setNoteAwaitingMove] = useState<Note | null>(null);
   const [noteAwaitingRename, setNoteAwaitingRename] = useState<Note | null>(null);
+  const [isEditorDirty, setIsEditorDirty] = useState(false);
+  /**
+   * What to do once the user says the unsaved edits can go.
+   *
+   * Holding the action rather than a flag keeps the two ways of leaving a note,
+   * opening another and starting a new one, on one path.
+   */
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
   // Which folder a note being written now belongs in. Empty is the workspace
   // root, which is what the Create Note button and the File menu use.
   const [newNoteDirectory, setNewNoteDirectory] = useState('');
@@ -29,19 +38,63 @@ const HomePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleSelectNote = (note: Note) => {
-    setActiveNote(note);
-    setIsCreatingNote(false);
-    // On mobile only one pane shows, so opening a note has to move the view.
-    setActivePane('detail');
-  };
+  /**
+   * Runs an action, or holds it back while the user decides about unsaved work.
+   *
+   * Every route out of the open note goes through here. Saving happens on
+   * demand rather than as you type, so leaving takes the buffer with it.
+   */
+  const guardUnsaved = useCallback(
+    (action: () => void) => {
+      if (isEditorDirty) {
+        // Stored behind a function, because React treats a bare function passed
+        // to a setter as an updater and would call it immediately.
+        setPendingNavigation(() => action);
+        return;
+      }
+      action();
+    },
+    [isEditorDirty]
+  );
 
-  const handleCreateNote = useCallback((directory = '') => {
-    setNewNoteDirectory(directory);
-    setActiveNote(null);
-    setIsCreatingNote(true);
-    setActivePane('detail');
-  }, [setActiveNote]);
+  const openNote = useCallback(
+    (note: Note) => {
+      setActiveNote(note);
+      setIsCreatingNote(false);
+      // On mobile only one pane shows, so opening a note has to move the view.
+      setActivePane('detail');
+    },
+    [setActiveNote]
+  );
+
+  const handleSelectNote = useCallback(
+    (note: Note) => {
+      // Reopening the note already on screen is not leaving it.
+      if (activeNote?.id === note.id && !isCreatingNote) {
+        setActivePane('detail');
+        return;
+      }
+      guardUnsaved(() => openNote(note));
+    },
+    [activeNote, guardUnsaved, isCreatingNote, openNote]
+  );
+
+  const startNewNote = useCallback(
+    (directory: string) => {
+      setNewNoteDirectory(directory);
+      setActiveNote(null);
+      setIsCreatingNote(true);
+      setActivePane('detail');
+    },
+    [setActiveNote]
+  );
+
+  const handleCreateNote = useCallback(
+    (directory = '') => {
+      guardUnsaved(() => startNewNote(directory));
+    },
+    [guardUnsaved, startNewNote]
+  );
 
   useEffect(() => {
     if (location.state?.createNote) {
@@ -76,12 +129,14 @@ const HomePage: React.FC = () => {
       isNew={true}
       onSave={handleSaveNewNote}
       onCreateNote={handleCreateNote}
+      onDirtyChange={setIsEditorDirty}
     />
   ) : activeNote ? (
     <NoteEditor
       key={activeNote.id}
       note={activeNote}
       onCreateNote={handleCreateNote}
+      onDirtyChange={setIsEditorDirty}
     />
   ) : (
     <div className="flex h-full flex-col items-center justify-center p-8 text-center">
@@ -141,6 +196,19 @@ const HomePage: React.FC = () => {
         detail={<div className="h-full border-l border-border">{editor}</div>}
       />
       )}
+
+      <UnsavedChangesDialog
+        open={pendingNavigation !== null}
+        noteTitle={isCreatingNote ? '' : activeNote?.title ?? ''}
+        onCancel={() => setPendingNavigation(null)}
+        onDiscard={() => {
+          // Cleared first, so the editor unmounting cannot report the old
+          // buffer as dirty again and reopen this dialog.
+          setIsEditorDirty(false);
+          pendingNavigation?.();
+          setPendingNavigation(null);
+        }}
+      />
 
       {/* Each of these owns a real file operation, so they render once here and
           are opened by setting the note they act on. */}

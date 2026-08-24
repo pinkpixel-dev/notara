@@ -4,6 +4,18 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 💾 Unsaved work
+
+- Notara warns before throwing away unsaved edits. Opening another note or
+  starting a new one now asks first, and closing the tab or window brings up the
+  browser's own prompt. Nothing warned about any of this before, so leaving a
+  note was a quiet way to lose what you had typed.
+- The editor shows an Unsaved marker next to Save while the note differs from
+  what is on disk.
+- Fixed a way to lose text: pinning or starring the note you were editing saved
+  the note, which refilled the editor from the saved copy and wiped anything you
+  had typed since. The editor now refills only when you open a different note.
+
 ### 🧭 Getting around
 
 - The notes sidebar has its own row of actions above the search box: New note,

@@ -12,6 +12,7 @@ import { Maximize2, Pin, Plus, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import NoteConflictDialog from './NoteConflictDialog';
 import { NoteConflictError } from '@/lib/notes/store';
+import { isNewNoteDirty, isNoteDirty } from '@/lib/notes/dirty';
 
 interface NoteEditorProps {
   note?: Note;
@@ -25,6 +26,13 @@ interface NoteEditorProps {
   directory?: string;
   onSave?: (note: Note) => void;
   onCreateNote?: () => void;
+  /**
+   * Reports whether the buffer differs from what is on disk.
+   *
+   * The editor owns the buffer, but the page owns note selection, so the page
+   * has to be told before it can ask about discarding anything.
+   */
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const NoteEditor: React.FC<NoteEditorProps> = ({
@@ -33,6 +41,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   directory = '',
   onSave,
   onCreateNote,
+  onDirtyChange,
 }) => {
   const {
     notes,
@@ -59,18 +68,32 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [hasConflict, setHasConflict] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
+  /**
+   * Which note the buffer was last filled from.
+   *
+   * Pinning or starring the open note saves it, which hands this component a
+   * new `note` object for the same note. Refilling the buffer on that would
+   * throw away whatever the user had typed but not yet saved, so the buffer is
+   * only refilled when a genuinely different note arrives.
+   */
+  const loadedNoteIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (isNew) {
-      setTitle('');
-      setContent('');
-      setSelectedTags([]);
-      setIsPinned(false);
-      setIsStarred(false);
-      setIsPreview(false);
+      if (loadedNoteIdRef.current !== null) {
+        loadedNoteIdRef.current = null;
+        setTitle('');
+        setContent('');
+        setSelectedTags([]);
+        setIsPinned(false);
+        setIsStarred(false);
+        setIsPreview(false);
+      }
       return;
     }
 
-    if (note) {
+    if (note && loadedNoteIdRef.current !== note.id) {
+      loadedNoteIdRef.current = note.id;
       setTitle(note.title);
       setContent(note.content);
       setSelectedTags(note.tags);
@@ -78,6 +101,40 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setIsStarred(note.isStarred);
     }
   }, [isNew, note]);
+
+  /**
+   * Whether there is unsaved work in the buffer.
+   *
+   * A new note counts once it holds anything at all, because nothing has been
+   * written for it yet. The comparison itself lives in `lib/notes/dirty`.
+   */
+  const isDirty = isNew
+    ? isNewNoteDirty({ title, content })
+    : isNoteDirty({ title, content, tags: selectedTags }, note);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  // Tells the editor to forget the note when it unmounts, so a stale dirty flag
+  // cannot outlive the buffer it described.
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
+  // The browser's own prompt is the only thing that can interrupt a tab close
+  // or a reload. It cannot be styled and its wording is up to the browser.
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -347,6 +404,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             <Plus className="h-4 w-4 mr-1" />
             New Note
           </Button>
+          {/* Named rather than shown only as a colour, so the state is
+              readable without relying on seeing the dot. */}
+          {isDirty && (
+            <span className="ml-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              Unsaved
+            </span>
+          )}
           <Button
             onClick={handleSave}
             disabled={isSaving}
