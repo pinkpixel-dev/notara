@@ -11,7 +11,7 @@ import NoteEditor from '@/components/notes/NoteEditor';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useBlocker, useLocation, useNavigate } from 'react-router-dom';
 import { useSidebarPane } from '@/hooks/use-sidebar-pane';
 
 const HomePage: React.FC = () => {
@@ -28,6 +28,19 @@ const HomePage: React.FC = () => {
    * opening another and starting a new one, on one path.
    */
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
+
+  /**
+   * Stops a section change while the editor holds unsaved work.
+   *
+   * The in-page guard below only covers opening another note. Leaving for
+   * To-Do or Calendar is a router navigation, and only the router can stop it.
+   * This is also what catches the browser's back and forward buttons.
+   */
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isEditorDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+  const isBlocked = blocker.state === 'blocked';
   // Which folder a note being written now belongs in. Empty is the workspace
   // root, which is what the Create Note button and the File menu use.
   const [newNoteDirectory, setNewNoteDirectory] = useState('');
@@ -197,14 +210,28 @@ const HomePage: React.FC = () => {
       />
       )}
 
+      {/* One dialog for both ways of leaving a note: opening another one, and
+          navigating off the page entirely. */}
       <UnsavedChangesDialog
-        open={pendingNavigation !== null}
+        open={pendingNavigation !== null || isBlocked}
         noteTitle={isCreatingNote ? '' : activeNote?.title ?? ''}
-        onCancel={() => setPendingNavigation(null)}
+        onCancel={() => {
+          if (isBlocked) {
+            blocker.reset?.();
+            return;
+          }
+          setPendingNavigation(null);
+        }}
         onDiscard={() => {
           // Cleared first, so the editor unmounting cannot report the old
           // buffer as dirty again and reopen this dialog.
           setIsEditorDirty(false);
+
+          if (isBlocked) {
+            blocker.proceed?.();
+            return;
+          }
+
           pendingNavigation?.();
           setPendingNavigation(null);
         }}

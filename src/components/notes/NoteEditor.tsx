@@ -3,10 +3,10 @@ import { useNotes, PIN_LIMIT } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
 import { Note } from '@/types';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { EditorMode } from './NoteEditorHeader';
 import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import NoteConflictDialog from './NoteConflictDialog';
 import { NoteConflictError } from '@/lib/notes/store';
@@ -62,9 +62,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [selectedTags, setSelectedTags] = useState(note?.tags || []);
   const [isPinned, setIsPinned] = useState(note?.isPinned || false);
   const [isStarred, setIsStarred] = useState(note?.isStarred || false);
-  const [isPreview, setIsPreview] = useState(false);
+  const [mode, setMode] = useState<EditorMode>('edit');
   const [isSaving, setIsSaving] = useState(false);
-  const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   // Set when a save is refused because the file moved underneath us. Holding it
   // here keeps the user's unsaved text in the editor while they decide.
   const [hasConflict, setHasConflict] = useState(false);
@@ -90,7 +89,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         setSelectedTags([]);
         setIsPinned(false);
         setIsStarred(false);
-        setIsPreview(false);
+        setMode('edit');
       }
       return;
     }
@@ -363,37 +362,25 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     [addNote, content, onSave, selectedTags, setActiveNote]
   );
 
-  const togglePreview = () => {
-    setIsPreview(!isPreview);
-  };
-
-  const toggleFullPreview = useCallback(() => {
-    setIsFullPreviewOpen((open) => !open);
-  }, []);
-
   useEffect(() => {
     const handleSaveEvent = () => handleSave();
-    const handlePreviewEvent = () => toggleFullPreview();
     const handleSaveAsEvent = () => setIsSaveAsOpen(true);
 
     window.addEventListener('notara:save-active-note', handleSaveEvent);
-    window.addEventListener('notara:toggle-full-preview', handlePreviewEvent);
     window.addEventListener('notara:save-note-as', handleSaveAsEvent);
 
     return () => {
       window.removeEventListener('notara:save-active-note', handleSaveEvent);
-      window.removeEventListener('notara:toggle-full-preview', handlePreviewEvent);
       window.removeEventListener('notara:save-note-as', handleSaveAsEvent);
     };
-  }, [handleSave, toggleFullPreview]);
+  }, [handleSave]);
 
   return (
     <div className="h-full flex flex-col">
       <NoteEditorHeader
         isPinned={isPinned}
         isStarred={isStarred}
-        isPreview={isPreview}
-        isFullPreviewOpen={isFullPreviewOpen}
+        mode={mode}
         isSaving={isSaving}
         isDirty={isDirty}
         isNew={isNew}
@@ -401,57 +388,60 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         availableTags={availableTags}
         onTogglePin={handleTogglePin}
         onToggleStar={handleToggleStar}
-        onTogglePreview={togglePreview}
-        onOpenFullPreview={() => setIsFullPreviewOpen(true)}
+        onModeChange={setMode}
         onTagsChange={setSelectedTags}
         onCreateNote={onCreateNote}
         onSave={handleSave}
         onSaveAs={() => setIsSaveAsOpen(true)}
       />
 
-      <div className="p-4 flex-1 overflow-auto">
+      <div className="flex min-h-0 flex-1 flex-col p-4">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Note Title"
-          className="w-full text-2xl font-bold mb-4 bg-transparent border-none outline-none focus:ring-0"
+          className="w-full shrink-0 text-2xl font-bold mb-4 bg-transparent border-none outline-none focus:ring-0"
         />
 
-        {isPreview ? (
-          <MarkdownPreview content={content} />
-        ) : (
-          <>
-            <MarkdownToolbar textareaRef={editorRef} content={content} setContent={setContent} />
-            <textarea
-              ref={editorRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Start typing..."
-              className="w-full min-h-[60vh] bg-transparent border-none outline-none resize-none font-mono focus:ring-0"
-            />
-          </>
-        )}
-      </div>
+        {/* Split stacks below the medium breakpoint. Two columns on a phone
+            gives two unusable ones, and Edit and Preview are still a tap away. */}
+        <div
+          className={cn(
+            'min-h-0 flex-1',
+            mode === 'split' ? 'grid gap-4 md:grid-cols-2' : 'flex flex-col'
+          )}
+        >
+          {mode !== 'preview' && (
+            <div className="flex min-h-0 flex-col">
+              <MarkdownToolbar textareaRef={editorRef} content={content} setContent={setContent} />
+              <textarea
+                ref={editorRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Start typing..."
+                aria-label="Note content"
+                className={cn(
+                  'w-full flex-1 resize-none overflow-auto bg-transparent font-mono',
+                  'border-none outline-none focus:ring-0',
+                  mode === 'split' ? 'min-h-[40vh]' : 'min-h-[60vh]'
+                )}
+              />
+            </div>
+          )}
 
-      <Dialog open={isFullPreviewOpen} onOpenChange={setIsFullPreviewOpen}>
-        <DialogContent className="max-w-5xl w-[90vw] h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{title || 'Untitled Note'}</DialogTitle>
-            <DialogDescription className="sr-only">
-              Full-screen markdown preview for the current note.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto rounded-md border border-border/30 bg-background/80 p-4">
-            <MarkdownPreview content={content} />
-          </div>
-          <DialogFooter className="sm:justify-end">
-            <DialogClose asChild>
-              <Button variant="secondary">Close Preview</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {mode !== 'edit' && (
+            <div
+              className={cn(
+                'min-h-0 flex-1 overflow-auto',
+                mode === 'split' && 'rounded-md border border-border/40 p-3'
+              )}
+            >
+              <MarkdownPreview content={content} />
+            </div>
+          )}
+        </div>
+      </div>
 
       <NoteConflictDialog
         open={hasConflict}

@@ -4,6 +4,22 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### ✍️ Editor modes
+
+- The editor has Edit, Split, and Preview modes in one control. Split shows the
+  Markdown and the rendered result side by side, and stacks them on a phone
+  where two columns would leave both unusable.
+- The Full Preview dialog is gone, along with its button, its View menu item,
+  and its Ctrl+P shortcut. How a note is laid out belongs in the editor rather
+  than in a window floating over it, and Preview mode covers the same need.
+
+### 🧭 Leaving a note
+
+- Switching sections with unsaved edits now asks first. Only opening another
+  note and closing the window were covered before, so moving to To-Do or
+  Calendar quietly threw the edits away.
+- The browser and app back buttons ask too.
+
 ### 💾 Save a copy
 
 - Save As writes the open note to another place in your workspace and leaves

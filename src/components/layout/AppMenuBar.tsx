@@ -360,11 +360,6 @@ const AppMenuBar: React.FC = () => {
       <MenubarMenu>
         <MenubarTrigger className="hover:bg-secondary/60">View</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem onSelect={(event) => { event.preventDefault(); dispatchEditorEvent('notara:toggle-full-preview'); }}>
-            Toggle Full Preview
-            <MenubarShortcut>Ctrl+P</MenubarShortcut>
-          </MenubarItem>
-          <MenubarSeparator />
           <MenubarRadioGroup value={settings.fontSize} onValueChange={(value) => setFontSize(value as 'small' | 'medium' | 'large')}>
             <MenubarRadioItem value="small">
               Small Font

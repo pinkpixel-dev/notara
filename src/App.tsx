@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { NotesProvider } from "./context/NotesContext";
 import { TodoProvider } from "./context/TodoContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -23,6 +23,28 @@ import { removeLegacyCredentialStorage } from "./lib/legacy-cleanup";
 
 const queryClient = new QueryClient();
 
+/**
+ * A data router, rather than `BrowserRouter`.
+ *
+ * `useBlocker` only works under one of these, and blocking is how the notes
+ * page stops a section change from throwing away unsaved edits. The providers
+ * stay outside it: none of them use router hooks, and the pages below still
+ * see every context.
+ */
+const router = createBrowserRouter([
+  { path: "/", element: <HomePage /> },
+  { path: "/tags", element: <TagsPage /> },
+  { path: "/constellations", element: <ConstellationsPage /> },
+  { path: "/vision-board", element: <VisionBoardPage /> },
+  { path: "/ai-assistant", element: <AiAssistantPage /> },
+  { path: "/calendar", element: <CalendarPage /> },
+  { path: "/settings", element: <SettingsPage /> },
+  { path: "/markdown-cheatsheet", element: <MarkdownCheatsheetPage /> },
+  { path: "/note/:id", element: <NoteViewPage /> },
+  { path: "/todos", element: <TodoPage /> },
+  { path: "*", element: <NotFound /> },
+]);
+
 const App = () => {
   useEffect(() => {
     removeLegacyCredentialStorage();
@@ -36,21 +58,7 @@ const App = () => {
         <ThemeProvider>
           <NotesProvider>
             <TodoProvider>
-              <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/tags" element={<TagsPage />} />
-                <Route path="/constellations" element={<ConstellationsPage />} />
-                <Route path="/vision-board" element={<VisionBoardPage />} />
-                <Route path="/ai-assistant" element={<AiAssistantPage />} />
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/markdown-cheatsheet" element={<MarkdownCheatsheetPage />} />
-                <Route path="/note/:id" element={<NoteViewPage />} />
-                <Route path="/todos" element={<TodoPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              </BrowserRouter>
+              <RouterProvider router={router} />
             </TodoProvider>
           </NotesProvider>
         </ThemeProvider>

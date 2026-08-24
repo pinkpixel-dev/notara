@@ -1,20 +1,29 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Maximize2, Pin, Plus, Star } from 'lucide-react';
+import { ChevronDown, Pin, Plus, Star } from 'lucide-react';
 import TagSelector from './TagSelector';
 import type { NoteTag } from '@/types';
+
+/** How the editor body is laid out. */
+export type EditorMode = 'edit' | 'split' | 'preview';
+
+const MODES: Array<{ id: EditorMode; label: string }> = [
+  { id: 'edit', label: 'Edit' },
+  { id: 'split', label: 'Split' },
+  { id: 'preview', label: 'Preview' },
+];
 
 interface NoteEditorHeaderProps {
   isPinned: boolean;
   isStarred: boolean;
-  isPreview: boolean;
-  isFullPreviewOpen: boolean;
+  mode: EditorMode;
   isSaving: boolean;
   isDirty: boolean;
   /** A note with no file yet cannot be copied, so Save as is unavailable. */
@@ -23,8 +32,7 @@ interface NoteEditorHeaderProps {
   availableTags: NoteTag[];
   onTogglePin: () => void;
   onToggleStar: () => void;
-  onTogglePreview: () => void;
-  onOpenFullPreview: () => void;
+  onModeChange: (mode: EditorMode) => void;
   onTagsChange: (tags: NoteTag[]) => void;
   onCreateNote?: () => void;
   onSave: () => void;
@@ -41,8 +49,7 @@ interface NoteEditorHeaderProps {
 const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
   isPinned,
   isStarred,
-  isPreview,
-  isFullPreviewOpen,
+  mode,
   isSaving,
   isDirty,
   isNew,
@@ -50,8 +57,7 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
   availableTags,
   onTogglePin,
   onToggleStar,
-  onTogglePreview,
-  onOpenFullPreview,
+  onModeChange,
   onTagsChange,
   onCreateNote,
   onSave,
@@ -86,24 +92,26 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
         >
           <Star className={`h-5 w-5 ${isStarred ? 'fill-current' : 'fill-transparent'}`} aria-hidden="true" />
         </button>
-        <div className="flex gap-2">
-          <Button
-            onClick={onTogglePreview}
-            variant="ghost"
-            size="sm"
-            className={isPreview ? 'bg-secondary' : ''}
-          >
-            Preview
-          </Button>
-          <Button
-            onClick={onOpenFullPreview}
-            variant="ghost"
-            size="sm"
-            className={isFullPreviewOpen ? 'bg-secondary' : ''}
-          >
-            <Maximize2 className="h-4 w-4 mr-1" />
-            Full Preview
-          </Button>
+        {/* One control with three states, rather than a Preview toggle plus a
+            separate full-screen dialog. The mode is a property of the editor,
+            so it belongs in the editor rather than in a window over it. */}
+        <div className="flex gap-1 rounded-md border border-border p-0.5" role="group" aria-label="Editor mode">
+          {MODES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => onModeChange(option.id)}
+              aria-pressed={mode === option.id}
+              className={cn(
+                'min-h-9 whitespace-nowrap rounded px-3 text-sm font-medium transition-colors',
+                mode === option.id
+                  ? 'bg-accent text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
       <div className="flex gap-2">
