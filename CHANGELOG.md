@@ -2,6 +2,20 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.0.1 - August 23, 2026
+
+### 🐛 Linux AppImage
+
+- Fixed an AppImage startup crash on CachyOS caused by bundled GIO modules
+  loading an incompatible mix of WebKitGTK and crypto libraries.
+- The startup guard runs only for Linux AppImages. Development, `.deb`, and
+  `.rpm` runs keep their normal GIO module paths.
+
+### 🏷️ Versioning
+
+- Bumped the application and bundle version to 2.0.1 for the replacement
+  AppImage build.
+
 ## 2.0.0 - August 23, 2026
 
 ### 📦 Older notes
