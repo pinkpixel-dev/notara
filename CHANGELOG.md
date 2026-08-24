@@ -4,9 +4,24 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 💾 Save a copy
+
+- Save As writes the open note to another place in your workspace and leaves
+  the original file exactly as it is. Pick a folder and a title, and the dialog
+  shows the file name it will use while you type.
+- Reach it from the arrow beside the Save button, or from File, Save Active
+  Note As.
+- A copy never overwrites an existing note. If the name is taken, the copy gets
+  a number and the dialog says so before you save.
+- Unsaved edits are what gets copied, so Save As is a way to keep a change
+  without touching the note you started from.
+
 ### 📥 Import
 
 - Import Markdown takes several files at once instead of one at a time.
+- Import asks which folder the notes should go in, the same way Move to does.
+  It used to always write to the workspace root, so filing anything meant a
+  second trip through Move for every note.
 - Import works in the desktop app. It used to go through a browser API that the
   desktop webview does not have, so on desktop it only reported that opening
   files was unsupported. It now uses the system file dialog there.

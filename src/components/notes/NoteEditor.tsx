@@ -4,15 +4,16 @@ import { useFileSystem } from '@/context/FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
 import { Note } from '@/types';
 import { Button } from '@/components/ui/button';
-import TagSelector from './TagSelector';
 import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Maximize2, Pin, Plus, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import NoteConflictDialog from './NoteConflictDialog';
 import { NoteConflictError } from '@/lib/notes/store';
 import { isNewNoteDirty, isNoteDirty } from '@/lib/notes/dirty';
+import SaveAsDialog from './SaveAsDialog';
+import NoteEditorHeader from './NoteEditorHeader';
+import { parentOf } from '@/lib/workspace/types';
 
 interface NoteEditorProps {
   note?: Note;
@@ -53,6 +54,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     persistBundle,
     togglePin,
     toggleStar,
+    setActiveNote,
   } = useNotes();
   const { status } = useFileSystem();
   const [title, setTitle] = useState(note?.title || '');
@@ -66,6 +68,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // Set when a save is refused because the file moved underneath us. Holding it
   // here keeps the user's unsaved text in the editor while they decide.
   const [hasConflict, setHasConflict] = useState(false);
+  const [isSaveAsOpen, setIsSaveAsOpen] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   /**
@@ -317,6 +320,49 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   }, [note, reloadNote]);
 
+  /**
+   * Writes the buffer to a new note and moves the editor to it.
+   *
+   * The note this was invoked from is left exactly as it is, including any
+   * unsaved edits still sitting in the buffer, which are what gets copied. That
+   * is the point of Save As: the original file is not written at all.
+   */
+  const handleSaveAs = useCallback(
+    async (targetDirectory: string, targetTitle: string) => {
+      setIsSaving(true);
+      try {
+        const copy = await addNote({
+          title: targetTitle,
+          content,
+          tags: selectedTags,
+          directory: targetDirectory,
+        });
+
+        setIsSaveAsOpen(false);
+        // Moving the active note remounts the editor against the copy, so the
+        // buffer lines up with the file that was just written.
+        setActiveNote(copy);
+
+        toast({ title: 'Copy saved', description: `Written to ${copy.path}.` });
+
+        if (onSave) {
+          onSave(copy);
+        }
+      } catch (error) {
+        console.error('Failed to save a copy', error);
+        toast({
+          title: 'Could not save a copy',
+          description:
+            (error instanceof Error && error.message) || 'Unable to write the new note.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [addNote, content, onSave, selectedTags, setActiveNote]
+  );
+
   const togglePreview = () => {
     setIsPreview(!isPreview);
   };
@@ -328,100 +374,40 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   useEffect(() => {
     const handleSaveEvent = () => handleSave();
     const handlePreviewEvent = () => toggleFullPreview();
+    const handleSaveAsEvent = () => setIsSaveAsOpen(true);
 
     window.addEventListener('notara:save-active-note', handleSaveEvent);
     window.addEventListener('notara:toggle-full-preview', handlePreviewEvent);
+    window.addEventListener('notara:save-note-as', handleSaveAsEvent);
 
     return () => {
       window.removeEventListener('notara:save-active-note', handleSaveEvent);
       window.removeEventListener('notara:toggle-full-preview', handlePreviewEvent);
+      window.removeEventListener('notara:save-note-as', handleSaveAsEvent);
     };
   }, [handleSave, toggleFullPreview]);
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-border flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          {/* Pinning keeps a note at the top of the notes bar and is capped.
-              Starring marks it important and is not. They are separate
-              controls because they answer different questions. */}
-          <button
-            type="button"
-            onClick={handleTogglePin}
-            className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
-              isPinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-            }`}
-            aria-pressed={isPinned}
-            aria-label={isPinned ? 'Unpin note' : 'Pin note'}
-            title={isPinned ? 'Unpin note' : 'Pin note'}
-          >
-            <Pin className={`h-5 w-5 ${isPinned ? 'fill-current' : 'fill-transparent'}`} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleStar}
-            className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
-              isStarred ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-            }`}
-            aria-pressed={isStarred}
-            aria-label={isStarred ? 'Unstar note' : 'Star note'}
-            title={isStarred ? 'Unstar note' : 'Star note'}
-          >
-            <Star className={`h-5 w-5 ${isStarred ? 'fill-current' : 'fill-transparent'}`} aria-hidden="true" />
-          </button>
-          <div className="flex gap-2">
-            <Button
-              onClick={togglePreview}
-              variant="ghost"
-              size="sm"
-              className={isPreview ? 'bg-secondary' : ''}
-            >
-              Preview
-            </Button>
-            <Button
-              onClick={() => setIsFullPreviewOpen(true)}
-              variant="ghost"
-              size="sm"
-              className={isFullPreviewOpen ? 'bg-secondary' : ''}
-            >
-              <Maximize2 className="h-4 w-4 mr-1" />
-              Full Preview
-            </Button>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <TagSelector
-            selectedTags={selectedTags}
-            onChange={setSelectedTags}
-            availableTags={availableTags}
-          />
-          <Button
-            onClick={onCreateNote}
-            disabled={!onCreateNote}
-            variant="outline"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New Note
-          </Button>
-          {/* Named rather than shown only as a colour, so the state is
-              readable without relying on seeing the dot. */}
-          {isDirty && (
-            <span className="ml-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-              Unsaved
-            </span>
-          )}
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="ml-2"
-            size="sm"
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        </div>
-      </div>
+      <NoteEditorHeader
+        isPinned={isPinned}
+        isStarred={isStarred}
+        isPreview={isPreview}
+        isFullPreviewOpen={isFullPreviewOpen}
+        isSaving={isSaving}
+        isDirty={isDirty}
+        isNew={isNew}
+        selectedTags={selectedTags}
+        availableTags={availableTags}
+        onTogglePin={handleTogglePin}
+        onToggleStar={handleToggleStar}
+        onTogglePreview={togglePreview}
+        onOpenFullPreview={() => setIsFullPreviewOpen(true)}
+        onTagsChange={setSelectedTags}
+        onCreateNote={onCreateNote}
+        onSave={handleSave}
+        onSaveAs={() => setIsSaveAsOpen(true)}
+      />
 
       <div className="p-4 flex-1 overflow-auto">
         <input
@@ -474,6 +460,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         onKeepMine={() => void resolveKeepMine()}
         onUseTheirs={() => void resolveUseTheirs()}
         onCancel={() => setHasConflict(false)}
+      />
+
+      <SaveAsDialog
+        open={isSaveAsOpen}
+        initialTitle={title || 'Untitled'}
+        initialDirectory={note ? parentOf(note.path) : ''}
+        isBusy={isSaving}
+        onConfirm={(directory, nextTitle) => void handleSaveAs(directory, nextTitle)}
+        onCancel={() => setIsSaveAsOpen(false)}
       />
     </div>
   );

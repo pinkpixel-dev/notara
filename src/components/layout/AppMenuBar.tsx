@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Menubar,
@@ -12,7 +12,8 @@ import {
   MenubarShortcut,
 } from '@/components/ui/menubar';
 import { toast } from '@/hooks/use-toast';
-import { pickMarkdownFiles } from '@/lib/notes/import';
+import { pickMarkdownFiles, type ImportSelection } from '@/lib/notes/import';
+import ImportDestinationDialog from '@/components/notes/ImportDestinationDialog';
 import { fileNameToTitle } from '@/lib/notes/naming';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useNotes } from '@/context/NotesContextTypes';
@@ -71,6 +72,10 @@ const AppMenuBar: React.FC = () => {
 
   const navigate = useNavigate();
 
+  // Files that have been read and are waiting on a destination folder.
+  const [pendingImport, setPendingImport] = useState<ImportSelection | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
   // The notes page owns note creation, so this routes there and asks for a new
   // note the same way the note view's New Note button does.
   const handleNewNote = useCallback(() => {
@@ -79,6 +84,12 @@ const AppMenuBar: React.FC = () => {
 
   const handleSaveActiveNote = useCallback(() => {
     dispatchEditorEvent('notara:save-active-note');
+  }, []);
+
+  // The editor holds the buffer being copied, so it owns the dialog and this
+  // only asks for it.
+  const handleSaveNoteAs = useCallback(() => {
+    dispatchEditorEvent('notara:save-note-as');
   }, []);
 
   const handleSaveAll = useCallback(async () => {
@@ -109,12 +120,12 @@ const AppMenuBar: React.FC = () => {
   }, [flushCachedAiConversations, hasLinkedDirectory, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
 
   /**
-   * Imports one or more Markdown files as new notes.
+   * Asks for files, then asks where they should go.
    *
-   * The picker differs per runtime, which `pickMarkdownFiles` handles. Files
-   * that cannot be read, and notes that cannot be written, are both reported
-   * rather than dropped, because a partly finished import is worth knowing
-   * about in detail.
+   * Picking comes first because choosing what to import is the decision the
+   * user already had in mind. The destination dialog then opens over the
+   * result, which is also where unreadable files are reported before anything
+   * is written.
    */
   const handleImportMarkdown = useCallback(async () => {
     try {
@@ -123,44 +134,18 @@ const AppMenuBar: React.FC = () => {
         return;
       }
 
-      const { created, failures } = await addNotes(
-        selection.sources.map((source) => ({
-          title: fileNameToTitle(source.name),
-          content: source.text,
-        }))
-      );
-
-      const unreadable = selection.failures.length;
-      const unwritable = failures.length;
-      const problems = unreadable + unwritable;
-
-      if (created.length > 0) {
-        setActiveNote(created[created.length - 1]);
-      }
-
-      if (created.length === 0 && problems > 0) {
+      if (selection.sources.length === 0) {
         toast({
           title: 'Nothing was imported',
-          description: [...selection.failures, ...failures]
-            .map((failure) => ('name' in failure ? failure.name : failure.title))
-            .join(', '),
+          description: selection.failures.map((failure) => failure.name).join(', '),
           variant: 'destructive',
         });
         return;
       }
 
-      toast({
-        title: `${created.length} note${created.length === 1 ? '' : 's'} imported`,
-        description:
-          problems > 0
-            ? `${problems} file${problems === 1 ? '' : 's'} could not be imported.`
-            : created.length === 1
-              ? `Added as ${created[0].path}.`
-              : 'Added to your workspace.',
-        variant: problems > 0 ? 'destructive' : undefined,
-      });
+      setPendingImport(selection);
     } catch (error) {
-      console.error('Failed to import Markdown files', error);
+      console.error('Failed to read the selected files', error);
       toast({
         title: 'Import failed',
         description:
@@ -168,7 +153,70 @@ const AppMenuBar: React.FC = () => {
         variant: 'destructive',
       });
     }
-  }, [addNotes, setActiveNote]);
+  }, []);
+
+  /**
+   * Writes the picked files into the chosen folder.
+   *
+   * Files that could not be read and notes that could not be written are both
+   * counted, because a partly finished import is worth knowing about in detail.
+   */
+  const runImport = useCallback(
+    async (directory: string) => {
+      const selection = pendingImport;
+      if (!selection) {
+        return;
+      }
+
+      setIsImporting(true);
+      try {
+        const { created, failures } = await addNotes(
+          selection.sources.map((source) => ({
+            title: fileNameToTitle(source.name),
+            content: source.text,
+          })),
+          directory
+        );
+
+        const problems = selection.failures.length + failures.length;
+        setPendingImport(null);
+
+        if (created.length === 0) {
+          toast({
+            title: 'Nothing was imported',
+            description: failures.map((failure) => failure.title).join(', '),
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // The notes page is the only place an imported note is visible, and the
+        // import can be started from anywhere in the app.
+        setActiveNote(created[created.length - 1]);
+        navigate('/');
+
+        toast({
+          title: `${created.length} note${created.length === 1 ? '' : 's'} imported`,
+          description:
+            problems > 0
+              ? `${problems} file${problems === 1 ? '' : 's'} could not be imported.`
+              : `Added to ${directory || 'the workspace root'}.`,
+          variant: problems > 0 ? 'destructive' : undefined,
+        });
+      } catch (error) {
+        console.error('Failed to import Markdown files', error);
+        toast({
+          title: 'Import failed',
+          description:
+            (error instanceof Error && error.message) || 'Unable to write the imported notes.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [addNotes, navigate, pendingImport, setActiveNote]
+  );
 
   const handleConnectDirectory = useCallback(async () => {
     const connected = await selectDirectory();
@@ -268,6 +316,9 @@ const AppMenuBar: React.FC = () => {
             Save Active Note
             <MenubarShortcut>Ctrl+S</MenubarShortcut>
           </MenubarItem>
+          <MenubarItem onSelect={(event) => { event.preventDefault(); handleSaveNoteAs(); }}>
+            Save Active Note As...
+          </MenubarItem>
           <MenubarItem onSelect={(event) => { event.preventDefault(); void handleSaveAll(); }}>
             Save All
             <MenubarShortcut>Ctrl+Shift+S</MenubarShortcut>
@@ -327,6 +378,15 @@ const AppMenuBar: React.FC = () => {
           </MenubarRadioGroup>
         </MenubarContent>
       </MenubarMenu>
+
+      {/* Renders no inline DOM of its own: the dialog content is portalled to
+          the body, so nothing extra lands inside the menubar. */}
+      <ImportDestinationDialog
+        selection={pendingImport}
+        isBusy={isImporting}
+        onConfirm={(directory) => void runImport(directory)}
+        onCancel={() => setPendingImport(null)}
+      />
     </Menubar>
   );
 };

@@ -13,8 +13,8 @@ import { useFileSystem } from '@/context/FileSystemContext';
 import { useWorkspace } from '@/context/WorkspaceContextTypes';
 import { loadNotesFromWorkspace, type NoteLoadFailure } from '@/lib/notes/load';
 import { metadataOf, noteFromFile, noteToFileContents } from '@/lib/notes/mapping';
-import { migrateNotesBundle } from '@/lib/notes/migrate';
 import { uniqueNotePath, uniqueNotePaths } from '@/lib/notes/naming';
+import { prepareWorkspaceFiles } from '@/lib/notes/prepare';
 import { buildNoteFile } from '@/lib/markdown/note-frontmatter';
 import {
   deleteNoteFile,
@@ -24,7 +24,6 @@ import {
   NoteConflictError,
 } from '@/lib/notes/store';
 import { parentOf } from '@/lib/workspace/types';
-import { STARTER_NOTES } from './starter-notes';
 
 export type NoteFilesStatus = 'no-workspace' | 'loading' | 'ready' | 'error';
 
@@ -136,8 +135,7 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
   /**
    * Gets a freshly chosen folder ready.
    *
-   * Runs the one-time migration out of the old JSON bundle, then seeds the
-   * starter notes if the folder is still empty. Returns true when it wrote
+   * The work itself lives in `lib/notes/prepare`. Returns true when it wrote
    * something, which means the scan on screen is stale and has to be redone.
    */
   const prepareWorkspace = useCallback(async (): Promise<boolean> => {
@@ -145,45 +143,11 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
       return false;
     }
 
-    const existingPaths = scan.files.map((file) => file.path);
-    const migration = await migrateNotesBundle(rootHandle, existingPaths);
-
-    if (migration.failures.length > 0) {
-      setLastError(
-        `${migration.failures.length} note${
-          migration.failures.length === 1 ? '' : 's'
-        } could not be moved out of the old storage. The original file was left in place.`
-      );
+    const { wroteFiles, migrationError } = await prepareWorkspaceFiles(rootHandle, scan);
+    if (migrationError) {
+      setLastError(migrationError);
     }
-
-    if (migration.ran) {
-      return true;
-    }
-
-    // A folder with notes already in it is not empty, and neither is one the
-    // migration just filled. Only a genuinely blank workspace gets starters.
-    if (existingPaths.length > 0) {
-      return false;
-    }
-
-    const claimed: string[] = [];
-    for (const starter of STARTER_NOTES) {
-      const path = uniqueNotePath('', starter.title, claimed);
-      const now = new Date().toISOString();
-
-      await writeNoteFile(
-        rootHandle,
-        path,
-        buildNoteFile(
-          { tags: [], pinned: starter.pinned, starred: false, created: now, updated: now },
-          starter.content
-        ),
-        null
-      );
-      claimed.push(path);
-    }
-
-    return claimed.length > 0;
+    return wroteFiles;
   }, [rootHandle, scan]);
 
   useEffect(() => {
