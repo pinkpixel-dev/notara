@@ -4,6 +4,21 @@ All notable changes to the Notara project will be documented in this file.
 
 ## Unreleased
 
+### 📦 Older notes
+
+- Notara offers to import notes left in its older storage, and shows you what
+  it found before writing anything. You get a count, where they came from, and
+  their titles, with Import or Not now.
+- Notes kept in browser storage are found now. Earlier versions of the web app
+  saved notes there, and nothing in the app had read them since notes became
+  Markdown files, so they were invisible.
+- Nothing is ever removed from the old storage. If the imported notes look
+  wrong you can delete them and the originals are still where they were.
+- The import used to run on its own the first time a folder was opened. It now
+  waits for you to say yes, because it writes into a folder you own.
+- A folder with old notes waiting no longer gets Notara's sample notes mixed
+  into it.
+
 ### ✍️ Editor modes
 
 - The editor has Edit, Split, and Preview modes in one control. Split shows the

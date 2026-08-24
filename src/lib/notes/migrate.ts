@@ -1,16 +1,17 @@
 /**
- * Moving notes out of `data/notes/notes.json` and into the workspace.
+ * Moving notes out of the old storage and into the workspace.
  *
- * Earlier versions kept notes as records in a JSON bundle and wrote a one-way
- * `note-{uuid}.md` mirror beside it that was never read back. Now the Markdown
- * file is the note, so those records have to become real files in folders the
- * user can see.
+ * Earlier versions kept notes as records rather than files: a JSON bundle at
+ * `data/notes/notes.json` in desktop workspaces, and `localStorage` in the
+ * browser. Now the Markdown file is the note, so those records have to become
+ * real files in folders the user can see.
  *
- * Two rules shape everything here. The migration runs once and records that it
- * ran, so reopening a workspace does not produce a second copy of every note.
- * And it never deletes the JSON it read from. If something about the result is
- * wrong, the original is still sitting there, which matters far more than a
- * tidy folder.
+ * Three rules shape everything here. Finding notes never writes anything, so
+ * the user is asked before their folder changes. The import runs once per
+ * workspace and records that it ran, so reopening does not produce a second
+ * copy of every note. And nothing is ever deleted from the old storage: if the
+ * result is wrong, the original is still sitting there, which matters far more
+ * than a tidy folder.
  */
 import { fileSystemHelpers, type RootDirectoryHandle } from '@/lib/filesystem';
 import { NOTES_JSON_PATH } from '@/lib/filesystem/paths';
@@ -33,16 +34,32 @@ interface MigrationMarker {
 }
 
 export interface MigrationResult {
-  /** True when files were written during this call. */
-  ran: boolean;
   written: string[];
   failures: Array<{ title: string; message: string }>;
 }
 
-const nothingToDo = (): MigrationResult => ({ ran: false, written: [], failures: [] });
+/** Where a set of legacy notes was found. */
+export type LegacySource = 'workspace-json' | 'browser-storage';
+
+/** Legacy notes found in one place, before anything has been written. */
+export interface LegacyNotesFound {
+  source: LegacySource;
+  notes: LegacyNote[];
+}
+
+/** Everything a workspace could import, and enough detail to preview it. */
+export interface PendingMigration {
+  found: LegacyNotesFound[];
+  /** Note titles in the order they would be written, for the preview. */
+  titles: string[];
+  total: number;
+}
 
 /** A note record from the old bundle, before it became a file. */
-type LegacyNote = Partial<Note> & { title?: string; content?: string };
+export type LegacyNote = Partial<Note> & { title?: string; content?: string };
+
+/** `localStorage` keys the browser build used before notes were files. */
+export const LEGACY_NOTES_STORAGE_KEY = 'notara-notes';
 
 const hasRun = async (root: RootDirectoryHandle): Promise<boolean> => {
   const marker = await fileSystemHelpers
@@ -51,10 +68,75 @@ const hasRun = async (root: RootDirectoryHandle): Promise<boolean> => {
   return marker !== null;
 };
 
+/** Reads the notes the browser build left in `localStorage`. */
+const readBrowserNotes = (): LegacyNote[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const stored = window.localStorage.getItem(LEGACY_NOTES_STORAGE_KEY);
+    if (!stored) {
+      return [];
+    }
+    const parsed: unknown = JSON.parse(stored);
+    return Array.isArray(parsed) ? (parsed as LegacyNote[]) : [];
+  } catch {
+    // Unreadable storage is treated as empty. There is nothing useful to
+    // recover from a value that will not parse, and failing the whole app over
+    // it would be worse.
+    return [];
+  }
+};
+
+/** The title a legacy record will be filed under. */
+export const legacyTitle = (legacy: LegacyNote): string => legacy.title?.trim() || 'Untitled';
+
 /**
- * Writes the old JSON notes into the workspace as Markdown files.
+ * Looks for notes still living in the old storage.
  *
- * Notes land at the workspace root, because the bundle had no concept of
+ * This never writes a note. The one thing it can write is the marker, and only
+ * when there is nothing to migrate, so a workspace that never had old data is
+ * not searched again on every open.
+ *
+ * Returns null when there is nothing to offer.
+ */
+export const findLegacyNotes = async (
+  root: RootDirectoryHandle
+): Promise<PendingMigration | null> => {
+  if (await hasRun(root)) {
+    return null;
+  }
+
+  const bundle = await fileSystemHelpers
+    .readJSON<{ notes?: LegacyNote[] }>(root, NOTES_JSON_PATH)
+    .catch(() => null);
+
+  const found: LegacyNotesFound[] = [];
+
+  const jsonNotes = bundle?.notes ?? [];
+  if (jsonNotes.length > 0) {
+    found.push({ source: 'workspace-json', notes: jsonNotes });
+  }
+
+  const browserNotes = readBrowserNotes();
+  if (browserNotes.length > 0) {
+    found.push({ source: 'browser-storage', notes: browserNotes });
+  }
+
+  if (found.length === 0) {
+    await writeMarker(root, 0);
+    return null;
+  }
+
+  const titles = found.flatMap((entry) => entry.notes.map(legacyTitle));
+  return { found, titles, total: titles.length };
+};
+
+/**
+ * Writes the legacy notes into the workspace as Markdown files.
+ *
+ * Notes land at the workspace root, because the old storage had no concept of
  * folders and inventing a structure for someone else's notes is not this
  * function's decision to make. Sorting them into folders is a thing the user
  * does afterwards, in the app or in their file manager.
@@ -62,32 +144,17 @@ const hasRun = async (root: RootDirectoryHandle): Promise<boolean> => {
  * `existingPaths` is what the scan already found, so a migrated note cannot
  * overwrite a Markdown file that was already sitting in the folder.
  */
-export const migrateNotesBundle = async (
+export const importLegacyNotes = async (
   root: RootDirectoryHandle,
+  pending: PendingMigration,
   existingPaths: string[]
 ): Promise<MigrationResult> => {
-  if (await hasRun(root)) {
-    return nothingToDo();
-  }
-
-  const bundle = await fileSystemHelpers
-    .readJSON<{ notes?: LegacyNote[] }>(root, NOTES_JSON_PATH)
-    .catch(() => null);
-
-  const legacyNotes = bundle?.notes ?? [];
-  if (legacyNotes.length === 0) {
-    // Still record the run. A workspace that never had a bundle should not be
-    // checked again every time it opens.
-    await writeMarker(root, 0);
-    return nothingToDo();
-  }
-
   const claimed = [...existingPaths];
   const written: string[] = [];
   const failures: MigrationResult['failures'] = [];
 
-  for (const legacy of legacyNotes) {
-    const title = legacy.title?.trim() || 'Untitled';
+  for (const legacy of pending.found.flatMap((entry) => entry.notes)) {
+    const title = legacyTitle(legacy);
     const path = uniqueNotePath('', title, claimed);
 
     try {
@@ -117,16 +184,16 @@ export const migrateNotesBundle = async (
     }
   }
 
-  // The marker goes in only after the writes, so a migration interrupted
-  // halfway runs again rather than leaving the rest of the notes stranded in
-  // the JSON. The already-written files keep their names, so the second pass
-  // adds numbered copies instead of overwriting. That is noisy but recoverable,
-  // which is the right way round.
+  // The marker goes in only after a clean run, so a migration interrupted
+  // halfway is offered again rather than leaving the rest of the notes
+  // stranded. The already-written files keep their names, so the second pass
+  // adds numbered copies instead of overwriting. That is noisy but
+  // recoverable, which is the right way round.
   if (failures.length === 0) {
     await writeMarker(root, written.length);
   }
 
-  return { ran: written.length > 0, written, failures };
+  return { written, failures };
 };
 
 const writeMarker = async (root: RootDirectoryHandle, noteCount: number): Promise<void> => {

@@ -2,6 +2,7 @@ import React, { createContext } from 'react';
 import { Note, NoteTag, VisionBoard } from '../types';
 import type { NotesBundle } from '@/lib/filesystem';
 import type { CreateNotesResult, NoteFilesStatus, SaveOptions } from './notes/useNoteFiles';
+import type { MigrationResult, PendingMigration } from '@/lib/notes/migrate';
 import type { NoteLoadFailure } from '@/lib/notes/load';
 
 /**
@@ -47,6 +48,12 @@ export interface NotesContextType {
    * returned note carries the path that was actually used, which can differ
    * from the requested title when the filesystem would not accept it.
    */
+  /** Notes still in the old storage, waiting for the user to say yes. */
+  pendingMigration: PendingMigration | null;
+  /** Imports them. Nothing is removed from the old storage. */
+  runMigration: () => Promise<MigrationResult | null>;
+  /** Puts the offer away for this session. */
+  dismissMigration: () => void;
   addNote: (
     note: Partial<Note> & {
       /** Folder to create the note in. Empty or absent is the workspace root. */

@@ -15,6 +15,8 @@ import { loadNotesFromWorkspace, type NoteLoadFailure } from '@/lib/notes/load';
 import { metadataOf, noteFromFile, noteToFileContents } from '@/lib/notes/mapping';
 import { uniqueNotePath, uniqueNotePaths } from '@/lib/notes/naming';
 import { prepareWorkspaceFiles } from '@/lib/notes/prepare';
+import type { MigrationResult, PendingMigration } from '@/lib/notes/migrate';
+import { useNoteMigration } from './useNoteMigration';
 import { buildNoteFile } from '@/lib/markdown/note-frontmatter';
 import {
   deleteNoteFile,
@@ -71,6 +73,12 @@ export interface NoteFilesApi {
   /** Tags discovered inside note files, merged with the ones already known. */
   discoveredTags: NoteTag[];
   reload: () => Promise<void>;
+  /** Old notes waiting to be imported, or null when there are none. */
+  pendingMigration: PendingMigration | null;
+  /** Imports those notes. Only called after the user has seen them. */
+  runMigration: () => Promise<MigrationResult | null>;
+  /** Puts the offer away for this session. */
+  dismissMigration: () => void;
   createNote: (input: NoteInput) => Promise<Note>;
   /**
    * Creates several notes at once, allocating every file name before writing
@@ -94,6 +102,9 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
   const [failures, setFailures] = useState<NoteLoadFailure[]>([]);
   const [status, setStatus] = useState<NoteFilesStatus>('no-workspace');
   const [lastError, setLastError] = useState<string | null>(null);
+
+  const { pendingMigration, detectLegacyNotes, runMigration, dismissMigration } =
+    useNoteMigration(rootHandle, scan, refresh, setLastError);
 
   // Read inside callbacks that must not re-create themselves on every keystroke.
   const notesRef = useRef(notes);
@@ -143,12 +154,13 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
       return false;
     }
 
-    const { wroteFiles, migrationError } = await prepareWorkspaceFiles(rootHandle, scan);
-    if (migrationError) {
-      setLastError(migrationError);
-    }
-    return wroteFiles;
-  }, [rootHandle, scan]);
+    // Looking for old notes writes nothing, so it is safe to do on every open.
+    // Importing them is the user's call and happens through `runMigration`.
+    const hasPendingMigration = await detectLegacyNotes();
+
+    return prepareWorkspaceFiles(rootHandle, scan, { hasPendingMigration });
+  }, [detectLegacyNotes, rootHandle, scan]);
+
 
   useEffect(() => {
     if (fileSystemStatus !== 'ready' || !rootHandle) {
@@ -469,6 +481,9 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
     lastError,
     discoveredTags,
     reload,
+    pendingMigration,
+    runMigration,
+    dismissMigration,
     createNote,
     createNotes,
     saveNote,

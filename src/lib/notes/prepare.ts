@@ -1,10 +1,9 @@
 /**
  * Getting a freshly chosen workspace ready.
  *
- * Two one-time jobs run before a folder's notes are read: moving anything left
- * in the old JSON bundle into real Markdown files, and seeding the starter
- * notes when the folder is genuinely empty. Both write files, so the caller has
- * to rescan afterwards.
+ * One job is left here: seeding the starter notes when the folder is genuinely
+ * empty. Migrating old storage used to run from here too, and now does not.
+ * That writes into the user's folder, so it waits for the user to say yes.
  *
  * This lives outside `useNoteFiles` because it is a plain sequence of file
  * operations with no React in it, and keeping it there pushed that file past
@@ -13,45 +12,32 @@
 import type { RootDirectoryHandle } from '@/lib/filesystem';
 import type { WorkspaceScan } from '@/lib/workspace/types';
 import { buildNoteFile } from '@/lib/markdown/note-frontmatter';
-import { migrateNotesBundle } from './migrate';
 import { uniqueNotePath } from './naming';
 import { writeNoteFile } from './store';
 import { STARTER_NOTES } from '@/context/notes/starter-notes';
 
-export interface PrepareResult {
+export interface PrepareOptions {
   /**
-   * True when files were written, which means the scan on screen is stale.
+   * True when old notes are waiting to be imported.
+   *
+   * A workspace with a pending import is not really empty, so it does not get
+   * starter notes. Seeding them would mix Notara's sample text into the folder
+   * the user is about to fill with their own.
    */
-  wroteFiles: boolean;
-  /**
-   * Set when the migration could not move some notes. The originals are left
-   * where they were, so this is a warning rather than a failure.
-   */
-  migrationError: string | null;
+  hasPendingMigration: boolean;
 }
 
+/** True when files were written, which means the scan on screen is stale. */
 export const prepareWorkspaceFiles = async (
   root: RootDirectoryHandle,
-  scan: WorkspaceScan
-): Promise<PrepareResult> => {
+  scan: WorkspaceScan,
+  options: PrepareOptions
+): Promise<boolean> => {
   const existingPaths = scan.files.map((file) => file.path);
-  const migration = await migrateNotesBundle(root, existingPaths);
 
-  const migrationError =
-    migration.failures.length > 0
-      ? `${migration.failures.length} note${
-          migration.failures.length === 1 ? '' : 's'
-        } could not be moved out of the old storage. The original file was left in place.`
-      : null;
-
-  if (migration.ran) {
-    return { wroteFiles: true, migrationError };
-  }
-
-  // A folder with notes already in it is not empty, and neither is one the
-  // migration just filled. Only a genuinely blank workspace gets starters.
-  if (existingPaths.length > 0) {
-    return { wroteFiles: false, migrationError };
+  // Only a genuinely blank workspace with nothing waiting gets starters.
+  if (existingPaths.length > 0 || options.hasPendingMigration) {
+    return false;
   }
 
   const claimed: string[] = [];
@@ -71,5 +57,5 @@ export const prepareWorkspaceFiles = async (
     claimed.push(path);
   }
 
-  return { wroteFiles: claimed.length > 0, migrationError };
+  return claimed.length > 0;
 };

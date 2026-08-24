@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu, Search, Tag } from 'lucide-react';
+import MigrationDialog from '@/components/notes/MigrationDialog';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -189,6 +190,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       )}
 
       <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+
+      {/* Rendered from the layout rather than the notes page, because the app
+          can open on any section and old notes are worth offering wherever the
+          user landed. It renders nothing when there is nothing to import. */}
+      <MigrationDialog />
     </div>
   );
 };
