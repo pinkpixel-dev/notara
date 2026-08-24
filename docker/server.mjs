@@ -1,9 +1,13 @@
+// Static file server for the Docker image.
+//
+// This used to proxy AI requests as well. It does not any more: OpenAI runs
+// through the desktop backend, which is the only place the API key can be held
+// safely, so a hosted Notara serves the app without AI features.
 import { createReadStream } from 'node:fs';
 import { access, readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Readable } from 'node:stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,167 +26,6 @@ const MIME_TYPES = {
   '.webp': 'image/webp',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
-};
-
-const normalizeToken = (token) => {
-  if (!token) {
-    return undefined;
-  }
-
-  const trimmed = token.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  return trimmed.startsWith('Bearer ') ? trimmed : `Bearer ${trimmed}`;
-};
-
-const readBody = async (req) => {
-  const chunks = [];
-
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-
-  return Buffer.concat(chunks);
-};
-
-const sendJson = (res, statusCode, payload) => {
-  const body = JSON.stringify(payload);
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body),
-  });
-  res.end(body);
-};
-
-const relayFetchResponse = async (res, upstreamResponse, fallbackContentType) => {
-  const headers = {
-    'Cache-Control': upstreamResponse.headers.get('Cache-Control') ?? 'no-store',
-    'Content-Type': upstreamResponse.headers.get('Content-Type') ?? fallbackContentType,
-  };
-
-  res.writeHead(upstreamResponse.status, headers);
-
-  if (!upstreamResponse.body) {
-    res.end();
-    return;
-  }
-
-  Readable.fromWeb(upstreamResponse.body).pipe(res);
-};
-
-const handlePollinationsText = async (req, res) => {
-  const authorization =
-    req.headers.authorization || normalizeToken(process.env.POLLINATIONS_API_TOKEN);
-
-  if (!authorization) {
-    sendJson(res, 401, {
-      error: 'Pollinations API key required',
-      message: 'Provide an API key from https://enter.pollinations.ai in Settings -> Integrations.',
-    });
-    return;
-  }
-
-  try {
-    const requestBody = await readBody(req);
-
-    const upstreamResponse = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Accept: 'text/event-stream',
-        Authorization: authorization,
-        'Content-Type': 'application/json',
-      },
-      body: requestBody,
-    });
-
-    if (!upstreamResponse.ok) {
-      const errorText = await upstreamResponse.text();
-      res.writeHead(upstreamResponse.status, {
-        'Content-Type': 'text/plain; charset=utf-8',
-      });
-      res.end(errorText);
-      return;
-    }
-
-    await relayFetchResponse(res, upstreamResponse, 'text/event-stream');
-  } catch (error) {
-    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end(`Pollinations proxy error: ${error instanceof Error ? error.message : String(error)}`);
-  }
-};
-
-const handlePollinationsImage = async (req, res) => {
-  const authorization =
-    req.headers.authorization || normalizeToken(process.env.POLLINATIONS_API_TOKEN);
-
-  if (!authorization) {
-    sendJson(res, 401, {
-      error: 'Pollinations API key required',
-      message: 'Provide an API key from https://enter.pollinations.ai in Settings -> Integrations.',
-    });
-    return;
-  }
-
-  let payload;
-
-  try {
-    payload = JSON.parse((await readBody(req)).toString('utf8'));
-  } catch {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON payload');
-    return;
-  }
-
-  const prompt = payload.prompt?.trim();
-
-  if (!prompt) {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Prompt is required');
-    return;
-  }
-
-  const upstreamUrl = new URL(`https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}`);
-  upstreamUrl.searchParams.set('width', String(payload.width ?? 1024));
-  upstreamUrl.searchParams.set('height', String(payload.height ?? 1024));
-  upstreamUrl.searchParams.set('seed', String(payload.seed ?? Math.floor(Math.random() * 1000)));
-  upstreamUrl.searchParams.set('model', payload.model ?? 'flux');
-
-  if (typeof payload.enhance === 'boolean') {
-    upstreamUrl.searchParams.set('enhance', payload.enhance ? 'true' : 'false');
-  }
-
-  if (typeof payload.safe === 'boolean') {
-    upstreamUrl.searchParams.set('safe', payload.safe ? 'true' : 'false');
-  }
-
-  if (payload.quality) {
-    upstreamUrl.searchParams.set('quality', payload.quality);
-  }
-
-  try {
-    const upstreamResponse = await fetch(upstreamUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: authorization,
-      },
-    });
-
-    if (!upstreamResponse.ok) {
-      const errorText = await upstreamResponse.text();
-      res.writeHead(upstreamResponse.status, {
-        'Content-Type': 'text/plain; charset=utf-8',
-      });
-      res.end(errorText);
-      return;
-    }
-
-    await relayFetchResponse(res, upstreamResponse, 'image/png');
-  } catch (error) {
-    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end(`Pollinations proxy error: ${error instanceof Error ? error.message : String(error)}`);
-  }
 };
 
 const serveStaticFile = async (req, res) => {
@@ -242,26 +85,6 @@ const server = createServer(async (req, res) => {
   if (!req.url || !req.method) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Bad request');
-    return;
-  }
-
-  if (req.method === 'OPTIONS' && req.url.startsWith('/api/')) {
-    res.writeHead(204, {
-      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-      'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-      'Access-Control-Allow-Origin': '*',
-    });
-    res.end();
-    return;
-  }
-
-  if (req.method === 'POST' && req.url === '/api/pollinations/text') {
-    await handlePollinationsText(req, res);
-    return;
-  }
-
-  if (req.method === 'POST' && req.url === '/api/pollinations/image') {
-    await handlePollinationsImage(req, res);
     return;
   }
 

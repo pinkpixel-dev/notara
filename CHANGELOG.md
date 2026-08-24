@@ -2,6 +2,70 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.1.0 - August 23, 2026
+
+### 🤖 OpenAI
+
+- Notara uses OpenAI for text and image generation. Add your API key in
+  Settings, under AI & Data, then pick a text model and an image model.
+- The key never touches browser storage. Notara encrypts it and keeps it with
+  the app's own settings, outside your workspace folder, and the interface only
+  ever shows a masked hint like `sk-••••mnop`.
+- Test connection checks the key against OpenAI without starting a generation,
+  so it costs nothing to find out whether the key works.
+- Replace key and Delete key are separate actions, and deleting asks first. It
+  removes the key from this computer only. Your key stays valid in the OpenAI
+  console until you revoke it there.
+- The model lists are fixed. Notara offers the models it has been tested
+  against and nothing else, and it never quietly switches to a different model
+  after a request fails.
+- Generated images can go to a vision board or to a file you pick.
+
+### 🔑 Why the key moved
+
+- Every OpenAI request is now made by the desktop backend rather than by the
+  page. That is the whole reason the key can stay out of browser storage, out of
+  the interface, and out of the logs.
+- This makes AI desktop only. The hosted web app and the Docker image have no
+  backend to hold a key safely, so they show AI as unavailable instead of asking
+  for one.
+- The encryption stops the ordinary ways a key leaks: a backup, a synced folder,
+  a screen share, a search through your config directory. It does not stop a
+  program already running under your account, which can read the stored key. If
+  you want the full reasoning, including why an OS keyring was turned down,
+  `DOCS/PRIVACY-AND-SECURITY.md` has it.
+
+### 🗑️ Pollinations removed
+
+- Pollinations is gone: the client, the development proxy, the Cloudflare
+  routes, the Docker proxy, the API token variables, and the network permission
+  that let the app reach it.
+- The old `notara-pollinations-config` value is cleared from browser storage
+  when Notara starts, because it held an API key in plain text.
+- If you were using Pollinations, you will need an OpenAI key to use AI again.
+  Nothing else about your notes, tasks, or boards changes.
+
+### 💬 Errors
+
+- A failed request says what actually went wrong. An expired key, an
+  unverified organization, an exhausted balance, and a rate limit each need a
+  different fix, so each one gets its own message instead of "request failed".
+- Errors carry the OpenAI request ID when there is one, which is the first
+  thing their support asks for.
+
+### 🧹 Maintenance
+
+- Dropped the Tauri HTTP plugin and its `unsafe-headers` feature. Pollinations
+  was the only thing using it.
+- The Docker image now serves the built app and nothing else.
+- The approved model list lives in three places: the documentation, the
+  TypeScript mirror, and the Rust validator. Tests read the document and compare
+  against both, so the three cannot drift apart.
+
+### 🏷️ Versioning
+
+- Bumped to 2.1.0 for the OpenAI provider.
+
 ## 2.0.1 - August 23, 2026
 
 ### 🐛 Linux AppImage

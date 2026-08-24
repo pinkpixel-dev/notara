@@ -20,7 +20,7 @@ Notara is a local-first note workspace for Markdown notes, tasks, calendar organ
 - Vision boards with movable image and text items
 - Constellation view for note relationships
 - Local Tauri app-data storage and browser storage
-- Pollinations text and image tools
+- OpenAI text and image tools on the desktop build
 - Linux, Windows, Docker, and hosted web build paths
 
 ## Important current limitations
@@ -30,7 +30,7 @@ Notara is a local-first note workspace for Markdown notes, tasks, calendar organ
 - JSON is the current note source. Markdown files are generated mirrors.
 - Split editor view, Save As, external-change detection, reminders, and notifications do not exist yet.
 - Notara has no account system or cloud-sync integration.
-- Current AI uses Pollinations. OpenAI is planned but not implemented.
+- AI needs the desktop app. Browser and Docker builds show AI as unavailable, because the API key is held by the desktop backend.
 - The hosted web layout has known small-screen and keyboard-access gaps.
 
 Read the [overhaul plan](DOCS/OVERHAUL-PLAN.md) and [roadmap](DOCS/ROADMAP.md) for the accepted direction.
@@ -63,7 +63,7 @@ npm run dev
 
 Open `http://localhost:3489`.
 
-The environment file currently contains only the optional Pollinations token used during the OpenAI transition.
+The environment file holds no credentials. The OpenAI key is entered in Settings, under AI & Data.
 
 ## Desktop development
 
@@ -103,7 +103,7 @@ docker run --rm -p 3489:3489 notara:latest
 
 Open `http://localhost:3489`.
 
-The current Docker runtime can proxy Pollinations when `POLLINATIONS_API_TOKEN` is present. This path will change during the OpenAI phase.
+The Docker runtime serves the built app and nothing else. It has no AI proxy, because AI needs the desktop backend.
 
 ## Documentation
 

@@ -17,5 +17,6 @@ VITE_APP_ENV = "production"
 VITE_APP_ENV = "development"
 
 # Secrets (configure these with `wrangler secret put <NAME>` and NEVER commit actual values)
-# Example:
-#   wrangler secret put POLLINATIONS_API_TOKEN
+#
+# The hosted build has no AI credentials to configure. OpenAI runs through the
+# desktop backend, so a hosted deployment serves Notara without AI features.

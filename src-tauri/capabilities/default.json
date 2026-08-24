@@ -23,17 +23,6 @@
     "fs:allow-rename",
     "fs:allow-stat",
     "fs:allow-write-file",
-    "fs:allow-write-text-file",
-    {
-      "identifier": "http:default",
-      "allow": [
-        {
-          "url": "https://pollinations.ai"
-        },
-        {
-          "url": "https://*.pollinations.ai"
-        }
-      ]
-    }
+    "fs:allow-write-text-file"
   ]
 }

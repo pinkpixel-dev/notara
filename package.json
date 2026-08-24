@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/notara",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Feature-rich note-taking application and markdown editor with AI assistant.",
   "type": "module",
   "scripts": {
@@ -51,7 +51,6 @@
     "@tanstack/react-query": "^5.56.2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
-    "@tauri-apps/plugin-http": "^2.5.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

@@ -1,3 +1,4 @@
+mod openai;
 mod workspace;
 
 use workspace::commands;
@@ -25,7 +26,6 @@ pub fn run() {
     configure_appimage_gio_modules();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_persisted_scope::init())
@@ -40,6 +40,13 @@ pub fn run() {
             commands::preview_workspace_deletion,
             commands::write_workspace_note,
             commands::workspace_note_revision,
+            openai::commands::openai_key_status,
+            openai::commands::openai_save_key,
+            openai::commands::openai_delete_key,
+            openai::commands::openai_test_key,
+            openai::commands::openai_generate_text,
+            openai::commands::openai_generate_image,
+            openai::commands::openai_save_image,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

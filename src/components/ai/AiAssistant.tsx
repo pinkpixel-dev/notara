@@ -17,6 +17,7 @@ import {
   Save,
   Clock,
   ArrowUpRight,
+  Download,
   Trash2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -31,11 +32,17 @@ import { calculateNoteSimilarity } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { AiConversationSnapshot, AiMessage, Note } from '@/types';
 import {
-  isTauriDesktopRuntime,
-  readPollinationsConfig,
-  requestPollinationsImage,
-  requestPollinationsText,
-} from '@/lib/pollinations';
+  dataUrlToOpenAiImage,
+  describeOpenAiFailure,
+  generateOpenAiImage,
+  generateOpenAiText,
+  isOpenAiAvailable,
+  openAiImageToBlob,
+  OPENAI_UNAVAILABLE_MESSAGE,
+  saveOpenAiImageAs,
+} from '@/lib/openai/client';
+import { readOpenAiConfig } from '@/lib/openai/config';
+import { IMAGE_SIZES } from '@/lib/openai/models';
 
 type Message = AiMessage;
 
@@ -145,8 +152,6 @@ const writeSessionMessages = (messages: Message[]): void => {
   }
 };
 
-const POLLINATIONS_TOKEN = import.meta.env.VITE_POLLINATIONS_API_TOKEN;
-
 const formatConversationMarkdown = (title: string, messages: Message[]): string => {
   const timestamp = new Date().toISOString();
   const lines = [
@@ -216,7 +221,7 @@ const AiAssistant: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [showImagePrompt, setShowImagePrompt] = useState(false);
-  const [imageSize, setImageSize] = useState<{ width: number, height: number }>({ width: 1024, height: 1024 });
+  const [imageSize, setImageSize] = useState<string>(() => readOpenAiConfig().imageSize);
 
   const [conversationArchive, setConversationArchive] = useState<ConversationSnapshot[]>([]);
   const [isArchiveLoaded, setIsArchiveLoaded] = useState(false);
@@ -701,111 +706,49 @@ covered in the calendar data, please mention that.
     });
   };
 
-  // Stream chat completion from Pollinations API
-  const streamChatCompletion = async (messages: Array<{ role: string, content: string }>, onChunkReceived: (chunk: string) => void) => {
+  /**
+   * Runs one text generation through the OpenAI backend.
+   *
+   * The name and the callback are kept from the previous streaming transport so
+   * the callers do not change. Text arrives in a single piece rather than in
+   * chunks: the request is made in Rust, which is what keeps the API key out of
+   * this component, and incremental delivery needs the panel rework that Phase 6
+   * owns. Callers already handle a single call, because the desktop build was
+   * non-streaming before this too.
+   */
+  const streamChatCompletion = async (
+    messages: Array<{ role: string, content: string }>,
+    onChunkReceived: (chunk: string) => void
+  ) => {
+    contentAccumulatorRef.current = '';
+
+    if (!isOpenAiAvailable()) {
+      throw new Error(OPENAI_UNAVAILABLE_MESSAGE);
+    }
+
+    // The Responses API takes top-level instructions rather than a system turn,
+    // which keeps the conversation array to real dialogue.
+    const instructions = messages
+      .filter((message) => message.role === 'system' || message.role === 'developer')
+      .map((message) => message.content)
+      .join('\n\n');
+
+    const conversation = messages.filter(
+      (message) => message.role !== 'system' && message.role !== 'developer'
+    );
+
     try {
-      // Reset the content accumulator
-      contentAccumulatorRef.current = '';
+      const result = await generateOpenAiText({
+        model: readOpenAiConfig().textModel,
+        messages: conversation.length > 0 ? conversation : messages,
+        instructions: instructions || undefined,
+      });
 
-      const pollinationsConfig = readPollinationsConfig();
-      const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
-
-      if (!pollinationsToken) {
-        throw new Error('Pollinations API key is required for text generation. Add one in Settings → AI & Data.');
-      }
-
-      const isDesktopRuntime = isTauriDesktopRuntime();
-      const payload = {
-        model: pollinationsConfig.textModel,
-        messages: messages,
-        stream: !isDesktopRuntime,
-      };
-
-      const response = await requestPollinationsText(payload, `Bearer ${pollinationsToken}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
-      }
-
-      if (isDesktopRuntime) {
-        const data = await response.json();
-        const fullContent =
-          data?.choices?.[0]?.message?.content ??
-          data?.choices?.[0]?.delta?.content ??
-          '';
-
-        if (!fullContent) {
-          throw new Error('Pollinations returned an empty response.');
-        }
-
-        onChunkReceived(fullContent);
-        return;
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get reader from response');
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let localAccumulatedContent = ""; // Local accumulation to reduce UI updates
-      let lastUpdateTime = Date.now();
-      const UPDATE_INTERVAL = 500; // Update UI every 500ms to reduce flashing
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log("Stream finished.");
-          // Send any remaining accumulated content
-          if (localAccumulatedContent && onChunkReceived) {
-            onChunkReceived(localAccumulatedContent);
-          }
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Process buffer line by line (SSE format: data: {...}\n\n)
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || ""; // Keep the potentially incomplete last line
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const dataStr = line.substring(6).trim();
-            if (dataStr === "[DONE]") {
-              console.log("Received [DONE] marker.");
-              continue;
-            }
-            try {
-              const chunk = JSON.parse(dataStr);
-              const content = chunk?.choices?.[0]?.delta?.content;
-              if (content) {
-                // Accumulate content instead of updating UI immediately
-                localAccumulatedContent += content;
-
-                // Only update UI periodically to reduce flashing
-                const now = Date.now();
-                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                  if (onChunkReceived && localAccumulatedContent) {
-                    onChunkReceived(localAccumulatedContent);
-                    localAccumulatedContent = ""; // Reset accumulated content
-                    lastUpdateTime = now;
-                  }
-                }
-              }
-            } catch (e) {
-              console.error("Failed to parse stream chunk:", dataStr, e);
-            }
-          }
-        }
-      }
+      onChunkReceived(result.text);
     } catch (error) {
-      console.error("Error during streaming chat completion:", error);
-      throw error;
+      // Rethrow with the provider's own wording so every caller's catch block
+      // shows why the request failed instead of a generic message.
+      throw new Error(describeOpenAiFailure(error));
     }
   };
 
@@ -1252,6 +1195,38 @@ ${constellationContent}
     });
   };
 
+  /** Saves a generated image to a path the user picks. */
+  const handleSaveImageToFile = async (message: Message) => {
+    if (!message.imageUrl) {
+      return;
+    }
+
+    const image = dataUrlToOpenAiImage(message.imageUrl);
+
+    if (!image) {
+      toast({
+        title: 'Could not read the image',
+        description: 'This message does not carry image data that can be saved.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const savedPath = await saveOpenAiImageAs(image, 'notara-image');
+
+      if (savedPath) {
+        toast({ title: 'Image saved', description: savedPath });
+      }
+    } catch (error) {
+      toast({
+        title: 'Could not save the image',
+        description: describeOpenAiFailure(error),
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Format Vision Board data for AI context
   const formatVisionBoardData = (visionBoardIds: string[] = []) => {
     // If no specific vision boards are selected, use all vision boards
@@ -1519,6 +1494,15 @@ Focus on finding meaningful relationships and insights rather than just summariz
 
   // Generate image
   const handleGenerateImage = async () => {
+    if (!isOpenAiAvailable()) {
+      toast({
+        title: "AI is unavailable here",
+        description: OPENAI_UNAVAILABLE_MESSAGE,
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!imagePrompt.trim() || isProcessing) {
       toast({
         title: "No prompt provided",
@@ -1531,34 +1515,16 @@ Focus on finding meaningful relationships and insights rather than just summariz
     setIsProcessing(true);
 
     try {
-      // Create request for image
       const prompt = imagePrompt;
-      const { width, height } = imageSize;
-      const seed = Math.floor(Math.random() * 1000); // Random seed for each generation
-      const pollinationsConfig = readPollinationsConfig();
-      const pollinationsToken = pollinationsConfig.apiKey || POLLINATIONS_TOKEN;
+      const config = readOpenAiConfig();
 
-      if (!pollinationsToken) {
-        throw new Error('Pollinations API key is required for image generation. Add one in Settings → AI & Data.');
-      }
+      const result = await generateOpenAiImage({
+        model: config.imageModel,
+        prompt,
+        size: imageSize,
+      });
 
-      const response = await requestPollinationsImage(
-        {
-          prompt,
-          width,
-          height,
-          seed,
-          model: pollinationsConfig.imageModel,
-        },
-        `Bearer ${pollinationsToken}`
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Image request failed (${response.status}): ${errorText}`);
-      }
-
-      const blob = await response.blob();
+      const blob = openAiImageToBlob(result);
       const safePromptPrefix = prompt
         .slice(0, 32)
         .replace(/[^a-z0-9]+/gi, '-')
@@ -1603,7 +1569,7 @@ Focus on finding meaningful relationships and insights rather than just summariz
 
       toast({
         title: "Image Generation Failed",
-        description: "There was an error generating your image. Please try again.",
+        description: describeOpenAiFailure(error),
         variant: "destructive"
       });
     } finally {
@@ -2132,12 +2098,22 @@ Focus on finding meaningful relationships and insights rather than just summariz
                         <FileText className="w-3 h-3" /> Save as note
                       </button>
                       {message.imageUrl && (
-                        <button
-                          onClick={() => handleSaveImageToVisionBoard(message)}
-                          className="text-xs text-primary/70 hover:text-primary flex items-center gap-1 transition-colors"
-                        >
-                          <ImageIcon className="w-3 h-3" /> Save to vision board
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleSaveImageToVisionBoard(message)}
+                            className="text-xs text-primary/70 hover:text-primary flex items-center gap-1 transition-colors"
+                          >
+                            <ImageIcon className="w-3 h-3" /> Save to vision board
+                          </button>
+                          {isOpenAiAvailable() && (
+                            <button
+                              onClick={() => void handleSaveImageToFile(message)}
+                              className="text-xs text-primary/70 hover:text-primary flex items-center gap-1 transition-colors"
+                            >
+                              <Download className="w-3 h-3" /> Save to file
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -2234,24 +2210,20 @@ Focus on finding meaningful relationships and insights rather than just summariz
                   </div>
                   <div className="flex gap-4 items-center text-xs">
                     <div className="flex gap-2 items-center">
-                      <span className="text-muted-foreground">Size:</span>
+                      <label htmlFor="ai-image-size" className="text-muted-foreground">Size:</label>
                       <select
-                        value={`${imageSize.width}x${imageSize.height}`}
-                        onChange={(e) => {
-                          const [width, height] = e.target.value.split('x').map(Number);
-                          setImageSize({ width, height });
-                        }}
+                        id="ai-image-size"
+                        value={imageSize}
+                        onChange={(e) => setImageSize(e.target.value)}
                         className="bg-background/60 border border-border/40 rounded p-1"
                       >
-                        <option value="512x512">512 × 512</option>
-                        <option value="768x768">768 × 768</option>
-                        <option value="1024x1024">1024 × 1024</option>
-                        <option value="1024x768">1024 × 768</option>
-                        <option value="768x1024">768 × 1024</option>
+                        {IMAGE_SIZES.map((size) => (
+                          <option key={size.value} value={size.value}>{size.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="text-muted-foreground">
-                      Model: <span className="text-primary font-mono">flux</span>
+                      Model: <span className="text-primary font-mono">{readOpenAiConfig().imageModel}</span>
                     </div>
                   </div>
                 </div>
