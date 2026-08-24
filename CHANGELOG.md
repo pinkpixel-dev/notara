@@ -2,7 +2,7 @@
 
 All notable changes to the Notara project will be documented in this file.
 
-## Unreleased
+## 2.0.0 - August 23, 2026
 
 ### 📦 Older notes
 

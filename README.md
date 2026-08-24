@@ -6,8 +6,6 @@
 
 Notara is a local-first note workspace for Markdown notes, tasks, calendar organization, vision boards, and optional AI tools. It runs as a React web app and a Tauri desktop app for Linux and Windows.
 
-Version 2.0.0 is in development on the local-first overhaul branch. Version 1.1.1 remains the latest published download.
-
 [![Version](https://img.shields.io/badge/version-2.0.0-555.svg)](https://github.com/pinkpixel-dev/notara)
 [![License](https://img.shields.io/badge/license-Apache%202.0-555.svg)](LICENSE)
 
@@ -91,10 +89,10 @@ Current desktop data normally lives here on Linux:
 
 ## Current downloads
 
-- [Linux DEB](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.deb)
-- [Linux RPM](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-1.1.1-1.x86_64.rpm)
-- [Linux AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_amd64.AppImage)
-- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_1.1.1_x64-setup.exe)
+- [Linux DEB](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.0.0_amd64.deb)
+- [Linux RPM](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-2.0.0-1.x86_64.rpm)
+- [Linux AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.0.0_amd64.AppImage)
+- [Windows installer](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.0.0_x64-setup.exe)
 
 ## Docker
 
