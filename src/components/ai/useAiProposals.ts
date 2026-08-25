@@ -7,6 +7,9 @@ import { generateOpenAiImage, openAiImageToBlob } from '@/lib/openai/client';
 import type { ImageModel } from '@/lib/openai/models';
 import type { Proposal, TodoListSnapshot } from '@/lib/ai/proposals';
 import type { TodoItem, VisionBoardItem } from '@/types';
+import { isProposal } from '@/lib/ai/proposal-validation';
+import { assertCalendarPosition, assertTodoTargets } from '@/lib/ai/proposal-safety';
+import { useWorkspaceFocus, useWorkspaceFocusActions } from '@/context/WorkspaceFocusContext';
 
 /** What applying a proposal produced, so the panel can offer Undo. */
 export interface ApplyResult {
@@ -19,8 +22,11 @@ export interface ApplyResult {
 const isoFrom = (date: string, time: string): string => {
   const [year, month, day] = date.split('-').map(Number);
   const [hours, minutes] = time.split(':').map(Number);
+  const value = new Date(0);
+  value.setFullYear(year, month - 1, day);
+  value.setHours(hours, minutes, 0, 0);
 
-  return new Date(year, month - 1, day, hours, minutes, 0).toISOString();
+  return value.toISOString();
 };
 
 const snapshotOf = (list: {
@@ -55,15 +61,31 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
   const { notes, visionBoards, addNote, updateNote, deleteNote, updateVisionBoard } = useNotes();
   const { todoLists, addTodoList, updateTodoList, deleteTodoList } = useTodo();
   const { saveGeneratedImage } = useFileSystem();
+  const focus = useWorkspaceFocus();
+  const { replaceOpenNoteContent } = useWorkspaceFocusActions();
 
   return useCallback(
     async (proposal: Proposal): Promise<ApplyResult> => {
+      if (!isProposal(proposal)) {
+        throw new Error('This saved proposal is invalid and was not applied.');
+      }
+
       switch (proposal.kind) {
         case 'edit_note': {
           const note = notes.find((entry) => entry.path === proposal.path);
 
           if (!note) {
             throw new Error(`${proposal.path} is no longer in the workspace.`);
+          }
+
+          if (
+            focus.target?.kind === 'note' &&
+            focus.target.path === proposal.path &&
+            focus.target.isDirty
+          ) {
+            throw new Error(
+              `Save ${proposal.path} before applying this edit. The proposal was built from unsaved text.`
+            );
           }
 
           // The note may have been edited between the proposal and the Apply.
@@ -81,6 +103,8 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
             throw new Error(`${proposal.path} could not be saved.`);
           }
 
+          replaceOpenNoteContent(saved.path, proposal.before, proposal.after);
+
           return {
             summary: `Applied the edit to ${saved.path}`,
             undo: {
@@ -97,6 +121,7 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
             title: proposal.title,
             content: proposal.content,
             directory: proposal.folder,
+            expectedPath: proposal.path,
           });
 
           return {
@@ -111,6 +136,7 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
             content: proposal.content,
             directory: proposal.folder,
             createdAt: isoFrom(proposal.date, proposal.time),
+            expectedPath: proposal.path,
           });
 
           return {
@@ -126,10 +152,11 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
             throw new Error(`${proposal.path} is no longer in the workspace.`);
           }
 
+          assertCalendarPosition(note, proposal);
+
           const saved = await updateNote(note.id, {
             createdAt: isoFrom(proposal.date, proposal.time),
           });
-
           if (!saved) {
             throw new Error(`${proposal.path} could not be saved.`);
           }
@@ -184,6 +211,8 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
           if (!list) {
             throw new Error(`The list "${proposal.listTitle}" is no longer there.`);
           }
+
+          assertTodoTargets(list, proposal);
 
           const checkedByContent = new Map(
             (proposal.setChecked ?? []).map((entry) => [entry.content, entry.checked])
@@ -297,7 +326,9 @@ export const useAiProposals = (): ((proposal: Proposal) => Promise<ApplyResult>)
       addTodoList,
       deleteNote,
       deleteTodoList,
+      focus,
       notes,
+      replaceOpenNoteContent,
       saveGeneratedImage,
       todoLists,
       updateNote,

@@ -41,6 +41,8 @@ export interface EditNoteProposal {
 
 export interface CreateNoteProposal {
   kind: 'create_note';
+  /** Exact path approved on the review card. */
+  path: string;
   title: string;
   /** Empty means the workspace root. */
   folder: string;
@@ -95,6 +97,8 @@ export interface DeleteTodoListProposal {
  */
 export interface CreateCalendarEntryProposal {
   kind: 'create_calendar_entry';
+  /** Exact path approved on the review card. */
+  path: string;
   title: string;
   /** YYYY-MM-DD. */
   date: string;
@@ -206,11 +210,8 @@ export const proposalTarget = (proposal: Proposal): string => {
     case 'update_calendar_entry':
       return proposal.path;
     case 'create_note':
-      return proposal.folder ? `${proposal.folder}/${proposal.title}.md` : `${proposal.title}.md`;
     case 'create_calendar_entry':
-      return proposal.folder
-        ? `${proposal.folder}/${proposal.title}.md`
-        : `${proposal.title}.md`;
+      return proposal.path;
     case 'create_todo_list':
       return proposal.title;
     case 'update_todo_list':

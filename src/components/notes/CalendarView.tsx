@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { useNotes } from '@/context/NotesContextTypes';
 import { format } from 'date-fns';
@@ -12,6 +12,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Note } from '@/types';
+import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
+import { localDate } from '@/lib/ai/current-view';
 
 const CalendarView: React.FC = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -23,6 +25,15 @@ const CalendarView: React.FC = () => {
   const [eventTitle, setEventTitle] = useState('');
   const [eventContent, setEventContent] = useState('');
   const [eventTime, setEventTime] = useState('12:00');
+  const focusTarget = useMemo(
+    () => ({
+      kind: 'calendar' as const,
+      date: date ? localDate(date) : null,
+      eventPath: currentEvent,
+    }),
+    [currentEvent, date]
+  );
+  usePublishWorkspaceFocus(focusTarget);
 
   // Filter notes for the selected date
   const notesOnDate = notes.filter(note => {

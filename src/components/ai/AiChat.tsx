@@ -36,7 +36,17 @@ const PLACEHOLDERS: Record<string, string> = {
  * empty chat, which needs no explanation beyond a prompt to start.
  */
 const AiChat: React.FC<AiChatProps> = ({ chat, messages, decisions }) => {
-  const { status, streamingText, error, availability, sendMessage, retry, cancel, canRetry } = chat;
+  const {
+    status,
+    streamingText,
+    error,
+    availability,
+    currentViewLabel,
+    sendMessage,
+    retry,
+    cancel,
+    canRetry,
+  } = chat;
   const endRef = useRef<HTMLDivElement>(null);
 
   // New turns arrive at the bottom, so the bottom is where the user should be.
@@ -178,6 +188,12 @@ const AiChat: React.FC<AiChatProps> = ({ chat, messages, decisions }) => {
 
         <div ref={endRef} />
       </div>
+
+      {availability === 'ready' && (
+        <p className="border-t border-border px-3 pt-2 text-xs text-muted-foreground">
+          Current view: <span className="text-foreground">{currentViewLabel}</span>
+        </p>
+      )}
 
       <AiComposer
         onSend={sendMessage}

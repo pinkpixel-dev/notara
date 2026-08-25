@@ -56,6 +56,29 @@ describe('a turn with no tools', () => {
       { role: 'user', content: 'three' },
     ]);
   });
+
+  it('inserts ephemeral app context before the newest user message', async () => {
+    const send = vi.fn<TurnSender>().mockResolvedValue(reply('ok'));
+
+    await runTurn({
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'old answer' },
+        { role: 'user', content: 'summarize this' },
+      ],
+      context: [{ role: 'user', content: '<notara_current_view>{}</notara_current_view>' }],
+      tools: [],
+      send,
+      execute: okExecutor,
+    });
+
+    expect(send.mock.calls[0][0]).toEqual([
+      { role: 'user', content: 'old question' },
+      { role: 'assistant', content: 'old answer' },
+      { role: 'user', content: '<notara_current_view>{}</notara_current_view>' },
+      { role: 'user', content: 'summarize this' },
+    ]);
+  });
 });
 
 describe('a turn that uses a tool', () => {

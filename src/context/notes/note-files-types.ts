@@ -23,6 +23,8 @@ export interface NoteInput {
   createdAt?: string;
   /** Folder to create the note in. Defaults to the workspace root. */
   directory?: string;
+  /** Refuse creation if the currently available path is not this exact path. */
+  expectedPath?: string;
 }
 
 /** A note in a batch that could not be written. */

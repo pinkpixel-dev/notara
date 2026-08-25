@@ -98,13 +98,29 @@ describe('propose_new_note', () => {
   it('cleans the folder and keeps the content', () => {
     expect(
       buildProposal('propose_new_note', { title: 'Plan', folder: '/Ideas/', content: '# Plan' }, context())
-    ).toEqual({ kind: 'create_note', title: 'Plan', folder: 'Ideas', content: '# Plan' });
+    ).toEqual({
+      kind: 'create_note',
+      path: 'Ideas/Plan 2.md',
+      title: 'Plan',
+      folder: 'Ideas',
+      content: '# Plan',
+    });
   });
 
   it('needs a title', () => {
     expect(() => buildProposal('propose_new_note', { content: 'x' }, context())).toThrow(
       'needs a title'
     );
+  });
+
+  it('shows the sanitized, collision-free file path', () => {
+    const proposal = buildProposal(
+      'propose_new_note',
+      { title: 'Plan: next', folder: 'Ideas', content: '' },
+      context({ notes: [note({ path: 'Ideas/Plan next.md' })] })
+    );
+
+    expect(proposal).toMatchObject({ path: 'Ideas/Plan next 2.md' });
   });
 });
 
@@ -129,6 +145,18 @@ describe('propose_todo_list', () => {
     expect(() =>
       buildProposal('propose_todo_list', { title: 'x', items: [], date: 'tomorrow' }, context())
     ).toThrow('is not a date');
+  });
+
+  it('refuses impossible dates', () => {
+    expect(() =>
+      buildProposal('propose_todo_list', { title: 'x', items: [], date: '2026-02-30' }, context())
+    ).toThrow('is not a date');
+  });
+
+  it('accepts a real leap day', () => {
+    expect(
+      buildProposal('propose_todo_list', { title: 'x', items: [], date: '2028-02-29' }, context())
+    ).toMatchObject({ date: '2028-02-29' });
   });
 
   it('refuses a time that is not a time', () => {
@@ -180,6 +208,41 @@ describe('propose_todo_list_change', () => {
     ).toThrow('no item that reads');
   });
 
+  it('refuses an ambiguous item label', () => {
+    expect(() =>
+      buildProposal(
+        'propose_todo_list_change',
+        { list: 'Today', setChecked: [{ content: 'buy milk', checked: true }] },
+        context({
+          todoLists: [
+            list({
+              items: [
+                { id: 'a', content: 'buy milk', checked: false, time: '10:00' },
+                { id: 'b', content: 'buy milk', checked: false, time: '11:00' },
+              ],
+            }),
+          ],
+        })
+      )
+    ).toThrow('more than one item');
+  });
+
+  it('refuses the same item twice in one change', () => {
+    expect(() =>
+      buildProposal(
+        'propose_todo_list_change',
+        {
+          list: 'Today',
+          setChecked: [
+            { content: 'buy milk', checked: true },
+            { content: 'buy milk', checked: false },
+          ],
+        },
+        context()
+      )
+    ).toThrow('more than once');
+  });
+
   it('refuses a change that would alter nothing', () => {
     expect(() => buildProposal('propose_todo_list_change', { list: 'Today' }, context())).toThrow(
       'would not alter'
@@ -193,6 +256,7 @@ describe('calendar proposals', () => {
       buildProposal('propose_calendar_entry', { title: 'Dentist', date: '2026-09-01' }, context())
     ).toEqual({
       kind: 'create_calendar_entry',
+      path: 'Dentist.md',
       title: 'Dentist',
       date: '2026-09-01',
       time: '12:00',

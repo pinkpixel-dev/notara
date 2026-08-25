@@ -209,6 +209,12 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
         notesRef.current.map((note) => note.path)
       );
 
+      if (input.expectedPath && input.expectedPath !== path) {
+        throw new Error(
+          `${input.expectedPath} is no longer available. Review the proposed note again.`
+        );
+      }
+
       const written = await writeNoteFile(
         root,
         path,

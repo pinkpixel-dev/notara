@@ -9,6 +9,7 @@ import { useAiChat } from './useAiChat';
 import { useAiConversations } from './useAiConversations';
 import { useAiTools } from './useAiTools';
 import { useProposalDecisions } from './useProposalDecisions';
+import { useAiCurrentView } from './useAiCurrentView';
 
 interface AiPanelProps {
   panel: AiPanelState;
@@ -41,11 +42,13 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
   const isMobile = useIsMobile();
   const conversations = useAiConversations();
   const executeTool = useAiTools();
+  const currentView = useAiCurrentView();
   const chat = useAiChat({
     conversationKey: conversations.key,
     messages: conversations.messages,
     onMessagesChange: conversations.setMessages,
     executeTool,
+    currentView,
   });
   const decisions = useProposalDecisions(conversations.messages, conversations.setMessages);
 

@@ -1,8 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
+import { useEffect } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { NotesProvider } from "./context/NotesContext";
 import { TodoProvider } from "./context/TodoContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -19,6 +20,7 @@ import MarkdownCheatsheetPage from "./pages/MarkdownCheatsheetPage";
 import NoteViewPage from "./pages/NoteViewPage";
 import TodoPage from "./pages/TodoPage";
 import { removeLegacyCredentialStorage } from "./lib/legacy-cleanup";
+import { WorkspaceFocusProvider } from "./context/WorkspaceFocusContext";
 
 const queryClient = new QueryClient();
 
@@ -31,16 +33,25 @@ const queryClient = new QueryClient();
  * see every context.
  */
 const router = createBrowserRouter([
-  { path: "/", element: <HomePage /> },
-  { path: "/tags", element: <TagsPage /> },
-  { path: "/constellations", element: <ConstellationsPage /> },
-  { path: "/vision-board", element: <VisionBoardPage /> },
-  { path: "/calendar", element: <CalendarPage /> },
-  { path: "/settings", element: <SettingsPage /> },
-  { path: "/markdown-cheatsheet", element: <MarkdownCheatsheetPage /> },
-  { path: "/note/:id", element: <NoteViewPage /> },
-  { path: "/todos", element: <TodoPage /> },
-  { path: "*", element: <NotFound /> },
+  {
+    element: (
+      <WorkspaceFocusProvider>
+        <Outlet />
+      </WorkspaceFocusProvider>
+    ),
+    children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/tags", element: <TagsPage /> },
+      { path: "/constellations", element: <ConstellationsPage /> },
+      { path: "/vision-board", element: <VisionBoardPage /> },
+      { path: "/calendar", element: <CalendarPage /> },
+      { path: "/settings", element: <SettingsPage /> },
+      { path: "/markdown-cheatsheet", element: <MarkdownCheatsheetPage /> },
+      { path: "/note/:id", element: <NoteViewPage /> },
+      { path: "/todos", element: <TodoPage /> },
+      { path: "*", element: <NotFound /> },
+    ],
+  },
 ]);
 
 const App = () => {
@@ -70,4 +81,3 @@ const App = () => {
 };
 
 export default App;
-import { useEffect } from "react";

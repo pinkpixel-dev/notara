@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useTodo } from '@/context/TodoContextTypes';
 import { format, parse, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TodoDialogs from '@/components/todo/TodoDialogs';
-import { 
-  Edit3, Trash2, ListChecks, ChevronDown, ChevronRight, 
-  Plus, Calendar, Check, CheckCircle2, CircleDashed, Clock
-} from 'lucide-react';
+import { Edit3, Trash2, ListChecks, ChevronDown, ChevronRight, Plus, Calendar, Check, CheckCircle2, CircleDashed, Clock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { v4 as uuidv4 } from 'uuid';
 import type { TodoItem, TodoList } from '@/types';
@@ -16,7 +13,7 @@ import WorkspacePanes, { WorkspacePaneId } from '@/components/layout/WorkspacePa
 import { useSidebarPane } from '@/hooks/use-sidebar-pane';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
+import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 
 const TodoPage: React.FC = () => {
   const { todoLists, addTodoList, updateTodoList, deleteTodoList, addTodoItem, updateTodoItem, deleteTodoItem } = useTodo();
@@ -37,7 +34,8 @@ const TodoPage: React.FC = () => {
   const [subInputs, setSubInputs] = useState<Record<string, string>>({});
   const [use12HourFormat, setUse12HourFormat] = useState(true);
   const [showSubInputs, setShowSubInputs] = useState<Record<string, boolean>>({});
-
+  const focusTarget = useMemo(() => ({ kind: 'todo-list' as const, listId: selectedListId }), [selectedListId]);
+  usePublishWorkspaceFocus(focusTarget);
 
   // Select the first list when the component mounts if there are any lists
   useEffect(() => {

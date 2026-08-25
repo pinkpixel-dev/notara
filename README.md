@@ -20,7 +20,9 @@ Notara is a local-first note workspace for Markdown notes, tasks, calendar organ
 - Vision boards with movable image and text items
 - Constellation view for note relationships
 - Local Tauri app-data storage and browser storage
-- OpenAI text and image tools on the desktop build
+- A context-aware OpenAI side panel that can read the open work, search the
+  workspace, and propose reviewed note, task, calendar, and board changes on
+  the desktop build
 - Linux, Windows, Docker, and hosted web build paths
 
 ## Important current limitations

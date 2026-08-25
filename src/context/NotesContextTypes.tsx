@@ -58,6 +58,8 @@ export interface NotesContextType {
     note: Partial<Note> & {
       /** Folder to create the note in. Empty or absent is the workspace root. */
       directory?: string;
+      /** Exact approved path for a reviewed assistant proposal. */
+      expectedPath?: string;
     }
   ) => Promise<Note>;
   /**

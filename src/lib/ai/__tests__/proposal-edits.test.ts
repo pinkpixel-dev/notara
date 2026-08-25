@@ -36,17 +36,22 @@ describe('applying edits', () => {
     expect(applyProposalEdits(edit, { path: 'elsewhere.md' })).toEqual(edit);
   });
 
-  it('keeps the original title when the edited one is empty', () => {
-    const create: Proposal = { kind: 'create_note', title: 'Plan', folder: '', content: 'x' };
+  it('keeps the approved title, folder, and path fixed', () => {
+    const create: Proposal = {
+      kind: 'create_note',
+      path: 'Plan.md',
+      title: 'Plan',
+      folder: '',
+      content: 'x',
+    };
 
-    expect(applyProposalEdits(create, { title: '   ' }).kind === 'create_note').toBe(true);
-    expect(applyProposalEdits(create, { title: '   ' })).toMatchObject({ title: 'Plan' });
-  });
-
-  it('cleans a folder the user typed with slashes', () => {
-    const create: Proposal = { kind: 'create_note', title: 'Plan', folder: '', content: 'x' };
-
-    expect(applyProposalEdits(create, { folder: '/Ideas/' })).toMatchObject({ folder: 'Ideas' });
+    expect(
+      applyProposalEdits(create, {
+        path: 'Elsewhere.md',
+        title: 'Elsewhere',
+        folder: '/Ideas/',
+      })
+    ).toEqual(create);
   });
 
   it('lets a note edit be emptied, because that is a real change', () => {

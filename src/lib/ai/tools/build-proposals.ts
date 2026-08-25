@@ -10,6 +10,8 @@
  */
 import type { Note, TodoList, VisionBoard } from '@/types';
 import type { Proposal, TodoItemDraft } from '../proposals';
+import { isCalendarDate, isClockTime } from '../proposal-validation';
+import { uniqueNotePath } from '@/lib/notes/naming';
 
 export interface ProposalContext {
   notes: Note[];
@@ -27,9 +29,6 @@ const DEFAULT_TIME = '12:00';
 const asText = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
 
-const isDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
-const isTime = (value: string): boolean => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-
 const readDate = (value: unknown, fallback: string): string => {
   const text = asText(value);
 
@@ -37,7 +36,7 @@ const readDate = (value: unknown, fallback: string): string => {
     return fallback;
   }
 
-  if (!isDate(text)) {
+  if (!isCalendarDate(text)) {
     throw new Error(`"${text}" is not a date. Use YYYY-MM-DD.`);
   }
 
@@ -51,7 +50,7 @@ const readTime = (value: unknown, fallback = DEFAULT_TIME): string => {
     return fallback;
   }
 
-  if (!isTime(text)) {
+  if (!isClockTime(text)) {
     throw new Error(`"${text}" is not a time. Use HH:mm on a 24-hour clock.`);
   }
 
@@ -146,8 +145,15 @@ const findBoard = (context: ProposalContext, name: string | null): VisionBoard =
   return board;
 };
 
-const cleanFolder = (value: unknown): string =>
-  (asText(value) ?? '').replace(/^\/+|\/+$/g, '');
+const cleanFolder = (value: unknown): string => {
+  const folder = (asText(value) ?? '').replace(/^\/+|\/+$/g, '');
+
+  if (folder.split('/').some((segment) => segment === '.' || segment === '..')) {
+    throw new Error('A folder must stay inside the workspace. Do not use . or .. segments.');
+  }
+
+  return folder;
+};
 
 export const buildProposal = (
   name: string,
@@ -179,10 +185,12 @@ export const buildProposal = (
         throw new Error('A new note needs a title.');
       }
 
+      const folder = cleanFolder(args.folder);
       return {
         kind: 'create_note',
+        path: uniqueNotePath(folder, title, context.notes.map((note) => note.path)),
         title,
-        folder: cleanFolder(args.folder),
+        folder,
         content: typeof args.content === 'string' ? args.content : '',
       };
     }
@@ -212,6 +220,7 @@ export const buildProposal = (
 
       const list = findTodoList(context, listTitle);
       const addItems = readItems(args.addItems);
+      const checkedNames = new Set<string>();
 
       const setChecked = Array.isArray(args.setChecked)
         ? args.setChecked.flatMap((entry) => {
@@ -222,8 +231,19 @@ export const buildProposal = (
               return [];
             }
 
-            if (!list.items.some((item) => item.content === content)) {
+            if (checkedNames.has(content)) {
+              throw new Error(`The item "${content}" was named more than once in the same change.`);
+            }
+            checkedNames.add(content);
+
+            const matches = list.items.filter((item) => item.content === content);
+            if (matches.length === 0) {
               throw new Error(`"${list.title}" has no item that reads "${content}".`);
+            }
+            if (matches.length > 1) {
+              throw new Error(
+                `"${list.title}" has more than one item that reads "${content}". Rename one before changing it.`
+              );
             }
 
             return [{ content, checked }];
@@ -257,13 +277,15 @@ export const buildProposal = (
         throw new Error('A calendar entry needs a title.');
       }
 
+      const folder = cleanFolder(args.folder);
       return {
         kind: 'create_calendar_entry',
+        path: uniqueNotePath(folder, title, context.notes.map((note) => note.path)),
         title,
         date: readDate(args.date, todayAsDate(today)),
         time: readTime(args.time),
         content: typeof args.content === 'string' ? args.content : '',
-        folder: cleanFolder(args.folder),
+        folder,
       };
     }
 

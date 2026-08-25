@@ -80,6 +80,34 @@ describe('reading the stored file', () => {
 
     expect(parsed['note:a.md'].updatedAt).toBe(9);
   });
+
+  it('drops malformed proposals and removes malformed undo data', () => {
+    const parsed = parseStoredConversations({
+      version: 1,
+      conversations: {
+        'note:a.md': {
+          messages: [
+            message({
+              id: 'bad',
+              role: 'proposal',
+              proposal: { kind: 'delete_note', path: '' } as never,
+            }),
+            message({
+              id: 'good',
+              role: 'proposal',
+              proposal: { kind: 'edit_note', path: 'a.md', before: 'a', after: 'b' },
+              proposalStatus: 'unknown' as never,
+              undo: { kind: 'delete_note', path: '' },
+            }),
+          ],
+        },
+      },
+    });
+
+    expect(parsed['note:a.md'].messages.map((entry) => entry.id)).toEqual(['good']);
+    expect(parsed['note:a.md'].messages[0].proposalStatus).toBeUndefined();
+    expect(parsed['note:a.md'].messages[0].undo).toBeUndefined();
+  });
 });
 
 describe('trimming', () => {

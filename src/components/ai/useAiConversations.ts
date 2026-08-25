@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useFileSystem } from '@/context/FileSystemContext';
-import { useNotes } from '@/context/NotesContextTypes';
+import { useWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 import {
   deleteNoteConversation,
   moveNoteConversation,
@@ -42,16 +41,6 @@ const SECTION_LABELS: Record<string, string> = {
   tags: 'Tags',
   settings: 'Settings',
   'markdown-cheatsheet': 'Markdown Cheat Sheet',
-};
-
-const sectionFromPathname = (pathname: string): string => {
-  const segment = pathname.split('/').filter(Boolean)[0];
-
-  if (!segment || segment === 'note') {
-    return 'notes';
-  }
-
-  return segment in SECTION_LABELS ? segment : 'notes';
 };
 
 const readLocalConversations = (): AiConversations => {
@@ -112,8 +101,7 @@ export interface AiConversationsController {
  */
 export const useAiConversations = (): AiConversationsController => {
   const { status, loadAiConversations, saveAiConversations } = useFileSystem();
-  const { activeNote } = useNotes();
-  const location = useLocation();
+  const focus = useWorkspaceFocus();
 
   const [conversations, setConversations] = useState<AiConversations>({});
   const [isLoaded, setIsLoaded] = useState(false);
@@ -122,8 +110,10 @@ export const useAiConversations = (): AiConversationsController => {
   const latest = useRef<AiConversations>({});
   latest.current = conversations;
 
-  const section = sectionFromPathname(location.pathname);
-  const key = activeNote ? noteConversationKey(activeNote.path) : sectionConversationKey(section);
+  const focusedNote = focus.target?.kind === 'note' ? focus.target : null;
+  const key = focusedNote?.path
+    ? noteConversationKey(focusedNote.path)
+    : sectionConversationKey(focus.section);
 
   useEffect(() => {
     if (status === 'uninitialized') {
@@ -231,8 +221,8 @@ export const useAiConversations = (): AiConversationsController => {
 
   return {
     key,
-    label: activeNote ? activeNote.title : (SECTION_LABELS[section] ?? 'Notes'),
-    isNoteConversation: Boolean(activeNote),
+    label: focusedNote?.title || SECTION_LABELS[focus.section] || 'Notes',
+    isNoteConversation: Boolean(focusedNote?.path),
     messages,
     setMessages,
     newChat,

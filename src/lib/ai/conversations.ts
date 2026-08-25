@@ -15,6 +15,7 @@
  * `src/components/ai/useAiConversations.ts`.
  */
 import type { Proposal, ProposalStatus } from './proposals';
+import { isProposal, isProposalStatus } from './proposal-validation';
 
 export const NOTE_KEY_PREFIX = 'note:';
 export const SECTION_KEY_PREFIX = 'section:';
@@ -138,7 +139,7 @@ export const parseStoredConversations = (raw: unknown): AiConversations => {
       // It is dropped rather than rendered as an empty approval.
       const candidate = message as StoredAiMessage;
 
-      return candidate.role !== 'proposal' || !!candidate.proposal;
+      return candidate.role !== 'proposal' || isProposal(candidate.proposal);
     });
 
     if (usable.length === 0) {
@@ -153,9 +154,11 @@ export const parseStoredConversations = (raw: unknown): AiConversations => {
         createdAt: message.createdAt,
         ...(typeof message.toolName === 'string' ? { toolName: message.toolName } : {}),
         ...(message.failed === true ? { failed: true } : {}),
-        ...(message.proposal ? { proposal: message.proposal } : {}),
-        ...(message.proposalStatus ? { proposalStatus: message.proposalStatus } : {}),
-        ...(message.undo ? { undo: message.undo } : {}),
+        ...(isProposal(message.proposal) ? { proposal: message.proposal } : {}),
+        ...(isProposalStatus(message.proposalStatus)
+          ? { proposalStatus: message.proposalStatus }
+          : {}),
+        ...(isProposal(message.undo) ? { undo: message.undo } : {}),
       })),
       updatedAt:
         typeof candidate.updatedAt === 'number' && Number.isFinite(candidate.updatedAt)

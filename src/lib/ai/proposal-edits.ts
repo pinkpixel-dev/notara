@@ -28,18 +28,12 @@ export const editableFields = (proposal: Proposal): EditableField[] => {
       return [{ key: 'after', label: 'New content', kind: 'textarea', value: proposal.after }];
 
     case 'create_note':
-      return [
-        { key: 'title', label: 'Title', kind: 'text', value: proposal.title },
-        { key: 'folder', label: 'Folder', kind: 'text', value: proposal.folder },
-        { key: 'content', label: 'Content', kind: 'textarea', value: proposal.content },
-      ];
+      return [{ key: 'content', label: 'Content', kind: 'textarea', value: proposal.content }];
 
     case 'create_calendar_entry':
       return [
-        { key: 'title', label: 'Title', kind: 'text', value: proposal.title },
         { key: 'date', label: 'Date', kind: 'date', value: proposal.date },
         { key: 'time', label: 'Time', kind: 'time', value: proposal.time },
-        { key: 'folder', label: 'Folder', kind: 'text', value: proposal.folder },
         { key: 'content', label: 'Notes', kind: 'textarea', value: proposal.content },
       ];
 

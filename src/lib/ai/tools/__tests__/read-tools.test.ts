@@ -7,6 +7,7 @@ import {
   listNotes,
   listTodos,
   readNote,
+  readFocusedNote,
   searchNotes,
 } from '../read-tools';
 
@@ -115,6 +116,20 @@ describe('readNote', () => {
 
     expect(result.content).toHaveLength(MAX_NOTE_CHARACTERS);
     expect(result.truncated).toBe(true);
+  });
+
+  it('reads unsaved text from the visible editor draft', () => {
+    expect(
+      readFocusedNote({
+        kind: 'note',
+        path: 'a.md',
+        title: 'A',
+        content: 'live text',
+        isDirty: true,
+        isNew: false,
+        directory: '',
+      })
+    ).toMatchObject({ content: 'live text', unsavedChanges: true, isNew: false });
   });
 });
 

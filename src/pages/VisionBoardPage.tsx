@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import VisionBoard from '@/components/visionboard/VisionBoard';
 import { useNotes } from '@/context/NotesContextTypes';
@@ -11,6 +11,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 
 const VisionBoardPage: React.FC = () => {
   const { visionBoards, addVisionBoard } = useNotes();
@@ -19,6 +20,11 @@ const VisionBoardPage: React.FC = () => {
   );
   const [isCreatingBoard, setIsCreatingBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
+  const focusTarget = useMemo(
+    () => ({ kind: 'vision-board' as const, boardId: selectedVisionBoardId }),
+    [selectedVisionBoardId]
+  );
+  usePublishWorkspaceFocus(focusTarget);
 
   const handleCreateVisionBoard = () => {
     if (!newBoardName.trim()) return;

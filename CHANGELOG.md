@@ -17,14 +17,16 @@ All notable changes to the Notara project will be documented in this file.
   the way you left it.
 - On a phone the panel slides up over the content instead, leaving the section
   behind it visible.
+- The assistant now knows which note, to-do list, calendar date, or vision board
+  is open. The panel shows that scope above the message box.
+- Questions such as "summarize this" use the open note, including text that has
+  not been saved yet. The assistant can also answer about the selected task list
+  or calendar date without making you name it again.
 - The chat has a proper waiting state, a Stop button while a reply is on its
   way, a clear error message when something fails, and a Try again button that
   resends your last message.
 - Stop means Notara stops waiting for the reply. The request has already gone to
   OpenAI, so it still finishes there and still counts against your account.
-- The assistant will tell you it cannot open or change your files. That is true
-  for now. Searching, summarizing, and editing notes are the next stages, and
-  every change will be shown to you before anything is written.
 
 ### 💬 Conversations that stay put
 
@@ -58,9 +60,6 @@ All notable changes to the Notara project will be documented in this file.
 - Note contents are not saved. The line saying what was read is kept with the
   conversation; the text that came back is not written to disk and is not sent
   again next time.
-- The assistant still cannot change anything, and it will say so. Editing notes,
-  writing new ones, and adding tasks and calendar entries come next, and each
-  one will be shown to you for approval before anything is written.
 
 ### ✅ The assistant can ask to change things
 
@@ -81,6 +80,12 @@ All notable changes to the Notara project will be documented in this file.
   what was proposed and what you decided.
 - If a note changed on disk between the proposal and your Apply, the write is
   refused and tells you why, rather than overwriting an edit you have not seen.
+- An open note with unsaved edits must be saved before an AI edit can be
+  applied. After a successful edit, the visible editor updates with the same
+  content that was written to disk.
+- New notes and calendar entries reserve the exact path shown on the review
+  card. Invalid dates, stale calendar moves, missing or ambiguous tasks, and
+  malformed saved proposals are refused instead of being guessed through.
 - A vision board image is generated when you approve it, not when it is
   proposed, so you see the prompt, the model, and the size before it costs
   anything.

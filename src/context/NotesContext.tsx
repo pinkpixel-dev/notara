@@ -148,7 +148,9 @@ export const NotesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isInitialised, tags, visionBoards, persistBundle, status]);
 
   const addNote = useCallback(
-    async (note: Partial<Note> & { directory?: string }): Promise<Note> => {
+    async (
+      note: Partial<Note> & { directory?: string; expectedPath?: string }
+    ): Promise<Note> => {
       const created = await createNote(note as NoteInput);
       return created;
     },

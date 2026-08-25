@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useNotes, PIN_LIMIT } from '@/context/NotesContextTypes';
 import { useFileSystem } from '@/context/FileSystemContext';
 import type { NotesBundle } from '@/lib/filesystem';
@@ -14,6 +14,7 @@ import { isNewNoteDirty, isNoteDirty } from '@/lib/notes/dirty';
 import SaveAsDialog from './SaveAsDialog';
 import NoteEditorHeader from './NoteEditorHeader';
 import { parentOf } from '@/lib/workspace/types';
+import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 
 interface NoteEditorProps {
   note?: Note;
@@ -113,6 +114,23 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const isDirty = isNew
     ? isNewNoteDirty({ title, content })
     : isNoteDirty({ title, content, tags: selectedTags }, note);
+
+  const replaceFocusedContent = useCallback((nextContent: string) => {
+    setContent(nextContent);
+  }, []);
+  const focusTarget = useMemo(
+    () => ({
+      kind: 'note' as const,
+      path: note?.path ?? null,
+      title,
+      content,
+      isDirty,
+      isNew,
+      directory: isNew ? directory : note ? parentOf(note.path) : directory,
+    }),
+    [content, directory, isDirty, isNew, note, title]
+  );
+  usePublishWorkspaceFocus(focusTarget, replaceFocusedContent);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);

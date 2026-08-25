@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useTodo } from '@/context/TodoContextTypes';
+import { useWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 import { buildProposal } from '@/lib/ai/tools/build-proposals';
 import { isAiWriteToolName } from '@/lib/ai/tools/write-definitions';
 import { proposalTarget, proposalTitle } from '@/lib/ai/proposals';
@@ -11,6 +12,7 @@ import {
   listNotes,
   listTodos,
   readNote,
+  readFocusedNote,
   searchNotes,
 } from '@/lib/ai/tools/read-tools';
 import { isAiToolName } from '@/lib/ai/tools/definitions';
@@ -42,15 +44,23 @@ const plural = (count: number, singular: string, plural = `${singular}s`): strin
 export const useAiTools = (): ToolExecutor => {
   const { notes, activeNote, visionBoards } = useNotes();
   const { todoLists } = useTodo();
+  const focus = useWorkspaceFocus();
 
   return useCallback<ToolExecutor>(
     async (name, args) => {
       if (isAiWriteToolName(name)) {
         const config = readOpenAiConfig();
+        const focusedNote =
+          focus.target?.kind === 'note' && focus.target.path
+            ? notes.find((note) => note.path === focus.target?.path) ?? null
+            : null;
+        const proposalActiveNote = focusedNote
+          ? { ...focusedNote, title: focus.target!.title, content: focus.target!.content }
+          : activeNote;
 
         const proposal = buildProposal(name, args, {
           notes,
-          activeNote,
+          activeNote: proposalActiveNote,
           todoLists,
           boards: visionBoards,
           imageModel: config.imageModel,
@@ -99,6 +109,17 @@ export const useAiTools = (): ToolExecutor => {
 
         case 'read_note': {
           const path = asString(args.path);
+          const focusedNote = focus.target?.kind === 'note' ? focus.target : null;
+
+          if (!path && focusedNote) {
+            return done(
+              readFocusedNote(focusedNote),
+              `Read ${focusedNote.path ?? 'the unsaved open note'}${
+                focusedNote.isDirty ? ' with unsaved changes' : ''
+              }`
+            );
+          }
+
           const note = path ? notes.find((entry) => entry.path === path) : activeNote;
 
           if (!note) {
@@ -145,6 +166,6 @@ export const useAiTools = (): ToolExecutor => {
           throw new Error(`The tool ${name} is not available.`);
       }
     },
-    [activeNote, notes, todoLists, visionBoards]
+    [activeNote, focus, notes, todoLists, visionBoards]
   );
 };

@@ -58,6 +58,8 @@ export type TurnSender = (
 
 export interface RunTurnOptions {
   messages: TurnMessage[];
+  /** Ephemeral app context inserted before the newest user message. */
+  context?: OpenAiInputItem[];
   tools: OpenAiToolDefinition[];
   send: TurnSender;
   execute: ToolExecutor;
@@ -98,6 +100,7 @@ const parseArguments = (raw: string): Record<string, unknown> | null => {
 
 export const runTurn = async ({
   messages,
+  context = [],
   tools,
   send,
   execute,
@@ -108,6 +111,13 @@ export const runTurn = async ({
     role: message.role,
     content: message.content,
   }));
+
+  if (context.length > 0) {
+    const latestUserIndex = input.findLastIndex(
+      (item) => 'role' in item && item.role === 'user'
+    );
+    input.splice(latestUserIndex === -1 ? 0 : latestUserIndex, 0, ...context);
+  }
 
   const texts: string[] = [];
   const toolRuns: ToolRun[] = [];

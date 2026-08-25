@@ -11,6 +11,7 @@
  * note's identity and the assistant needs it to read or, later, to change one.
  */
 import type { Note, TodoList } from '@/types';
+import type { NoteFocusTarget } from '@/context/WorkspaceFocusContext';
 import { MAX_NOTE_CHARACTERS, MAX_TOOL_RESULTS } from './definitions';
 
 /** How many matching lines to return per note. */
@@ -127,6 +128,29 @@ export const readNote = (note: Note): NoteReadResult => {
     title: note.title,
     content: truncated ? note.content.slice(0, MAX_NOTE_CHARACTERS) : note.content,
     truncated,
+  };
+};
+
+export interface FocusedNoteReadResult {
+  path: string | null;
+  title: string;
+  content: string;
+  truncated: boolean;
+  unsavedChanges: boolean;
+  isNew: boolean;
+}
+
+/** Reads the editor buffer, including text that has not reached disk yet. */
+export const readFocusedNote = (note: NoteFocusTarget): FocusedNoteReadResult => {
+  const truncated = note.content.length > MAX_NOTE_CHARACTERS;
+
+  return {
+    path: note.path,
+    title: note.title.trim() || 'Untitled',
+    content: truncated ? note.content.slice(0, MAX_NOTE_CHARACTERS) : note.content,
+    truncated,
+    unsavedChanges: note.isDirty,
+    isNew: note.isNew,
   };
 };
 
