@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { OPENAI_UNAVAILABLE_MESSAGE } from '@/lib/openai/client';
 import AiComposer from './AiComposer';
 import AiMessage from './AiMessage';
-import type { AiChatController } from './useAiChat';
+import type { AiChatController, AiChatMessage } from './useAiChat';
 
 interface AiChatProps {
   chat: AiChatController;
+  /** The turns in the conversation now showing. */
+  messages: AiChatMessage[];
 }
 
 const PLACEHOLDERS: Record<string, string> = {
@@ -27,8 +29,8 @@ const PLACEHOLDERS: Record<string, string> = {
  * fixed from here. No key is one trip to Settings. Ready but empty is just an
  * empty chat, which needs no explanation beyond a prompt to start.
  */
-const AiChat: React.FC<AiChatProps> = ({ chat }) => {
-  const { messages, status, error, availability, sendMessage, retry, cancel, canRetry } = chat;
+const AiChat: React.FC<AiChatProps> = ({ chat, messages }) => {
+  const { status, error, availability, sendMessage, retry, cancel, canRetry } = chat;
   const endRef = useRef<HTMLDivElement>(null);
 
   // New turns arrive at the bottom, so the bottom is where the user should be.
@@ -61,8 +63,8 @@ const AiChat: React.FC<AiChatProps> = ({ chat }) => {
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
             <MessageSquare className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">
-              Ask a question to start. This conversation stays open while you move
-              around the app.
+              Ask a question to start. Every note keeps its own conversation, so
+              this one comes back when you open that note again.
             </p>
           </div>
         )}

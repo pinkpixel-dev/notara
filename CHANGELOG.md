@@ -26,6 +26,24 @@ All notable changes to the Notara project will be documented in this file.
   for now. Searching, summarizing, and editing notes are the next stages, and
   every change will be shown to you before anything is written.
 
+### 💬 Conversations that stay put
+
+- Every note keeps its own conversation. Open a note and the chat about that
+  note comes back, right where you left it.
+- Each section keeps its own too, so the chat you had on the calendar is not
+  mixed in with the one about a note.
+- New chat clears the conversation you are looking at and leaves every other one
+  alone.
+- Conversations are saved in your workspace, in
+  `.notara/ai-conversations.json`, so they survive a restart. If you have not
+  chosen a folder yet, they are kept in the browser instead.
+- Rename or move a note and its conversation goes with it. Delete a note and the
+  conversation goes too.
+- Notara keeps the 100 most recent conversations, and the last 200 turns of
+  each.
+- Moving to a different note while a reply is on its way drops that reply, the
+  same as pressing Stop. It was asked for somewhere else.
+
 ### 🧹 Maintenance
 
 - The old assistant component was 2,440 lines and did several things nobody
@@ -33,6 +51,9 @@ All notable changes to the Notara project will be documented in this file.
   it is eight small files.
 - The `/ai-assistant` route and its entry in the header overflow menu were
   removed with it.
+- The old conversation archive, which wrote to `data/ai/conversations.json`, was
+  removed along with the empty `data/ai` folder Notara used to create in every
+  workspace. Nothing read that file after the old page went.
 
 ## 2.1.0 - August 23, 2026
 

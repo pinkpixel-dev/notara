@@ -10,7 +10,6 @@ import React, {
 import type { NotesBundle, RootDirectoryHandle } from '@/lib/filesystem';
 import { fileSystemHelpers } from '@/lib/filesystem';
 import {
-  AI_CONVERSATIONS_JSON_PATH,
   inferFileExtension,
   LEGACY_NOTES_BUNDLE_PATH,
   LEGACY_TODOS_PATH,
@@ -25,10 +24,16 @@ import {
   relocateLegacyNotaraFiles,
   relocationHappened,
   SIDECAR_MEDIA_DIRECTORY,
+  SIDECAR_AI_CONVERSATIONS_PATH,
   SIDECAR_TODOS_PATH,
   SIDECAR_VISION_BOARDS_PATH,
 } from '@/lib/workspace/sidecar';
-import type { AiConversationSnapshot, Note, NoteTag, TodoList, VisionBoard } from '@/types';
+import type { Note, NoteTag, TodoList, VisionBoard } from '@/types';
+import {
+  parseStoredConversations,
+  serializeConversations,
+  type AiConversations,
+} from '@/lib/ai/conversations';
 
 type FileSystemStatus = import('@/lib/filesystem').FileSystemStatus;
 
@@ -44,9 +49,9 @@ interface FileSystemContextValue {
   loadNotesBundle: () => Promise<NotesBundle | null>;
   saveTodos: (todos: TodoList[]) => Promise<void>;
   loadTodos: () => Promise<TodoList[] | null>;
-  saveAiConversations: (conversations: AiConversationSnapshot[]) => Promise<void>;
-  loadAiConversations: () => Promise<AiConversationSnapshot[] | null>;
-  flushCachedAiConversations: () => Promise<void>;
+  /** Writes every AI conversation into the workspace sidecar. */
+  saveAiConversations: (conversations: AiConversations) => Promise<void>;
+  loadAiConversations: () => Promise<AiConversations | null>;
   saveGeneratedImage: (blob: Blob, options?: { fileNamePrefix?: string; mimeType?: string }) => Promise<string | null>;
 }
 
@@ -61,7 +66,6 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [persistedHandle, setPersistedHandle] = useState<RootDirectoryHandle | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const initializingRef = useRef(false);
-  const aiArchiveCacheRef = useRef<AiConversationSnapshot[] | null>(null);
 
   /**
    * Creates everything a workspace needs before anything reads or writes.
@@ -329,49 +333,50 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [rootHandle]);
 
+  /**
+   * Writes the AI panel's conversations into `.notara`.
+   *
+   * They sit in the sidecar rather than beside the user's Markdown, for the
+   * same reason pins and tree state do: this is Notara's own record of what was
+   * said, not part of anyone's notes.
+   */
   const saveAiConversations = useCallback(
-    async (conversations: AiConversationSnapshot[]) => {
-      const trimmed = conversations.slice(0, 20);
-      aiArchiveCacheRef.current = trimmed;
+    async (conversations: AiConversations) => {
       if (!rootHandle) {
         return;
       }
       try {
-        await fileSystemHelpers.writeJSON(rootHandle, AI_CONVERSATIONS_JSON_PATH, trimmed);
+        await fileSystemHelpers.writeJSON(
+          rootHandle,
+          SIDECAR_AI_CONVERSATIONS_PATH,
+          serializeConversations(conversations)
+        );
       } catch (error) {
         console.error('Failed to write AI conversations', error);
-        setLastError((error as Error).message ?? 'Failed to save AI assistant history');
+        setLastError((error as Error).message ?? 'Failed to save AI conversations');
         throw error;
       }
     },
     [rootHandle]
   );
 
-  const loadAiConversations = useCallback(async (): Promise<AiConversationSnapshot[] | null> => {
+  const loadAiConversations = useCallback(async (): Promise<AiConversations | null> => {
     if (!rootHandle) {
       return null;
     }
     try {
-      const stored = await fileSystemHelpers.readJSON<AiConversationSnapshot[]>(rootHandle, AI_CONVERSATIONS_JSON_PATH);
-      if (stored) {
-        const trimmed = stored.slice(0, 20);
-        aiArchiveCacheRef.current = trimmed;
-        return trimmed;
-      }
-      return stored;
+      const stored = await fileSystemHelpers.readJSON<unknown>(
+        rootHandle,
+        SIDECAR_AI_CONVERSATIONS_PATH
+      );
+
+      return stored === null ? null : parseStoredConversations(stored);
     } catch (error) {
       console.error('Failed to read AI conversations', error);
-      setLastError((error as Error).message ?? 'Failed to load AI assistant history');
+      setLastError((error as Error).message ?? 'Failed to load AI conversations');
       return null;
     }
   }, [rootHandle]);
-
-  const flushCachedAiConversations = useCallback(async () => {
-    if (!rootHandle || !aiArchiveCacheRef.current) {
-      return;
-    }
-    await saveAiConversations(aiArchiveCacheRef.current);
-  }, [rootHandle, saveAiConversations]);
 
   const saveGeneratedImage = useCallback(
     async (
@@ -415,12 +420,10 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       loadTodos,
       saveAiConversations,
       loadAiConversations,
-      flushCachedAiConversations,
       saveGeneratedImage,
     }),
     [
       forgetDirectory,
-      flushCachedAiConversations,
       loadAiConversations,
       loadNotesBundle,
       loadTodos,

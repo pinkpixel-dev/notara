@@ -8,15 +8,15 @@ import {
 } from '@/lib/openai/client';
 import { readOpenAiConfig } from '@/lib/openai/config';
 
-export type AiChatRole = 'user' | 'assistant';
+import type { StoredAiMessage } from '@/lib/ai/conversations';
 
-export interface AiChatMessage {
-  id: string;
-  role: AiChatRole;
-  content: string;
-  /** Milliseconds since the epoch, used only for ordering and display. */
-  createdAt: number;
-}
+/**
+ * A turn, in the shape it is stored in.
+ *
+ * The panel and the file agree on one shape rather than mapping between two.
+ * There is nothing in a turn that is worth showing but not worth keeping.
+ */
+export type AiChatMessage = StoredAiMessage;
 
 export type AiChatStatus = 'idle' | 'sending' | 'error';
 
@@ -49,8 +49,20 @@ const INSTRUCTIONS = [
   'for detail.',
 ].join(' ');
 
-export interface AiChatController {
+export interface AiChatOptions {
+  /**
+   * Which conversation these turns belong to.
+   *
+   * Changing it drops any request in flight. The reply was asked for while
+   * looking at another note, and dropping it into the conversation the user
+   * has since moved to would be worse than not answering.
+   */
+  conversationKey: string;
   messages: AiChatMessage[];
+  onMessagesChange: (messages: AiChatMessage[]) => void;
+}
+
+export interface AiChatController {
   status: AiChatStatus;
   /** The sentence shown when the last request failed. */
   error: string | null;
@@ -60,8 +72,6 @@ export interface AiChatController {
   retry: () => void;
   /** Stops waiting for the request in flight. */
   cancel: () => void;
-  /** Clears the conversation. */
-  reset: () => void;
   /** True when there is a user turn waiting for a reply that never came. */
   canRetry: boolean;
 }
@@ -76,8 +86,11 @@ export interface AiChatController {
  * against the account. Stage 5 brings streaming, which is where a real abort
  * becomes possible.
  */
-export const useAiChat = (): AiChatController => {
-  const [messages, setMessages] = useState<AiChatMessage[]>([]);
+export const useAiChat = ({
+  conversationKey,
+  messages,
+  onMessagesChange,
+}: AiChatOptions): AiChatController => {
   const [status, setStatus] = useState<AiChatStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<AiChatAvailability>('checking');
@@ -130,6 +143,14 @@ export const useAiChat = (): AiChatController => {
     []
   );
 
+  // Read inside the request callback rather than captured, so a reply appends
+  // to the turns as they stand when it arrives.
+  const messagesRef = useRef<AiChatMessage[]>(messages);
+  messagesRef.current = messages;
+
+  const changeRef = useRef(onMessagesChange);
+  changeRef.current = onMessagesChange;
+
   const run = useCallback(async (history: AiChatMessage[]) => {
     requestToken.current += 1;
     const token = requestToken.current;
@@ -153,8 +174,8 @@ export const useAiChat = (): AiChatController => {
         return;
       }
 
-      setMessages((current) => [
-        ...current,
+      changeRef.current([
+        ...messagesRef.current,
         {
           id: createId(),
           role: 'assistant',
@@ -185,10 +206,10 @@ export const useAiChat = (): AiChatController => {
         { id: createId(), role: 'user', content: trimmed, createdAt: Date.now() },
       ];
 
-      setMessages(next);
+      onMessagesChange(next);
       void run(next);
     },
-    [messages, run]
+    [messages, onMessagesChange, run]
   );
 
   const retry = useCallback(() => {
@@ -205,12 +226,14 @@ export const useAiChat = (): AiChatController => {
     setError(null);
   }, []);
 
-  const reset = useCallback(() => {
+  // Moving to another conversation abandons whatever this one was waiting for,
+  // and takes its error with it. An error about a request sent from a different
+  // note is noise here.
+  useEffect(() => {
     requestToken.current += 1;
-    setMessages([]);
     setStatus('idle');
     setError(null);
-  }, []);
+  }, [conversationKey]);
 
   const canRetry =
     status !== 'sending' &&
@@ -218,14 +241,12 @@ export const useAiChat = (): AiChatController => {
     messages[messages.length - 1].role === 'user';
 
   return {
-    messages,
     status,
     error,
     availability,
     sendMessage,
     retry,
     cancel,
-    reset,
     canRetry,
   };
 };

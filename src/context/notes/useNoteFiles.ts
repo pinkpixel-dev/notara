@@ -18,6 +18,15 @@ import { prepareWorkspaceFiles } from '@/lib/notes/prepare';
 import type { MigrationResult, PendingMigration } from '@/lib/notes/migrate';
 import { useNoteMigration } from './useNoteMigration';
 import { buildNoteFile } from '@/lib/markdown/note-frontmatter';
+import { emitNoteDeleted, emitNotePathChanged } from '@/lib/notes/events';
+import type {
+  CreateNotesResult,
+  NoteFilesApi,
+  NoteFilesStatus,
+  NoteInput,
+  NoteWriteFailure,
+  SaveOptions,
+} from './note-files-types';
 import {
   deleteNoteFile,
   moveNoteFile,
@@ -27,71 +36,14 @@ import {
 } from '@/lib/notes/store';
 import { parentOf } from '@/lib/workspace/types';
 
-export type NoteFilesStatus = 'no-workspace' | 'loading' | 'ready' | 'error';
-
-/** The fields a caller may set when creating or changing a note. */
-export interface NoteInput {
-  title?: string;
-  content?: string;
-  tags?: NoteTag[];
-  isPinned?: boolean;
-  isStarred?: boolean;
-  createdAt?: string;
-  /** Folder to create the note in. Defaults to the workspace root. */
-  directory?: string;
-}
-
-/** A note in a batch that could not be written. */
-export interface NoteWriteFailure {
-  title: string;
-  message: string;
-}
-
-/** What a batch create managed, and what it did not. */
-export interface CreateNotesResult {
-  created: Note[];
-  failures: NoteWriteFailure[];
-}
-
-/** Options for a save that is not a plain edit. */
-export interface SaveOptions {
-  /**
-   * Write even though the file changed underneath Notara.
-   *
-   * Only set after the user has seen the conflict and chosen to keep their
-   * version. The previous contents are still backed up before the overwrite.
-   */
-  force?: boolean;
-}
-
-export interface NoteFilesApi {
-  notes: Note[];
-  status: NoteFilesStatus;
-  /** Files that could not be read, so the interface can name them. */
-  failures: NoteLoadFailure[];
-  lastError: string | null;
-  /** Tags discovered inside note files, merged with the ones already known. */
-  discoveredTags: NoteTag[];
-  reload: () => Promise<void>;
-  /** Old notes waiting to be imported, or null when there are none. */
-  pendingMigration: PendingMigration | null;
-  /** Imports those notes. Only called after the user has seen them. */
-  runMigration: () => Promise<MigrationResult | null>;
-  /** Puts the offer away for this session. */
-  dismissMigration: () => void;
-  createNote: (input: NoteInput) => Promise<Note>;
-  /**
-   * Creates several notes at once, allocating every file name before writing
-   * any of them so a batch cannot collide with itself.
-   */
-  createNotes: (inputs: NoteInput[], directory?: string) => Promise<CreateNotesResult>;
-  saveNote: (id: string, input: NoteInput, options?: SaveOptions) => Promise<Note | null>;
-  /** Moves a note's file into another workspace folder. */
-  moveNote: (id: string, directory: string) => Promise<Note | null>;
-  /** Re-reads a note from disk, dropping any in-memory version. */
-  reloadNote: (id: string) => Promise<Note | null>;
-  removeNote: (id: string) => Promise<void>;
-}
+export type {
+  CreateNotesResult,
+  NoteFilesApi,
+  NoteFilesStatus,
+  NoteInput,
+  NoteWriteFailure,
+  SaveOptions,
+} from './note-files-types';
 
 export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
   const { status: fileSystemStatus, rootHandle } = useFileSystem();
@@ -418,6 +370,11 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
       };
 
       setNotes((previous) => previous.map((note) => (note.id === id ? saved : note)));
+
+      // A rename and a move both land here as a changed path. Anything keyed by
+      // path has to be told, or it ends up pointing at a file that moved.
+      emitNotePathChanged({ from: existing.path, to: saved.path });
+
       return saved;
     },
     [requireWorkspace]
@@ -433,6 +390,7 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
 
       await deleteNoteFile(root, existing.path);
       setNotes((previous) => previous.filter((note) => note.id !== id));
+      emitNoteDeleted({ path: existing.path });
     },
     [requireWorkspace]
   );

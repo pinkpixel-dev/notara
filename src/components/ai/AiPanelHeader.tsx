@@ -1,12 +1,16 @@
 import React from 'react';
-import { PanelRightClose, Trash2 } from 'lucide-react';
+import { FileText, PanelRightClose, SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface AiPanelHeaderProps {
-  onClear: () => void;
-  canClear: boolean;
+  /** The note or section this conversation is about. */
+  subject: string;
+  /** Changes the icon and the wording, so the subject is never ambiguous. */
+  isNoteConversation: boolean;
+  onNewChat: () => void;
+  canStartNewChat: boolean;
   /**
    * Left out on mobile, where the sheet draws its own close control. Two close
    * buttons in one corner is a coin toss the user should not have to make.
@@ -15,9 +19,18 @@ interface AiPanelHeaderProps {
   className?: string;
 }
 
+/**
+ * The panel's title bar.
+ *
+ * The subject line matters more than it looks. Every note has its own
+ * conversation, so without it there is no way to tell which one is showing, and
+ * New chat would be a button that clears something unnamed.
+ */
 const AiPanelHeader: React.FC<AiPanelHeaderProps> = ({
-  onClear,
-  canClear,
+  subject,
+  isNoteConversation,
+  onNewChat,
+  canStartNewChat,
   onClose,
   className,
 }) => (
@@ -27,7 +40,15 @@ const AiPanelHeader: React.FC<AiPanelHeaderProps> = ({
       className
     )}
   >
-    <h2 className="min-w-0 flex-1 truncate px-1 text-sm font-semibold">Assistant</h2>
+    <div className="flex min-w-0 flex-1 flex-col px-1">
+      <h2 className="truncate text-sm font-semibold">Assistant</h2>
+      <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+        {isNoteConversation && <FileText className="h-3 w-3 shrink-0" aria-hidden="true" />}
+        <span className="truncate">
+          {isNoteConversation ? subject : `${subject} section`}
+        </span>
+      </p>
+    </div>
 
     <Tooltip>
       <TooltipTrigger asChild>
@@ -35,14 +56,14 @@ const AiPanelHeader: React.FC<AiPanelHeaderProps> = ({
           variant="ghost"
           size="icon"
           className="shrink-0"
-          aria-label="Clear this conversation"
-          disabled={!canClear}
-          onClick={onClear}
+          aria-label={`Start a new chat about ${subject}`}
+          disabled={!canStartNewChat}
+          onClick={onNewChat}
         >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          <SquarePen className="h-4 w-4" aria-hidden="true" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent>Clear this conversation</TooltipContent>
+      <TooltipContent>New chat</TooltipContent>
     </Tooltip>
 
     {onClose && (

@@ -73,17 +73,3 @@ export interface TodoList {
   items: TodoItem[];
 }
 
-export interface AiMessage {
-  id: string;
-  content: string;
-  sender: 'user' | 'ai';
-  timestamp: string;
-  imageUrl?: string;
-}
-
-export interface AiConversationSnapshot {
-  id: string;
-  title: string;
-  createdAt: string;
-  messages: AiMessage[];
-}

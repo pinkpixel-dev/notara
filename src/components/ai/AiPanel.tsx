@@ -6,6 +6,7 @@ import AiChat from './AiChat';
 import AiPanelHeader from './AiPanelHeader';
 import AiPanelResizer from './AiPanelResizer';
 import { useAiChat } from './useAiChat';
+import { useAiConversations } from './useAiConversations';
 
 interface AiPanelProps {
   panel: AiPanelState;
@@ -14,9 +15,13 @@ interface AiPanelProps {
 /**
  * The assistant, beside the work rather than instead of it.
  *
- * The conversation lives here, in a component the shell always renders, so
- * closing the panel or moving between sections does not throw it away. Only the
- * container around it changes with the viewport.
+ * The conversations live here, in a component the shell always renders, so
+ * closing the panel or moving between sections does not throw them away. Only
+ * the container around it changes with the viewport.
+ *
+ * Each note has its own conversation and so does each section, and the panel
+ * follows whatever the user is looking at. They are written into `.notara`, so
+ * they come back after a restart.
  *
  * On desktop it is a resizable right-hand column. Below the mobile breakpoint
  * there is no room for a third column, so it becomes a sheet over the content
@@ -26,12 +31,19 @@ interface AiPanelProps {
  */
 const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
   const isMobile = useIsMobile();
-  const chat = useAiChat();
+  const conversations = useAiConversations();
+  const chat = useAiChat({
+    conversationKey: conversations.key,
+    messages: conversations.messages,
+    onMessagesChange: conversations.setMessages,
+  });
 
   const header = (
     <AiPanelHeader
-      onClear={chat.reset}
-      canClear={chat.messages.length > 0}
+      subject={conversations.label}
+      isNoteConversation={conversations.isNoteConversation}
+      onNewChat={conversations.newChat}
+      canStartNewChat={conversations.messages.length > 0}
       onClose={isMobile ? undefined : panel.close}
       // The sheet draws its own close control in the top right corner, over
       // this row. Without the reserved space it lands on top of Clear.
@@ -48,7 +60,7 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
         >
           <SheetTitle className="sr-only">Assistant</SheetTitle>
           {header}
-          <AiChat chat={chat} />
+          <AiChat chat={chat} messages={conversations.messages} />
         </SheetContent>
       </Sheet>
     );
@@ -67,7 +79,7 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
         className="flex min-h-0 shrink-0 flex-col surface-sidebar"
       >
         {header}
-        <AiChat chat={chat} />
+        <AiChat chat={chat} messages={conversations.messages} />
       </aside>
     </>
   );

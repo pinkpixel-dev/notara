@@ -63,7 +63,6 @@ const AppMenuBar: React.FC = () => {
     forgetDirectory,
     saveNotesBundle,
     saveTodos,
-    flushCachedAiConversations,
   } = useFileSystem();
   const { settings, setFontSize } = useTheme();
   const hasLinkedDirectory =
@@ -104,7 +103,6 @@ const AppMenuBar: React.FC = () => {
     try {
       await saveNotesBundle({ notes, tags, visionBoards });
       await saveTodos(todoLists);
-      await flushCachedAiConversations();
       toast({
         title: 'All changes saved',
         description: 'Your notes and todos have been written to Notara app storage.',
@@ -117,7 +115,7 @@ const AppMenuBar: React.FC = () => {
         variant: 'destructive',
       });
     }
-  }, [flushCachedAiConversations, hasLinkedDirectory, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
+  }, [hasLinkedDirectory, notes, saveNotesBundle, saveTodos, status, tags, todoLists, visionBoards]);
 
   /**
    * Asks for files, then asks where they should go.

@@ -14,6 +14,7 @@ export const SIDECAR_DIRECTORY = '.notara';
 export const SIDECAR_STATE_PATH = [SIDECAR_DIRECTORY, 'workspace.json'];
 export const SIDECAR_TODOS_PATH = [SIDECAR_DIRECTORY, 'todos.json'];
 export const SIDECAR_VISION_BOARDS_PATH = [SIDECAR_DIRECTORY, 'vision-boards.json'];
+export const SIDECAR_AI_CONVERSATIONS_PATH = [SIDECAR_DIRECTORY, 'ai-conversations.json'];
 export const SIDECAR_BACKUPS_DIRECTORY = [SIDECAR_DIRECTORY, 'backups'];
 export const SIDECAR_MEDIA_DIRECTORY = [SIDECAR_DIRECTORY, 'media'];
 
