@@ -8,6 +8,7 @@ import AiPanelResizer from './AiPanelResizer';
 import { useAiChat } from './useAiChat';
 import { useAiConversations } from './useAiConversations';
 import { useAiTools } from './useAiTools';
+import { useProposalDecisions } from './useProposalDecisions';
 
 interface AiPanelProps {
   panel: AiPanelState;
@@ -26,7 +27,9 @@ interface AiPanelProps {
  *
  * The assistant can read the workspace through the tools in
  * `src/lib/ai/tools`, and what it read shows in the transcript beside the
- * answer. It cannot change anything: writing waits for the review step.
+ * answer. It can also ask to change things, and every such ask arrives as a
+ * proposal card the user approves, edits, or rejects. Nothing is written
+ * without that press.
  *
  * On desktop it is a resizable right-hand column. Below the mobile breakpoint
  * there is no room for a third column, so it becomes a sheet over the content
@@ -44,6 +47,7 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
     onMessagesChange: conversations.setMessages,
     executeTool,
   });
+  const decisions = useProposalDecisions(conversations.messages, conversations.setMessages);
 
   const header = (
     <AiPanelHeader
@@ -67,7 +71,7 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
         >
           <SheetTitle className="sr-only">Assistant</SheetTitle>
           {header}
-          <AiChat chat={chat} messages={conversations.messages} />
+          <AiChat chat={chat} messages={conversations.messages} decisions={decisions} />
         </SheetContent>
       </Sheet>
     );
@@ -86,7 +90,7 @@ const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
         className="flex min-h-0 shrink-0 flex-col surface-sidebar"
       >
         {header}
-        <AiChat chat={chat} messages={conversations.messages} />
+        <AiChat chat={chat} messages={conversations.messages} decisions={decisions} />
       </aside>
     </>
   );

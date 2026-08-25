@@ -7,6 +7,7 @@ import {
 } from '@/lib/openai/client';
 import { readOpenAiConfig } from '@/lib/openai/config';
 import { AI_TOOLS } from '@/lib/ai/tools/definitions';
+import { AI_WRITE_TOOLS } from '@/lib/ai/tools/write-definitions';
 import { EmptyTurnError, runTurn, type ToolExecutor, type TurnMessage } from '@/lib/ai/turn';
 
 import type { StoredAiMessage } from '@/lib/ai/conversations';
@@ -36,12 +37,19 @@ const createId = (): string =>
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 /**
+ * Every tool the assistant may call.
+ *
+ * The write tools do not write. Each one produces a proposal the user approves,
+ * so what the model is really being offered is the ability to ask.
+ */
+const TOOLS = [...AI_TOOLS, ...AI_WRITE_TOOLS];
+
+/**
  * What the assistant is told about itself.
  *
- * It can look at the workspace and it cannot change it, and both halves are
- * said plainly. An assistant that offers to edit a file it cannot write is
- * worse than one that says it cannot, and an assistant that guesses at a note
- * it could have read is worse still.
+ * The important sentence is the one about proposing rather than doing. A model
+ * that believes it saved the file will say so, and the user will read that
+ * their note was changed while the proposal is still sitting there unapproved.
  */
 const INSTRUCTIONS = [
   'You are the assistant built into Notara, a local-first Markdown notes app.',
@@ -50,10 +58,14 @@ const INSTRUCTIONS = [
   'read notes, list them, read the to-do lists, and read the calendar. Use them',
   'rather than guessing or asking the user to paste something you could look up.',
   'A note is identified by its file path, so name paths when you refer to notes.',
-  'You cannot change anything yet. Editing notes, writing new ones, and adding',
-  'tasks and calendar entries are coming, and each will be shown to the user for',
-  'approval first. Until then, say what you would change rather than claiming to',
-  'have changed it. Answer in Markdown. Be brief unless asked for detail.',
+  'You can also propose changes: edit a note, write a new one, make or change a',
+  'to-do list, add or move a calendar entry, and generate an image for a vision',
+  'board. Proposing is not doing. Each proposal is shown to the user, who',
+  'approves, edits, or rejects it, so say what you have proposed and never say a',
+  'change has been made. Before proposing an edit, read the note, and send its',
+  'complete new content rather than a fragment. Propose one change at a time and',
+  'wait for the user rather than repeating a proposal they have not answered.',
+  'Answer in Markdown. Be brief unless asked for detail.',
 ].join(' ');
 
 /** Turns the stored transcript into the turns the model is sent. */
@@ -184,7 +196,7 @@ export const useAiChat = ({
     try {
       const result = await runTurn({
         messages: toTurnMessages(history),
-        tools: AI_TOOLS,
+        tools: TOOLS,
         send: (input, tools) =>
           generateOpenAiText({ model, input, tools, instructions: INSTRUCTIONS }),
         execute: (name, args) => executeRef.current(name, args),
@@ -199,14 +211,25 @@ export const useAiChat = ({
 
       // What was read comes before the answer, in the order it happened, so the
       // reply can be judged against the material it came from.
-      const trace: AiChatMessage[] = result.toolRuns.map((toolRun, index) => ({
-        id: createId(),
-        role: 'tool',
-        content: toolRun.summary,
-        createdAt: now + index,
-        toolName: toolRun.name,
-        ...(toolRun.failed ? { failed: true } : {}),
-      }));
+      const trace: AiChatMessage[] = result.toolRuns.map((toolRun, index) =>
+        toolRun.proposal
+          ? {
+              id: createId(),
+              role: 'proposal',
+              content: toolRun.summary,
+              createdAt: now + index,
+              proposal: toolRun.proposal,
+              proposalStatus: 'pending',
+            }
+          : {
+              id: createId(),
+              role: 'tool',
+              content: toolRun.summary,
+              createdAt: now + index,
+              toolName: toolRun.name,
+              ...(toolRun.failed ? { failed: true } : {}),
+            }
+      );
 
       if (result.stoppedEarly) {
         trace.push({

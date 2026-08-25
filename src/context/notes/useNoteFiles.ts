@@ -315,6 +315,10 @@ export const useNoteFiles = (knownTags: NoteTag[]): NoteFilesApi => {
         tags: input.tags ?? existing.tags,
         isPinned: input.isPinned ?? existing.isPinned,
         isStarred: input.isStarred ?? existing.isStarred,
+        // A note's created date is what the calendar reads, and the calendar
+        // lets it be changed. It was being dropped here, so moving an entry to
+        // another day appeared to work and changed nothing on disk.
+        createdAt: input.createdAt ?? existing.createdAt,
         updatedAt: new Date().toISOString(),
       };
 

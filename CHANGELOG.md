@@ -62,6 +62,35 @@ All notable changes to the Notara project will be documented in this file.
   writing new ones, and adding tasks and calendar entries come next, and each
   one will be shown to you for approval before anything is written.
 
+### ✅ The assistant can ask to change things
+
+- The assistant can now propose changes: edit a note, write a new one, make or
+  change a to-do list, add or move a calendar entry, and generate an image for a
+  vision board.
+- It cannot do any of it by itself. Every change arrives as a card in the
+  conversation, and nothing is written until you press Apply.
+- A note change is shown as a real diff. The card carries the first few changed
+  lines and Review opens a wide view with line numbers on both sides and long
+  unchanged stretches folded away.
+- Everything else is shown as plain fields: the list, the items, the date, the
+  prompt. No guessing what "update my todos" meant.
+- Edit proposal lets you fix the wording before applying, so a good change with
+  one wrong heading does not have to be thrown out.
+- Undo is there after you apply, for the changes that can be reversed.
+- Cancel changes nothing at all, and the card stays in the conversation saying
+  what was proposed and what you decided.
+- If a note changed on disk between the proposal and your Apply, the write is
+  refused and tells you why, rather than overwriting an edit you have not seen.
+- A vision board image is generated when you approve it, not when it is
+  proposed, so you see the prompt, the model, and the size before it costs
+  anything.
+
+### 🐛 Fixes
+
+- Changing a calendar entry's date now actually changes it. The calendar has
+  always offered to move an event to another day, and the save was quietly
+  dropping the new date, so the entry stayed where it was.
+
 ### 🧹 Maintenance
 
 - The old assistant component was 2,440 lines and did several things nobody

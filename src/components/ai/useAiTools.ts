@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useTodo } from '@/context/TodoContextTypes';
+import { buildProposal } from '@/lib/ai/tools/build-proposals';
+import { isAiWriteToolName } from '@/lib/ai/tools/write-definitions';
+import { proposalTarget, proposalTitle } from '@/lib/ai/proposals';
+import { readOpenAiConfig } from '@/lib/openai/config';
 import {
   clampLimit,
   listCalendarEntries,
@@ -29,13 +33,45 @@ const plural = (count: number, singular: string, plural = `${singular}s`): strin
  * Every result is returned as JSON, because a model reads a labelled structure
  * more reliably than a paragraph, and every result carries the note's path so a
  * follow-up can name exactly which note it means.
+ *
+ * The write tools are different in one important way: they write nothing. Each
+ * one turns its arguments into a proposal, hands it to the panel, and tells the
+ * model that the user has not decided yet. Nothing on this side of the app can
+ * change a file without someone pressing Apply.
  */
 export const useAiTools = (): ToolExecutor => {
-  const { notes, activeNote } = useNotes();
+  const { notes, activeNote, visionBoards } = useNotes();
   const { todoLists } = useTodo();
 
   return useCallback<ToolExecutor>(
     async (name, args) => {
+      if (isAiWriteToolName(name)) {
+        const config = readOpenAiConfig();
+
+        const proposal = buildProposal(name, args, {
+          notes,
+          activeNote,
+          todoLists,
+          boards: visionBoards,
+          imageModel: config.imageModel,
+          imageSize: config.imageSize,
+        });
+
+        return {
+          // The model is told plainly that nothing has happened. Without this
+          // it reports the change as done, and the user reads that the note was
+          // saved while the proposal is still sitting there unapproved.
+          output: JSON.stringify({
+            status: 'awaiting_approval',
+            proposed: proposalTitle(proposal),
+            target: proposalTarget(proposal),
+            note: 'The user has not approved this yet. Do not propose it again, and do not say it is done.',
+          }),
+          summary: `Proposed: ${proposalTitle(proposal).toLowerCase()} · ${proposalTarget(proposal)}`,
+          proposal,
+        };
+      }
+
       if (!isAiToolName(name)) {
         throw new Error(`There is no tool called ${name}.`);
       }
@@ -109,6 +145,6 @@ export const useAiTools = (): ToolExecutor => {
           throw new Error(`The tool ${name} is not available.`);
       }
     },
-    [activeNote, notes, todoLists]
+    [activeNote, notes, todoLists, visionBoards]
   );
 };

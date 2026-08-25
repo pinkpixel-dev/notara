@@ -14,6 +14,7 @@
  * Everything in this module is pure. The React side and the file writes live in
  * `src/components/ai/useAiConversations.ts`.
  */
+import type { Proposal, ProposalStatus } from './proposals';
 
 export const NOTE_KEY_PREFIX = 'note:';
 export const SECTION_KEY_PREFIX = 'section:';
@@ -32,8 +33,12 @@ export const sectionConversationKey = (section: string): string =>
  * looking something up, kept so the user can see what was read. It is stored
  * with the conversation but never sent back to the model, which asks again if
  * it needs the same thing later.
+ *
+ * `proposal` is a change waiting for the user, or the record of one they
+ * already decided about. It is stored so a pending proposal survives a restart
+ * and an applied one keeps its Undo.
  */
-export type StoredAiRole = 'user' | 'assistant' | 'tool';
+export type StoredAiRole = 'user' | 'assistant' | 'tool' | 'proposal';
 
 export interface StoredAiMessage {
   id: string;
@@ -44,6 +49,17 @@ export interface StoredAiMessage {
   toolName?: string;
   /** Set on a `tool` row: true when the tool could not run. */
   failed?: boolean;
+  /** Set on a `proposal` row: the change itself. */
+  proposal?: Proposal;
+  /** Set on a `proposal` row: where the user's decision got to. */
+  proposalStatus?: ProposalStatus;
+  /**
+   * Set on an applied `proposal` row: the change that puts it back.
+   *
+   * Undo is the same code path as Apply, run against this. A proposal with no
+   * inverse simply has no Undo.
+   */
+  undo?: Proposal;
 }
 
 export interface AiConversation {
@@ -77,7 +93,7 @@ export const MAX_CONVERSATIONS = 100;
 export const MAX_MESSAGES_PER_CONVERSATION = 200;
 
 const isStoredRole = (value: unknown): value is StoredAiRole =>
-  value === 'user' || value === 'assistant' || value === 'tool';
+  value === 'user' || value === 'assistant' || value === 'tool' || value === 'proposal';
 
 /**
  * Reads whatever is in the file, keeping only what is usable.
@@ -106,15 +122,24 @@ export const parseStoredConversations = (raw: unknown): AiConversations => {
     const candidate = value as Partial<AiConversation>;
     const messages = Array.isArray(candidate.messages) ? candidate.messages : [];
 
-    const usable = messages.filter(
-      (message): message is StoredAiMessage =>
-        !!message &&
-        typeof message === 'object' &&
-        typeof (message as StoredAiMessage).id === 'string' &&
-        typeof (message as StoredAiMessage).content === 'string' &&
-        typeof (message as StoredAiMessage).createdAt === 'number' &&
-        isStoredRole((message as StoredAiMessage).role)
-    );
+    const usable = messages.filter((message): message is StoredAiMessage => {
+      if (
+        !message ||
+        typeof message !== 'object' ||
+        typeof (message as StoredAiMessage).id !== 'string' ||
+        typeof (message as StoredAiMessage).content !== 'string' ||
+        typeof (message as StoredAiMessage).createdAt !== 'number' ||
+        !isStoredRole((message as StoredAiMessage).role)
+      ) {
+        return false;
+      }
+
+      // A proposal row without its proposal is a row offering to apply nothing.
+      // It is dropped rather than rendered as an empty approval.
+      const candidate = message as StoredAiMessage;
+
+      return candidate.role !== 'proposal' || !!candidate.proposal;
+    });
 
     if (usable.length === 0) {
       return;
@@ -128,6 +153,9 @@ export const parseStoredConversations = (raw: unknown): AiConversations => {
         createdAt: message.createdAt,
         ...(typeof message.toolName === 'string' ? { toolName: message.toolName } : {}),
         ...(message.failed === true ? { failed: true } : {}),
+        ...(message.proposal ? { proposal: message.proposal } : {}),
+        ...(message.proposalStatus ? { proposalStatus: message.proposalStatus } : {}),
+        ...(message.undo ? { undo: message.undo } : {}),
       })),
       updatedAt:
         typeof candidate.updatedAt === 'number' && Number.isFinite(candidate.updatedAt)

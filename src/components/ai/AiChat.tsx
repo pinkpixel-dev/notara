@@ -6,12 +6,16 @@ import { OPENAI_UNAVAILABLE_MESSAGE } from '@/lib/openai/client';
 import AiComposer from './AiComposer';
 import AiMessage from './AiMessage';
 import AiToolRow from './AiToolRow';
+import AiProposalCard from './proposals/AiProposalCard';
+import type { ProposalDecisions } from './useProposalDecisions';
 import type { AiChatController, AiChatMessage } from './useAiChat';
 
 interface AiChatProps {
   chat: AiChatController;
   /** The turns in the conversation now showing. */
   messages: AiChatMessage[];
+  /** Apply, Cancel, and Undo for the proposals in this conversation. */
+  decisions: ProposalDecisions;
 }
 
 const PLACEHOLDERS: Record<string, string> = {
@@ -30,7 +34,7 @@ const PLACEHOLDERS: Record<string, string> = {
  * fixed from here. No key is one trip to Settings. Ready but empty is just an
  * empty chat, which needs no explanation beyond a prompt to start.
  */
-const AiChat: React.FC<AiChatProps> = ({ chat, messages }) => {
+const AiChat: React.FC<AiChatProps> = ({ chat, messages, decisions }) => {
   const { status, error, availability, sendMessage, retry, cancel, canRetry } = chat;
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -67,18 +71,42 @@ const AiChat: React.FC<AiChatProps> = ({ chat, messages }) => {
               Ask a question to start. Every note keeps its own conversation, so
               this one comes back when you open that note again.
             </p>
+            {/* Said before the first question rather than after it. The
+                assistant reads notes on its own, and that is worth knowing
+                up front rather than discovering in the transcript. */}
+            <p className="text-xs text-muted-foreground">
+              It can search and read your notes, tasks, and calendar. Every
+              lookup is listed here as it happens, and any change it wants to
+              make is shown to you before anything is written.
+            </p>
           </div>
         )}
 
         {messages.length > 0 && (
           <div className="flex flex-col gap-3">
-            {messages.map((message) =>
-              message.role === 'tool' ? (
-                <AiToolRow key={message.id} message={message} />
-              ) : (
-                <AiMessage key={message.id} message={message} />
-              )
-            )}
+            {messages.map((message) => {
+              if (message.role === 'tool') {
+                return <AiToolRow key={message.id} message={message} />;
+              }
+
+              if (message.role === 'proposal' && message.proposal) {
+                return (
+                  <AiProposalCard
+                    key={message.id}
+                    proposal={message.proposal}
+                    status={message.proposalStatus ?? 'pending'}
+                    undo={message.undo}
+                    outcome={message.proposalStatus === 'pending' ? '' : message.content}
+                    busy={decisions.busyId === message.id}
+                    onApply={(proposal) => decisions.apply(message.id, proposal)}
+                    onCancel={() => decisions.cancel(message.id)}
+                    onUndo={() => decisions.undo(message.id)}
+                  />
+                );
+              }
+
+              return <AiMessage key={message.id} message={message} />;
+            })}
           </div>
         )}
 

@@ -11,6 +11,7 @@
  * passed in.
  */
 import type { OpenAiInputItem, OpenAiTextResult, OpenAiToolDefinition } from '@/lib/openai/client';
+import type { Proposal } from './proposals';
 
 export interface TurnMessage {
   role: 'user' | 'assistant';
@@ -26,6 +27,13 @@ export interface ToolRun {
   summary: string;
   /** True when the tool could not run. The model is told either way. */
   failed: boolean;
+  /**
+   * The change this call is asking permission for.
+   *
+   * Present only for a write tool. Nothing has happened yet: the proposal goes
+   * to the user, who approves or rejects it.
+   */
+  proposal?: Proposal;
 }
 
 /** What a tool gives back: text for the model, a line for the user. */
@@ -34,6 +42,8 @@ export interface ToolOutcome {
   output: string;
   /** Shown in the panel, so the user can see what was read. */
   summary: string;
+  /** Set by a write tool: the change waiting for the user's approval. */
+  proposal?: Proposal;
 }
 
 export type ToolExecutor = (
@@ -152,7 +162,13 @@ export const runTurn = async ({
           call_id: call.callId,
           output: outcome.output,
         });
-        toolRuns.push({ name: call.name, arguments: args, summary: outcome.summary, failed: false });
+        toolRuns.push({
+          name: call.name,
+          arguments: args,
+          summary: outcome.summary,
+          failed: false,
+          ...(outcome.proposal ? { proposal: outcome.proposal } : {}),
+        });
       } catch (error) {
         // A tool that failed is told to the model rather than thrown. It can
         // try a different approach, and the user sees the failed step either
