@@ -7,6 +7,7 @@ import AiPanelHeader from './AiPanelHeader';
 import AiPanelResizer from './AiPanelResizer';
 import { useAiChat } from './useAiChat';
 import { useAiConversations } from './useAiConversations';
+import { useAiTools } from './useAiTools';
 
 interface AiPanelProps {
   panel: AiPanelState;
@@ -23,6 +24,10 @@ interface AiPanelProps {
  * follows whatever the user is looking at. They are written into `.notara`, so
  * they come back after a restart.
  *
+ * The assistant can read the workspace through the tools in
+ * `src/lib/ai/tools`, and what it read shows in the transcript beside the
+ * answer. It cannot change anything: writing waits for the review step.
+ *
  * On desktop it is a resizable right-hand column. Below the mobile breakpoint
  * there is no room for a third column, so it becomes a sheet over the content
  * at most of the viewport height. A full-screen sheet was turned down: the note
@@ -32,10 +37,12 @@ interface AiPanelProps {
 const AiPanel: React.FC<AiPanelProps> = ({ panel }) => {
   const isMobile = useIsMobile();
   const conversations = useAiConversations();
+  const executeTool = useAiTools();
   const chat = useAiChat({
     conversationKey: conversations.key,
     messages: conversations.messages,
     onMessagesChange: conversations.setMessages,
+    executeTool,
   });
 
   const header = (

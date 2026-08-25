@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { OPENAI_UNAVAILABLE_MESSAGE } from '@/lib/openai/client';
 import AiComposer from './AiComposer';
 import AiMessage from './AiMessage';
+import AiToolRow from './AiToolRow';
 import type { AiChatController, AiChatMessage } from './useAiChat';
 
 interface AiChatProps {
@@ -70,10 +71,14 @@ const AiChat: React.FC<AiChatProps> = ({ chat, messages }) => {
         )}
 
         {messages.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {messages.map((message) => (
-              <AiMessage key={message.id} message={message} />
-            ))}
+          <div className="flex flex-col gap-3">
+            {messages.map((message) =>
+              message.role === 'tool' ? (
+                <AiToolRow key={message.id} message={message} />
+              ) : (
+                <AiMessage key={message.id} message={message} />
+              )
+            )}
           </div>
         )}
 

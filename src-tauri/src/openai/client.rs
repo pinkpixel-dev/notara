@@ -9,10 +9,17 @@
 //! retained on the provider side. Images use the Images API rather than the
 //! Responses image tool, because Notara lets the user pick the exact GPT Image
 //! model and the Images API takes that model directly.
+//!
+//! Tool calling runs as a loop in the webview, not here. The model asks for a
+//! tool, this returns that request unanswered, the panel runs the tool against
+//! the notes and tasks it already holds, and the next call carries the result
+//! back. Rust stays out of it because the data the tools read lives in the
+//! webview, and moving it into Rust to answer a tool call would mean copying the
+//! whole workspace across the boundary for every question.
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine as _;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::json;
 
 use super::errors::{from_response, OpenAiError};
@@ -24,11 +31,31 @@ const IMAGES_URL: &str = "https://api.openai.com/v1/images/generations";
 const MODELS_URL: &str = "https://api.openai.com/v1/models";
 const REQUEST_TIMEOUT_SECONDS: u64 = 120;
 
-/// One turn of conversation on the way to the provider.
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct ChatMessage {
-    pub role: String,
-    pub content: String,
+/// One item on the way to the provider.
+///
+/// The Responses API takes a list of typed items rather than a list of
+/// messages: a turn of conversation is one shape, a tool call is another, and a
+/// tool result is a third. The panel builds them, so this is a passed-through
+/// JSON object rather than a struct per shape. Every entry is checked for being
+/// an object before anything is sent.
+pub type InputItem = serde_json::Value;
+
+/// A tool the model may call, as a Responses API tool definition.
+///
+/// These are constants defined in the frontend, not user input, so they are
+/// forwarded as they arrive. Notara does not build tool definitions from
+/// anything a user or a note can influence.
+pub type ToolDefinition = serde_json::Value;
+
+/// One tool call the model asked for.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolCall {
+    /// The identifier the result has to carry back.
+    pub call_id: String,
+    pub name: String,
+    /// The arguments, still JSON-encoded as a string, exactly as they arrived.
+    pub arguments: String,
 }
 
 /// Token counts, when the provider reports them.
@@ -41,10 +68,15 @@ pub struct Usage {
 }
 
 /// A completed text generation.
+///
+/// Text and tool calls are not exclusive. A model may say something and ask for
+/// a tool in the same turn, so both are returned and the caller decides what to
+/// do with each.
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TextResult {
     pub text: String,
+    pub tool_calls: Vec<ToolCall>,
     pub model: String,
     pub response_id: Option<String>,
     pub usage: Usage,
@@ -131,11 +163,17 @@ fn collect_text(payload: &serde_json::Value) -> String {
 }
 
 /// Finds a refusal, which arrives as a normal 200 rather than an error status.
+///
+/// Items without content are skipped rather than ending the search. Reasoning
+/// items and tool calls both have none, and stopping at the first of those
+/// would miss a refusal that came after it.
 fn collect_refusal(payload: &serde_json::Value) -> Option<String> {
     let output = payload["output"].as_array()?;
 
     for item in output {
-        let content = item["content"].as_array()?;
+        let Some(content) = item["content"].as_array() else {
+            continue;
+        };
 
         for part in content {
             if part["type"].as_str() == Some("refusal") {
@@ -145,6 +183,29 @@ fn collect_refusal(payload: &serde_json::Value) -> Option<String> {
     }
 
     None
+}
+
+/// Collects the tool calls the model asked for.
+///
+/// `arguments` stays a string rather than being parsed here. It is generated
+/// text that has to survive back to the tool that knows its shape, and parsing
+/// it in the middle would only add a place for it to fail with no context.
+fn collect_tool_calls(payload: &serde_json::Value) -> Vec<ToolCall> {
+    let Some(output) = payload["output"].as_array() else {
+        return Vec::new();
+    };
+
+    output
+        .iter()
+        .filter(|item| item["type"].as_str() == Some("function_call"))
+        .filter_map(|item| {
+            Some(ToolCall {
+                call_id: item["call_id"].as_str()?.to_string(),
+                name: item["name"].as_str()?.to_string(),
+                arguments: item["arguments"].as_str().unwrap_or("{}").to_string(),
+            })
+        })
+        .collect()
 }
 
 fn collect_usage(payload: &serde_json::Value) -> Usage {
@@ -188,22 +249,33 @@ pub async fn generate_text(
     store: &KeyStore,
     model: &str,
     instructions: Option<String>,
-    messages: Vec<ChatMessage>,
+    input: Vec<InputItem>,
+    tools: Vec<ToolDefinition>,
     max_output_tokens: Option<u32>,
 ) -> Result<TextResult, OpenAiError> {
     let model = validate_text_model(model)?;
 
-    if messages.is_empty() {
+    if input.is_empty() {
         return Err(OpenAiError::local("There is nothing to send to OpenAI."));
+    }
+
+    if input.iter().any(|item| !item.is_object()) {
+        return Err(OpenAiError::local(
+            "The conversation could not be prepared for OpenAI.",
+        ));
     }
 
     let key = store.reveal()?;
 
     let mut payload = json!({
         "model": model,
-        "input": messages,
+        "input": input,
         "store": false,
     });
+
+    if !tools.is_empty() {
+        payload["tools"] = json!(tools);
+    }
 
     if let Some(instructions) = instructions.filter(|text| !text.trim().is_empty()) {
         payload["instructions"] = json!(instructions);
@@ -237,8 +309,11 @@ pub async fn generate_text(
     }
 
     let text = collect_text(&parsed);
+    let tool_calls = collect_tool_calls(&parsed);
 
-    if text.trim().is_empty() {
+    // A turn that only asks for a tool carries no text, and that is a normal
+    // reply rather than a failure. Only a turn with neither is empty.
+    if text.trim().is_empty() && tool_calls.is_empty() {
         // An incomplete response means the model stopped early, most often on
         // the output-token limit. Saying so beats an empty message bubble.
         let reason = parsed["incomplete_details"]["reason"]
@@ -252,6 +327,7 @@ pub async fn generate_text(
 
     Ok(TextResult {
         text,
+        tool_calls,
         model,
         response_id: parsed["id"].as_str().map(str::to_string),
         usage: collect_usage(&parsed),
@@ -385,6 +461,77 @@ mod tests {
         });
 
         assert_eq!(collect_refusal(&payload).as_deref(), Some("I cannot help with that."));
+    }
+
+    #[test]
+    fn reads_a_tool_call() {
+        let payload = json!({
+            "output": [{
+                "type": "function_call",
+                "id": "fc_1",
+                "call_id": "call_1",
+                "name": "search_notes",
+                "arguments": "{\"query\":\"rent\"}"
+            }]
+        });
+
+        let calls = collect_tool_calls(&payload);
+
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].call_id, "call_1");
+        assert_eq!(calls[0].name, "search_notes");
+        assert_eq!(calls[0].arguments, "{\"query\":\"rent\"}");
+    }
+
+    #[test]
+    fn reads_several_tool_calls_and_ignores_other_items() {
+        let payload = json!({
+            "output": [
+                { "type": "reasoning", "summary": [] },
+                { "type": "function_call", "call_id": "a", "name": "one", "arguments": "{}" },
+                { "type": "message", "content": [{ "type": "output_text", "text": "working" }] },
+                { "type": "function_call", "call_id": "b", "name": "two", "arguments": "{}" }
+            ]
+        });
+
+        let calls = collect_tool_calls(&payload);
+
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[1].name, "two");
+        assert_eq!(collect_text(&payload), "working");
+    }
+
+    #[test]
+    fn treats_missing_arguments_as_an_empty_object() {
+        let payload = json!({
+            "output": [{ "type": "function_call", "call_id": "a", "name": "one" }]
+        });
+
+        assert_eq!(collect_tool_calls(&payload)[0].arguments, "{}");
+    }
+
+    #[test]
+    fn skips_a_tool_call_with_no_call_id() {
+        let payload = json!({
+            "output": [{ "type": "function_call", "name": "one", "arguments": "{}" }]
+        });
+
+        assert!(collect_tool_calls(&payload).is_empty());
+    }
+
+    #[test]
+    fn finds_a_refusal_after_an_item_with_no_content() {
+        let payload = json!({
+            "output": [
+                { "type": "function_call", "call_id": "a", "name": "one", "arguments": "{}" },
+                {
+                    "type": "message",
+                    "content": [{ "type": "refusal", "refusal": "No." }]
+                }
+            ]
+        });
+
+        assert_eq!(collect_refusal(&payload).as_deref(), Some("No."));
     }
 
     #[test]

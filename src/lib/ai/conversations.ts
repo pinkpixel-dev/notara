@@ -25,13 +25,25 @@ export const noteConversationKey = (path: string): string => `${NOTE_KEY_PREFIX}
 export const sectionConversationKey = (section: string): string =>
   `${SECTION_KEY_PREFIX}${section}`;
 
-export type StoredAiRole = 'user' | 'assistant';
+/**
+ * Who a turn came from.
+ *
+ * `tool` is not a turn of conversation. It is the record of the assistant
+ * looking something up, kept so the user can see what was read. It is stored
+ * with the conversation but never sent back to the model, which asks again if
+ * it needs the same thing later.
+ */
+export type StoredAiRole = 'user' | 'assistant' | 'tool';
 
 export interface StoredAiMessage {
   id: string;
   role: StoredAiRole;
   content: string;
   createdAt: number;
+  /** Set on a `tool` row: which tool ran. */
+  toolName?: string;
+  /** Set on a `tool` row: true when the tool could not run. */
+  failed?: boolean;
 }
 
 export interface AiConversation {
@@ -65,7 +77,7 @@ export const MAX_CONVERSATIONS = 100;
 export const MAX_MESSAGES_PER_CONVERSATION = 200;
 
 const isStoredRole = (value: unknown): value is StoredAiRole =>
-  value === 'user' || value === 'assistant';
+  value === 'user' || value === 'assistant' || value === 'tool';
 
 /**
  * Reads whatever is in the file, keeping only what is usable.
@@ -109,7 +121,14 @@ export const parseStoredConversations = (raw: unknown): AiConversations => {
     }
 
     conversations[key] = {
-      messages: usable,
+      messages: usable.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        createdAt: message.createdAt,
+        ...(typeof message.toolName === 'string' ? { toolName: message.toolName } : {}),
+        ...(message.failed === true ? { failed: true } : {}),
+      })),
       updatedAt:
         typeof candidate.updatedAt === 'number' && Number.isFinite(candidate.updatedAt)
           ? candidate.updatedAt

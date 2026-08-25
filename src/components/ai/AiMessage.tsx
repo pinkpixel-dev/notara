@@ -4,6 +4,7 @@ import MarkdownPreview from '@/components/notes/MarkdownPreview';
 import type { AiChatMessage } from './useAiChat';
 
 interface AiMessageProps {
+  /** A user or assistant turn. Tool rows render through `AiToolRow`. */
   message: AiChatMessage;
 }
 

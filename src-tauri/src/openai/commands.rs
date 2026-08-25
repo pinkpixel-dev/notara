@@ -12,7 +12,7 @@ use tauri::{AppHandle, Manager, Runtime};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine as _;
 
-use super::client::{self, ChatMessage, ImageResult, TextResult};
+use super::client::{self, ImageResult, InputItem, TextResult, ToolDefinition};
 use super::errors::OpenAiError;
 use super::secrets::{KeyStatus, KeyStore};
 
@@ -60,18 +60,32 @@ pub async fn openai_test_key<R: Runtime>(app: AppHandle<R>) -> Result<TestResult
     Ok(TestResult { ok: true })
 }
 
-/// Generates text through the Responses API.
+/// Runs one turn through the Responses API.
+///
+/// `input` carries the whole exchange, including any tool calls and their
+/// results, because nothing is stored on the provider side. `tools` is the set
+/// the model may ask for; the panel runs them and calls this again with the
+/// answers.
 #[tauri::command]
 pub async fn openai_generate_text<R: Runtime>(
     app: AppHandle<R>,
     model: String,
-    messages: Vec<ChatMessage>,
+    input: Vec<InputItem>,
     instructions: Option<String>,
+    tools: Option<Vec<ToolDefinition>>,
     max_output_tokens: Option<u32>,
 ) -> Result<TextResult, OpenAiError> {
     let store = key_store(&app)?;
 
-    client::generate_text(&store, &model, instructions, messages, max_output_tokens).await
+    client::generate_text(
+        &store,
+        &model,
+        instructions,
+        input,
+        tools.unwrap_or_default(),
+        max_output_tokens,
+    )
+    .await
 }
 
 /// Generates an image through the Images API.

@@ -44,6 +44,24 @@ All notable changes to the Notara project will be documented in this file.
 - Moving to a different note while a reply is on its way drops that reply, the
   same as pressing Stop. It was asked for somewhere else.
 
+### 🔍 The assistant can read your workspace
+
+- The assistant can now look things up for itself. It can search your notes,
+  read one in full, list what is in a folder, read your to-do lists, and read
+  what is on the calendar.
+- It decides when to look. Ask what you wrote about a topic and it searches
+  rather than asking you to paste the note in.
+- Every lookup shows in the conversation, above the answer, naming the notes it
+  read. You can see what went to OpenAI without having to ask.
+- Answers are capped so a question cannot quietly send your whole workspace: 25
+  results per search, 20,000 characters per note, and 5 lookups per question.
+- Note contents are not saved. The line saying what was read is kept with the
+  conversation; the text that came back is not written to disk and is not sent
+  again next time.
+- The assistant still cannot change anything, and it will say so. Editing notes,
+  writing new ones, and adding tasks and calendar entries come next, and each
+  one will be shown to you for approval before anything is written.
+
 ### 🧹 Maintenance
 
 - The old assistant component was 2,440 lines and did several things nobody

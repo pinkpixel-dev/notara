@@ -26,8 +26,23 @@ export interface OpenAiUsage {
   totalTokens: number;
 }
 
+export interface OpenAiToolCall {
+  /** The identifier the result has to carry back. */
+  callId: string;
+  name: string;
+  /** Still JSON-encoded, exactly as the model wrote it. */
+  arguments: string;
+}
+
 export interface OpenAiTextResult {
   text: string;
+  /**
+   * Tools the model asked for.
+   *
+   * Not exclusive with `text`: a turn can say something and ask for a tool at
+   * the same time.
+   */
+  toolCalls: OpenAiToolCall[];
   model: string;
   responseId: string | null;
   usage: OpenAiUsage;
@@ -43,6 +58,27 @@ export interface OpenAiImageResult {
 export interface OpenAiChatMessage {
   role: string;
   content: string;
+}
+
+/**
+ * One item in a Responses API exchange.
+ *
+ * A turn of conversation, a tool call, and a tool result are three different
+ * shapes in the same list. Notara sends the whole list every time, because
+ * nothing is stored on the provider side.
+ */
+export type OpenAiInputItem =
+  | OpenAiChatMessage
+  | { type: 'function_call'; call_id: string; name: string; arguments: string }
+  | { type: 'function_call_output'; call_id: string; output: string };
+
+/** A tool the model may call, as a Responses API tool definition. */
+export interface OpenAiToolDefinition {
+  type: 'function';
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+  strict?: boolean;
 }
 
 /** The failure kinds the backend distinguishes. */
@@ -130,17 +166,25 @@ export const deleteOpenAiKey = (): Promise<OpenAiKeyStatus> =>
 export const testOpenAiKey = (): Promise<{ ok: boolean }> =>
   invoke<{ ok: boolean }>('openai_test_key');
 
-/** Runs a text generation through the Responses API. */
+/**
+ * Runs one turn through the Responses API.
+ *
+ * When tools are offered, the reply may be a request to call one rather than an
+ * answer. Running it and asking again is the caller's job: see
+ * `src/lib/ai/turn.ts`.
+ */
 export const generateOpenAiText = (request: {
   model: TextModel;
-  messages: OpenAiChatMessage[];
+  input: OpenAiInputItem[];
   instructions?: string;
+  tools?: OpenAiToolDefinition[];
   maxOutputTokens?: number;
 }): Promise<OpenAiTextResult> =>
   invoke<OpenAiTextResult>('openai_generate_text', {
     model: request.model,
-    messages: request.messages,
+    input: request.input,
     instructions: request.instructions ?? null,
+    tools: request.tools ?? null,
     maxOutputTokens: request.maxOutputTokens ?? null,
   });
 

@@ -4,9 +4,10 @@ import {
   generateOpenAiText,
   isOpenAiAvailable,
   readOpenAiKeyStatus,
-  type OpenAiChatMessage,
 } from '@/lib/openai/client';
 import { readOpenAiConfig } from '@/lib/openai/config';
+import { AI_TOOLS } from '@/lib/ai/tools/definitions';
+import { EmptyTurnError, runTurn, type ToolExecutor, type TurnMessage } from '@/lib/ai/turn';
 
 import type { StoredAiMessage } from '@/lib/ai/conversations';
 
@@ -37,17 +38,31 @@ const createId = (): string =>
 /**
  * What the assistant is told about itself.
  *
- * Stage 1 gives it no tools, so it is told that plainly. An assistant that
- * offers to edit a file it cannot reach is worse than one that says it cannot.
- * Stage 3 replaces this with the real tool instructions.
+ * It can look at the workspace and it cannot change it, and both halves are
+ * said plainly. An assistant that offers to edit a file it cannot write is
+ * worse than one that says it cannot, and an assistant that guesses at a note
+ * it could have read is worse still.
  */
 const INSTRUCTIONS = [
   'You are the assistant built into Notara, a local-first Markdown notes app.',
   'You help with the notes, tasks, and plans the user is working on.',
-  'You cannot read or change files yet, so ask for the text you need instead of',
-  'claiming to have opened anything. Answer in Markdown. Be brief unless asked',
-  'for detail.',
+  'You can read the workspace through the tools you have been given: search and',
+  'read notes, list them, read the to-do lists, and read the calendar. Use them',
+  'rather than guessing or asking the user to paste something you could look up.',
+  'A note is identified by its file path, so name paths when you refer to notes.',
+  'You cannot change anything yet. Editing notes, writing new ones, and adding',
+  'tasks and calendar entries are coming, and each will be shown to the user for',
+  'approval first. Until then, say what you would change rather than claiming to',
+  'have changed it. Answer in Markdown. Be brief unless asked for detail.',
 ].join(' ');
+
+/** Turns the stored transcript into the turns the model is sent. */
+const toTurnMessages = (messages: AiChatMessage[]): TurnMessage[] =>
+  messages
+    .filter((message): message is AiChatMessage & { role: 'user' | 'assistant' } =>
+      message.role === 'user' || message.role === 'assistant'
+    )
+    .map((message) => ({ role: message.role, content: message.content }));
 
 export interface AiChatOptions {
   /**
@@ -60,6 +75,8 @@ export interface AiChatOptions {
   conversationKey: string;
   messages: AiChatMessage[];
   onMessagesChange: (messages: AiChatMessage[]) => void;
+  /** Runs a tool the model asked for. */
+  executeTool: ToolExecutor;
 }
 
 export interface AiChatController {
@@ -90,6 +107,7 @@ export const useAiChat = ({
   conversationKey,
   messages,
   onMessagesChange,
+  executeTool,
 }: AiChatOptions): AiChatController => {
   const [status, setStatus] = useState<AiChatStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +169,9 @@ export const useAiChat = ({
   const changeRef = useRef(onMessagesChange);
   changeRef.current = onMessagesChange;
 
+  const executeRef = useRef(executeTool);
+  executeRef.current = executeTool;
+
   const run = useCallback(async (history: AiChatMessage[]) => {
     requestToken.current += 1;
     const token = requestToken.current;
@@ -158,24 +179,49 @@ export const useAiChat = ({
     setStatus('sending');
     setError(null);
 
-    const payload: OpenAiChatMessage[] = history.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+    const model = readOpenAiConfig().textModel;
 
     try {
-      const result = await generateOpenAiText({
-        model: readOpenAiConfig().textModel,
-        messages: payload,
-        instructions: INSTRUCTIONS,
+      const result = await runTurn({
+        messages: toTurnMessages(history),
+        tools: AI_TOOLS,
+        send: (input, tools) =>
+          generateOpenAiText({ model, input, tools, instructions: INSTRUCTIONS }),
+        execute: (name, args) => executeRef.current(name, args),
+        isAbandoned: () => token !== requestToken.current,
       });
 
       if (token !== requestToken.current) {
         return;
       }
 
+      const now = Date.now();
+
+      // What was read comes before the answer, in the order it happened, so the
+      // reply can be judged against the material it came from.
+      const trace: AiChatMessage[] = result.toolRuns.map((toolRun, index) => ({
+        id: createId(),
+        role: 'tool',
+        content: toolRun.summary,
+        createdAt: now + index,
+        toolName: toolRun.name,
+        ...(toolRun.failed ? { failed: true } : {}),
+      }));
+
+      if (result.stoppedEarly) {
+        trace.push({
+          id: createId(),
+          role: 'tool',
+          content: 'Stopped after the limit on how many times one question may use tools',
+          createdAt: now + trace.length,
+          toolName: 'limit',
+          failed: true,
+        });
+      }
+
       changeRef.current([
         ...messagesRef.current,
+        ...trace,
         {
           id: createId(),
           role: 'assistant',
@@ -189,7 +235,9 @@ export const useAiChat = ({
         return;
       }
 
-      setError(describeOpenAiFailure(failure));
+      setError(
+        failure instanceof EmptyTurnError ? failure.message : describeOpenAiFailure(failure)
+      );
       setStatus('error');
     }
   }, []);
