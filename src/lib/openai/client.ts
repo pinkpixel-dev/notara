@@ -9,7 +9,7 @@
  * The browser build has no backend, so AI is unavailable there. Callers check
  * `isOpenAiAvailable()` before offering an AI action.
  */
-import { invoke } from '@tauri-apps/api/core';
+import { Channel, invoke } from '@tauri-apps/api/core';
 import { fileSystemHelpers } from '@/lib/filesystem';
 import type { ImageModel, TextModel } from './models';
 
@@ -46,6 +46,8 @@ export interface OpenAiTextResult {
   model: string;
   responseId: string | null;
   usage: OpenAiUsage;
+  /** True when the user stopped a streamed reply part way through. */
+  cancelled: boolean;
 }
 
 export interface OpenAiImageResult {
@@ -187,6 +189,48 @@ export const generateOpenAiText = (request: {
     tools: request.tools ?? null,
     maxOutputTokens: request.maxOutputTokens ?? null,
   });
+
+/**
+ * Runs one turn, with the reply arriving as it is written.
+ *
+ * The deltas come back over a channel rather than as events on a global bus,
+ * so two panels or two turns cannot hear each other. The promise resolves with
+ * the finished turn, tool calls included, exactly like the non-streaming call.
+ *
+ * `streamId` is this request's name, and the only thing needed to stop it.
+ */
+export const streamOpenAiText = (request: {
+  model: TextModel;
+  input: OpenAiInputItem[];
+  streamId: string;
+  onDelta: (text: string) => void;
+  instructions?: string;
+  tools?: OpenAiToolDefinition[];
+  maxOutputTokens?: number;
+}): Promise<OpenAiTextResult> => {
+  const channel = new Channel<{ text: string }>();
+  channel.onmessage = (message) => request.onDelta(message.text);
+
+  return invoke<OpenAiTextResult>('openai_stream_text', {
+    model: request.model,
+    input: request.input,
+    instructions: request.instructions ?? null,
+    tools: request.tools ?? null,
+    maxOutputTokens: request.maxOutputTokens ?? null,
+    streamId: request.streamId,
+    onDelta: channel,
+  });
+};
+
+/**
+ * Stops a streamed reply.
+ *
+ * This ends the generation rather than only ending the wait: the backend drops
+ * the connection to OpenAI. Whatever had already arrived is kept, because it
+ * has already been paid for.
+ */
+export const cancelOpenAiStream = (streamId: string): Promise<void> =>
+  invoke<void>('openai_cancel_stream', { streamId });
 
 /** Runs an image generation through the Images API. */
 export const generateOpenAiImage = (request: {

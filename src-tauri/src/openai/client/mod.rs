@@ -27,10 +27,13 @@ use super::models::{validate_image_model, validate_text_model};
 use super::secrets::KeyStore;
 
 mod parse;
+mod stream;
 
 use parse::{collect_refusal, collect_text, collect_tool_calls, collect_usage};
 
-const RESPONSES_URL: &str = "https://api.openai.com/v1/responses";
+pub use stream::{cancel as cancel_stream, generate_text_streaming, StreamDelta};
+
+pub(super) const RESPONSES_URL: &str = "https://api.openai.com/v1/responses";
 const IMAGES_URL: &str = "https://api.openai.com/v1/images/generations";
 const MODELS_URL: &str = "https://api.openai.com/v1/models";
 const REQUEST_TIMEOUT_SECONDS: u64 = 120;
@@ -84,6 +87,8 @@ pub struct TextResult {
     pub model: String,
     pub response_id: Option<String>,
     pub usage: Usage,
+    /// True when the user stopped a streamed reply part way through.
+    pub cancelled: bool,
 }
 
 /// A completed image generation, as base64 bytes plus its media type.
@@ -96,7 +101,7 @@ pub struct ImageResult {
     pub request_id: Option<String>,
 }
 
-fn http_client() -> Result<reqwest::Client, OpenAiError> {
+pub(super) fn http_client() -> Result<reqwest::Client, OpenAiError> {
     reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT_SECONDS))
         .build()
@@ -104,7 +109,7 @@ fn http_client() -> Result<reqwest::Client, OpenAiError> {
 }
 
 /// Reads the request ID header before the body is consumed.
-fn request_id(response: &reqwest::Response) -> Option<String> {
+pub(super) fn request_id(response: &reqwest::Response) -> Option<String> {
     response
         .headers()
         .get("x-request-id")
@@ -116,7 +121,7 @@ fn request_id(response: &reqwest::Response) -> Option<String> {
 ///
 /// The provider is not involved yet at this point, so there is no status code
 /// and no request ID to report.
-fn network_error(error: reqwest::Error) -> OpenAiError {
+pub(super) fn network_error(error: reqwest::Error) -> OpenAiError {
     if error.is_timeout() {
         return OpenAiError::network(format!(
             "OpenAI did not respond within {REQUEST_TIMEOUT_SECONDS} seconds."
@@ -245,6 +250,7 @@ pub async fn generate_text(
         model,
         response_id: parsed["id"].as_str().map(str::to_string),
         usage: collect_usage(&parsed),
+        cancelled: false,
     })
 }
 

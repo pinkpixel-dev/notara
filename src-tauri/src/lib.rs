@@ -45,6 +45,8 @@ pub fn run() {
             openai::commands::openai_delete_key,
             openai::commands::openai_test_key,
             openai::commands::openai_generate_text,
+            openai::commands::openai_stream_text,
+            openai::commands::openai_cancel_stream,
             openai::commands::openai_generate_image,
             openai::commands::openai_save_image,
         ])

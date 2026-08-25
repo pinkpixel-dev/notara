@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Loader2, MessageSquare, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OPENAI_UNAVAILABLE_MESSAGE } from '@/lib/openai/client';
+import MarkdownPreview from '@/components/notes/MarkdownPreview';
 import AiComposer from './AiComposer';
 import AiMessage from './AiMessage';
 import AiToolRow from './AiToolRow';
@@ -35,13 +36,15 @@ const PLACEHOLDERS: Record<string, string> = {
  * empty chat, which needs no explanation beyond a prompt to start.
  */
 const AiChat: React.FC<AiChatProps> = ({ chat, messages, decisions }) => {
-  const { status, error, availability, sendMessage, retry, cancel, canRetry } = chat;
+  const { status, streamingText, error, availability, sendMessage, retry, cancel, canRetry } = chat;
   const endRef = useRef<HTMLDivElement>(null);
 
   // New turns arrive at the bottom, so the bottom is where the user should be.
+  // The streaming text is in here too, which is what keeps the view following a
+  // reply as it is written.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, status]);
+  }, [messages.length, status, streamingText]);
 
   const isSending = status === 'sending';
   const isDisabled = availability !== 'ready';
@@ -112,8 +115,20 @@ const AiChat: React.FC<AiChatProps> = ({ chat, messages, decisions }) => {
 
         {/* Polite rather than assertive: a reply on its way is worth announcing,
             but not worth cutting off whatever is being read. */}
+        {/* The reply as it arrives. Outside the live region below, because a
+            screen reader announcing every few characters would be unusable; the
+            finished turn is announced when it lands. */}
+        {isSending && streamingText && (
+          <article className="mt-4 flex flex-col gap-1 items-start" aria-label="Assistant reply">
+            <p className="px-1 text-xs font-medium text-muted-foreground">Assistant</p>
+            <div className="max-w-[92%] rounded-lg border border-transparent surface-content px-3 py-2 text-sm">
+              <MarkdownPreview content={streamingText} className="text-sm" />
+            </div>
+          </article>
+        )}
+
         <div aria-live="polite" className="mt-3">
-          {isSending && (
+          {isSending && !streamingText && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               Waiting for a reply...

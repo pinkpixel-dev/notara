@@ -76,6 +76,20 @@ impl OpenAiError {
             status: None,
         }
     }
+
+    /// A failure OpenAI reported mid-stream, where there is no status code.
+    ///
+    /// A streamed reply that goes wrong arrives as an event on a connection
+    /// that already returned 200, so the classification by status code that
+    /// `from_response` does has nothing to work with.
+    pub fn provider(message: impl Into<String>, request_id: Option<String>) -> Self {
+        Self {
+            kind: OpenAiErrorKind::Provider,
+            message: message.into(),
+            request_id,
+            status: None,
+        }
+    }
 }
 
 impl From<String> for OpenAiError {

@@ -8,6 +8,7 @@ const reply = (text: string, toolCalls: OpenAiTextResult['toolCalls'] = []): Ope
   model: 'gpt-5.6-sol',
   responseId: 'resp_1',
   usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+  cancelled: false,
 });
 
 const call = (name: string, args: string, callId = 'call_1') => ({

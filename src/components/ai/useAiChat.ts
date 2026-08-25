@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  cancelOpenAiStream,
   describeOpenAiFailure,
-  generateOpenAiText,
   isOpenAiAvailable,
   readOpenAiKeyStatus,
+  streamOpenAiText,
 } from '@/lib/openai/client';
 import { readOpenAiConfig } from '@/lib/openai/config';
 import { AI_TOOLS } from '@/lib/ai/tools/definitions';
@@ -93,6 +94,14 @@ export interface AiChatOptions {
 
 export interface AiChatController {
   status: AiChatStatus;
+  /**
+   * The reply as it is arriving, before it becomes a turn.
+   *
+   * Empty except while a request is in flight. The panel shows it as a live
+   * assistant bubble, which is replaced by the real turn when the request
+   * finishes.
+   */
+  streamingText: string;
   /** The sentence shown when the last request failed. */
   error: string | null;
   availability: AiChatAvailability;
@@ -122,6 +131,7 @@ export const useAiChat = ({
   executeTool,
 }: AiChatOptions): AiChatController => {
   const [status, setStatus] = useState<AiChatStatus>('idle');
+  const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<AiChatAvailability>('checking');
 
@@ -166,13 +176,6 @@ export const useAiChat = ({
     };
   }, []);
 
-  useEffect(
-    () => () => {
-      requestToken.current += 1;
-    },
-    []
-  );
-
   // Read inside the request callback rather than captured, so a reply appends
   // to the turns as they stand when it arrives.
   const messagesRef = useRef<AiChatMessage[]>(messages);
@@ -184,23 +187,76 @@ export const useAiChat = ({
   const executeRef = useRef(executeTool);
   executeRef.current = executeTool;
 
+  /** The stream the backend is running for this panel, if any. */
+  const streamId = useRef<string | null>(null);
+  /** Set when a stream came back stopped rather than finished. */
+  const wasCancelled = useRef(false);
+
+  /** Tells the backend to drop the connection, if there is one. */
+  const stopStream = useCallback(() => {
+    if (!streamId.current) {
+      return;
+    }
+
+    void cancelOpenAiStream(streamId.current).catch(() => {
+      // The stream had already finished. Nothing to stop, nothing to report.
+    });
+  }, []);
+
+  // Closing the app or the panel should not leave a generation running for a
+  // reply that has nowhere to go.
+  useEffect(
+    () => () => {
+      requestToken.current += 1;
+      stopStream();
+    },
+    [stopStream]
+  );
+
   const run = useCallback(async (history: AiChatMessage[]) => {
     requestToken.current += 1;
     const token = requestToken.current;
 
     setStatus('sending');
     setError(null);
+    setStreamingText('');
 
     const model = readOpenAiConfig().textModel;
+    const id = createId();
+
+    streamId.current = id;
+    wasCancelled.current = false;
 
     try {
       const result = await runTurn({
         messages: toTurnMessages(history),
         tools: TOOLS,
-        send: (input, tools) =>
-          generateOpenAiText({ model, input, tools, instructions: INSTRUCTIONS }),
+        send: async (input, tools) => {
+          // A second round starts a new paragraph rather than running into the
+          // text from the round before it.
+          setStreamingText((current) => (current ? `${current}\n\n` : current));
+
+          const turn = await streamOpenAiText({
+            model,
+            input,
+            tools,
+            instructions: INSTRUCTIONS,
+            streamId: id,
+            onDelta: (text) => {
+              if (token === requestToken.current) {
+                setStreamingText((current) => current + text);
+              }
+            },
+          });
+
+          if (turn.cancelled) {
+            wasCancelled.current = true;
+          }
+
+          return turn;
+        },
         execute: (name, args) => executeRef.current(name, args),
-        isAbandoned: () => token !== requestToken.current,
+        isAbandoned: () => token !== requestToken.current || wasCancelled.current,
       });
 
       if (token !== requestToken.current) {
@@ -231,7 +287,15 @@ export const useAiChat = ({
             }
       );
 
-      if (result.stoppedEarly) {
+      if (wasCancelled.current) {
+        trace.push({
+          id: createId(),
+          role: 'tool',
+          content: 'You stopped this reply part way through',
+          createdAt: now + trace.length,
+          toolName: 'stopped',
+        });
+      } else if (result.stoppedEarly) {
         trace.push({
           id: createId(),
           role: 'tool',
@@ -242,15 +306,21 @@ export const useAiChat = ({
         });
       }
 
+      // A stopped reply keeps whatever arrived. Those tokens were generated and
+      // paid for, and throwing away half an answer helps nobody.
       changeRef.current([
         ...messagesRef.current,
         ...trace,
-        {
-          id: createId(),
-          role: 'assistant',
-          content: result.text,
-          createdAt: Date.now(),
-        },
+        ...(result.text
+          ? [
+              {
+                id: createId(),
+                role: 'assistant' as const,
+                content: result.text,
+                createdAt: Date.now(),
+              },
+            ]
+          : []),
       ]);
       setStatus('idle');
     } catch (failure) {
@@ -262,6 +332,11 @@ export const useAiChat = ({
         failure instanceof EmptyTurnError ? failure.message : describeOpenAiFailure(failure)
       );
       setStatus('error');
+    } finally {
+      if (token === requestToken.current) {
+        streamId.current = null;
+        setStreamingText('');
+      }
     }
   }, []);
 
@@ -291,20 +366,30 @@ export const useAiChat = ({
     void run(messages);
   }, [messages, run]);
 
+  /**
+   * Stops the reply.
+   *
+   * The request token is deliberately left alone. The backend answers a stopped
+   * stream with whatever it had, and that partial reply is worth keeping, so
+   * this turn is still the one being waited for.
+   */
   const cancel = useCallback(() => {
-    requestToken.current += 1;
-    setStatus('idle');
-    setError(null);
-  }, []);
+    wasCancelled.current = true;
+    stopStream();
+  }, [stopStream]);
 
   // Moving to another conversation abandons whatever this one was waiting for,
   // and takes its error with it. An error about a request sent from a different
-  // note is noise here.
+  // note is noise here. The generation is stopped rather than left running for
+  // a reply nobody will read.
   useEffect(() => {
     requestToken.current += 1;
+    stopStream();
+    streamId.current = null;
     setStatus('idle');
     setError(null);
-  }, [conversationKey]);
+    setStreamingText('');
+  }, [conversationKey, stopStream]);
 
   const canRetry =
     status !== 'sending' &&
@@ -313,6 +398,7 @@ export const useAiChat = ({
 
   return {
     status,
+    streamingText,
     error,
     availability,
     sendMessage,

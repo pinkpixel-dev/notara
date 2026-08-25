@@ -85,6 +85,17 @@ All notable changes to the Notara project will be documented in this file.
   proposed, so you see the prompt, the model, and the size before it costs
   anything.
 
+### ⚡ Replies as they are written
+
+- The assistant's replies now stream in as they are written instead of appearing
+  all at once when the request finishes.
+- Stop is a real stop. Notara drops the connection to OpenAI, so the generation
+  ends rather than carrying on where you cannot see it.
+- Whatever had already arrived when you pressed Stop is kept, because you have
+  already paid for it, and the conversation notes that the reply was stopped
+  part way through.
+- Moving to another note or closing the panel stops the reply the same way.
+
 ### 🐛 Fixes
 
 - Changing a calendar entry's date now actually changes it. The calendar has

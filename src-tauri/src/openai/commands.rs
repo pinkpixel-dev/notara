@@ -12,7 +12,9 @@ use tauri::{AppHandle, Manager, Runtime};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine as _;
 
-use super::client::{self, ImageResult, InputItem, TextResult, ToolDefinition};
+use tauri::ipc::Channel;
+
+use super::client::{self, ImageResult, InputItem, StreamDelta, TextResult, ToolDefinition};
 use super::errors::OpenAiError;
 use super::secrets::{KeyStatus, KeyStore};
 
@@ -86,6 +88,47 @@ pub async fn openai_generate_text<R: Runtime>(
         max_output_tokens,
     )
     .await
+}
+
+/// Runs one turn and streams the reply as it is written.
+///
+/// The deltas go back over the channel the webview passed in; the return value
+/// is the finished turn, tool calls included. `stream_id` is the frontend's own
+/// identifier for this request, and the only thing `openai_cancel_stream` needs
+/// to stop it.
+#[tauri::command]
+pub async fn openai_stream_text<R: Runtime>(
+    app: AppHandle<R>,
+    model: String,
+    input: Vec<InputItem>,
+    instructions: Option<String>,
+    tools: Option<Vec<ToolDefinition>>,
+    max_output_tokens: Option<u32>,
+    stream_id: String,
+    on_delta: Channel<StreamDelta>,
+) -> Result<TextResult, OpenAiError> {
+    let store = key_store(&app)?;
+
+    client::generate_text_streaming(
+        &store,
+        &model,
+        instructions,
+        input,
+        tools.unwrap_or_default(),
+        max_output_tokens,
+        stream_id,
+        on_delta,
+    )
+    .await
+}
+
+/// Stops a streamed reply.
+///
+/// This drops the connection rather than only stopping the app from waiting, so
+/// the generation itself ends. An identifier that is not streaming is ignored.
+#[tauri::command]
+pub fn openai_cancel_stream(stream_id: String) {
+    client::cancel_stream(&stream_id);
 }
 
 /// Generates an image through the Images API.
