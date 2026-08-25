@@ -7,9 +7,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 /**
  * The sections of the app.
  *
- * AI Assistant is deliberately not here. It becomes a right-hand panel rather
- * than a section in Phase 5, so it lives in the header's overflow menu until
- * then instead of claiming a tab it is about to give up.
+ * The assistant is deliberately not here. It is a panel that opens beside any
+ * of these rather than a place you go, so it has its own header toggle next to
+ * the other panel controls instead of a tab of its own.
  */
 export const SECTIONS = [
   { name: 'Notes', icon: FileText, path: '/' },

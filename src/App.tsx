@@ -12,7 +12,6 @@ import HomePage from "./pages/HomePage";
 import TagsPage from "./pages/TagsPage";
 import ConstellationsPage from "./pages/ConstellationsPage";
 import VisionBoardPage from "./pages/VisionBoardPage";
-import AiAssistantPage from "./pages/AiAssistantPage";
 import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -36,7 +35,6 @@ const router = createBrowserRouter([
   { path: "/tags", element: <TagsPage /> },
   { path: "/constellations", element: <ConstellationsPage /> },
   { path: "/vision-board", element: <VisionBoardPage /> },
-  { path: "/ai-assistant", element: <AiAssistantPage /> },
   { path: "/calendar", element: <CalendarPage /> },
   { path: "/settings", element: <SettingsPage /> },
   { path: "/markdown-cheatsheet", element: <MarkdownCheatsheetPage /> },

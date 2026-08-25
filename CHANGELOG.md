@@ -2,6 +2,38 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.2.0 - August 25, 2026
+
+### 🤖 AI panel
+
+- The AI Assistant page is gone. The assistant is now a panel that opens beside
+  whatever you are working on, from any section of the app.
+- Open and close it with the sparkle button in the header, or with Ctrl+J. On a
+  Mac that is Cmd+J.
+- On desktop the panel is a column on the right that you can drag to the width
+  you want. The handle also takes the arrow keys, so you do not need a mouse.
+  Home makes it as wide as it goes, End as narrow.
+- Notara remembers the width and whether the panel was open, so it comes back
+  the way you left it.
+- On a phone the panel slides up over the content instead, leaving the section
+  behind it visible.
+- The chat has a proper waiting state, a Stop button while a reply is on its
+  way, a clear error message when something fails, and a Try again button that
+  resends your last message.
+- Stop means Notara stops waiting for the reply. The request has already gone to
+  OpenAI, so it still finishes there and still counts against your account.
+- The assistant will tell you it cannot open or change your files. That is true
+  for now. Searching, summarizing, and editing notes are the next stages, and
+  every change will be shown to you before anything is written.
+
+### 🧹 Maintenance
+
+- The old assistant component was 2,440 lines and did several things nobody
+  asked for. It was deleted rather than carried forward. The panel that replaced
+  it is eight small files.
+- The `/ai-assistant` route and its entry in the header overflow menu were
+  removed with it.
+
 ## 2.1.0 - August 23, 2026
 
 ### 🤖 OpenAI

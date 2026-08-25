@@ -12,6 +12,9 @@ import StorageStatusBadge from './StorageStatusBadge';
 import SectionTabs from './SectionTabs';
 import HeaderUtilityMenu from './HeaderUtilityMenu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import AiPanel from '@/components/ai/AiPanel';
+import AiPanelToggle from '@/components/ai/AiPanelToggle';
+import { useAiPanel } from '@/hooks/use-ai-panel';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -37,6 +40,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isOnTagsPage = location.pathname.startsWith('/tags');
+  const aiPanel = useAiPanel();
+  // Pulled out because the hook returns a fresh object every render, and the
+  // shortcut listener should not be torn down and rebound on each one.
+  const { toggle: toggleAiPanel } = aiPanel;
 
   const triggerSearchFocus = useCallback(() => {
     window.setTimeout(() => {
@@ -54,16 +61,30 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isModifier = event.metaKey || event.ctrlKey;
-      if (!isModifier || event.key.toLowerCase() !== 'k') {
+      if (!isModifier) {
         return;
       }
-      event.preventDefault();
-      handleSearchNotes();
+
+      const key = event.key.toLowerCase();
+
+      if (key === 'k') {
+        event.preventDefault();
+        handleSearchNotes();
+        return;
+      }
+
+      // J rather than a letter that stands for something. Every obvious
+      // candidate is taken: K is search, S saves, O imports, and A is select
+      // all inside the editor.
+      if (key === 'j') {
+        event.preventDefault();
+        toggleAiPanel();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSearchNotes]);
+  }, [handleSearchNotes, toggleAiPanel]);
 
   // Leaving the mobile breakpoint should not strand an open drawer over the
   // desktop layout.
@@ -176,6 +197,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <TooltipContent>Tags</TooltipContent>
           </Tooltip>
 
+          <AiPanelToggle isOpen={aiPanel.isOpen} onToggle={aiPanel.toggle} />
+
           <HeaderUtilityMenu />
         </div>
       </header>
@@ -189,7 +212,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         </Sheet>
       )}
 
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      {/* The section and the assistant share this row. The section keeps
+          `min-w-0` so a wide note cannot push the panel off the screen, and the
+          panel renders nothing at all while it is closed on desktop. */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>
+        <AiPanel panel={aiPanel} />
+      </div>
 
       {/* Rendered from the layout rather than the notes page, because the app
           can open on any section and old notes are worth offering wherever the

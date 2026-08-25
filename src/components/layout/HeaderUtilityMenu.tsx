@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, FileCode, MessageSquare, MoreVertical, Settings } from 'lucide-react';
+import { BookOpen, FileCode, MoreVertical, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,15 +13,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 /** In-app destinations that are not sections. */
 export const UTILITY_LINKS = [
-  {
-    name: 'AI Assistant',
-    icon: MessageSquare,
-    to: '/ai-assistant',
-    /**
-     * Here rather than in the section tabs because Phase 5 turns this into a
-     * right-hand panel. Giving it a tab now means taking one away later.
-     */
-  },
   { name: 'Settings', icon: Settings, to: '/settings' },
   { name: 'Markdown Cheat Sheet', icon: FileCode, to: '/markdown-cheatsheet' },
 ] as const;
