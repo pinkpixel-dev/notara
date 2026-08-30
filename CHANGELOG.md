@@ -2,6 +2,34 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.3.0 - August 30, 2026
+
+### 🔎 Find and replace
+
+- The Edit menu now opens Find or Find and Replace for the active note.
+- Ctrl+F or Cmd+F opens Find. Ctrl+H or Cmd+H opens Find and Replace.
+- Search is case-insensitive and literal, with a match count, wrapping previous
+  and next controls, Enter navigation, and Shift+Enter reverse navigation.
+- Every match is highlighted with the chosen accent color. The current match
+  uses a stronger highlight so it stays easy to follow while moving through a
+  note.
+- Replace changes the current match, while Replace all updates every match and
+  reports the number changed. These changes stay in the note's unsaved editor
+  buffer until Save is used.
+- Opening Find from Preview switches to Edit so the matching text can be
+  selected. Escape closes the controls and returns focus to the editor.
+
+### 🐛 Notes editor
+
+- The note editor now uses the full available height instead of stopping above
+  an empty lower section.
+- Long notes scroll inside the editor without disappearing behind the bottom of
+  the view, including on mobile screens and short windows.
+
+### 🏷️ Versioning
+
+- Updated the application version to 2.3.0.
+
 ## 2.2.0 - August 25, 2026
 
 ### 🤖 AI panel

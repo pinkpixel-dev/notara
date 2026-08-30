@@ -6,15 +6,15 @@
 
 Notara is a local-first note workspace for Markdown notes, tasks, calendar organization, vision boards, and optional AI tools. It runs as a React web app and a Tauri desktop app for Linux and Windows.
 
-[![Version](https://img.shields.io/badge/version-2.0.1-555.svg)](https://github.com/pinkpixel-dev/notara)
+[![Version](https://img.shields.io/badge/version-2.3.0-555.svg)](https://github.com/pinkpixel-dev/notara)
 [![License](https://img.shields.io/badge/license-Apache%202.0-555.svg)](LICENSE)
 
 ![Notara screenshot](screenshot.png)
 
 ## Current features
 
-- Markdown notes with source and preview views
-- Formatting toolbar, tags, pinning, and search
+- Markdown notes with edit, split, and preview views
+- Formatting toolbar, tags, pinning, note search, and in-note Find and Replace
 - Task lists with dates, times, and nested items
 - Calendar organization based on notes and tasks
 - Vision boards with movable image and text items
@@ -30,7 +30,7 @@ Notara is a local-first note workspace for Markdown notes, tasks, calendar organ
 - Desktop builds use a fixed app-data workspace. They do not select an arbitrary folder.
 - Open Markdown imports content into a new note. Save does not update the source file.
 - JSON is the current note source. Markdown files are generated mirrors.
-- Split editor view, Save As, external-change detection, reminders, and notifications do not exist yet.
+- Save As, external-change detection, reminders, and notifications do not exist yet.
 - Notara has no account system or cloud-sync integration.
 - AI needs the desktop app. Browser and Docker builds show AI as unavailable, because the API key is held by the desktop backend.
 - The hosted web layout has known small-screen and keyboard-access gaps.

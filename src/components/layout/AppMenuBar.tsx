@@ -19,9 +19,21 @@ import { useFileSystem } from '@/context/FileSystemContext';
 import { useNotes } from '@/context/NotesContextTypes';
 import { useTodo } from '@/context/TodoContextTypes';
 import { useTheme } from '@/context/ThemeContext';
+import {
+  FIND_IN_NOTE_EVENT,
+  FIND_REPLACE_IN_NOTE_EVENT,
+} from '@/components/notes/NoteFindReplaceBar';
 
 const dispatchEditorEvent = (eventName: string) => {
   window.dispatchEvent(new CustomEvent(eventName));
+};
+
+const requestEditorFind = (eventName: string) => {
+  const event = new CustomEvent(eventName, { cancelable: true });
+  window.dispatchEvent(event);
+  if (!event.defaultPrevented) {
+    toast({ title: 'Open a note to use Find and Replace.' });
+  }
 };
 
 const execCommand = (command: string) => {
@@ -334,6 +346,25 @@ const AppMenuBar: React.FC = () => {
           <MenubarItem onSelect={(event) => { event.preventDefault(); execCommand('redo'); }}>
             Redo
             <MenubarShortcut>Ctrl+Shift+Z</MenubarShortcut>
+          </MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem
+            onSelect={(event) => {
+              event.preventDefault();
+              requestEditorFind(FIND_IN_NOTE_EVENT);
+            }}
+          >
+            Find
+            <MenubarShortcut>Ctrl+F</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem
+            onSelect={(event) => {
+              event.preventDefault();
+              requestEditorFind(FIND_REPLACE_IN_NOTE_EVENT);
+            }}
+          >
+            Find and Replace
+            <MenubarShortcut>Ctrl+H</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onSelect={(event) => { event.preventDefault(); execCommand('cut'); }}>

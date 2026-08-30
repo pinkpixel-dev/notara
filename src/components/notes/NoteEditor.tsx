@@ -15,6 +15,8 @@ import SaveAsDialog from './SaveAsDialog';
 import NoteEditorHeader from './NoteEditorHeader';
 import { parentOf } from '@/lib/workspace/types';
 import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
+import NoteFindReplaceBar, { type NoteFindHighlightState } from './NoteFindReplaceBar';
+import NoteHighlightedTextarea from './NoteHighlightedTextarea';
 
 interface NoteEditorProps {
   note?: Note;
@@ -64,6 +66,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [isPinned, setIsPinned] = useState(note?.isPinned || false);
   const [isStarred, setIsStarred] = useState(note?.isStarred || false);
   const [mode, setMode] = useState<EditorMode>('edit');
+  const [findHighlight, setFindHighlight] = useState<NoteFindHighlightState>({
+    isOpen: false,
+    matches: [],
+    currentIndex: -1,
+  });
   const [isSaving, setIsSaving] = useState(false);
   // Set when a save is refused because the file moved underneath us. Holding it
   // here keeps the user's unsaved text in the editor while they decide.
@@ -422,6 +429,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           className="w-full shrink-0 text-2xl font-bold mb-4 bg-transparent border-none outline-none focus:ring-0"
         />
 
+        <NoteFindReplaceBar
+          content={content}
+          setContent={setContent}
+          textareaRef={editorRef}
+          mode={mode}
+          onModeChange={setMode}
+          onHighlightChange={setFindHighlight}
+        />
+
         {/* Split stacks below the medium breakpoint. Two columns on a phone
             gives two unusable ones, and Edit and Preview are still a tap away. */}
         <div
@@ -431,19 +447,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           )}
         >
           {mode !== 'preview' && (
-            <div className="flex min-h-0 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">
               <MarkdownToolbar textareaRef={editorRef} content={content} setContent={setContent} />
-              <textarea
-                ref={editorRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start typing..."
-                aria-label="Note content"
-                className={cn(
-                  'w-full flex-1 resize-none overflow-auto bg-transparent font-mono',
-                  'border-none outline-none focus:ring-0',
-                  mode === 'split' ? 'min-h-[40vh]' : 'min-h-[60vh]'
-                )}
+              <NoteHighlightedTextarea
+                content={content}
+                setContent={setContent}
+                textareaRef={editorRef}
+                mode={mode}
+                matches={findHighlight.matches}
+                currentIndex={findHighlight.currentIndex}
+                isHighlighting={findHighlight.isOpen && findHighlight.matches.length > 0}
               />
             </div>
           )}
