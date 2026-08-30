@@ -1,58 +1,60 @@
-<section class="notara-hero">
-  <span class="notara-hero__eyebrow">Notara v1.1.1</span>
+---
+// WelcomeHero.astro
+---
 
-  <div class="notara-hero__headline-row" aria-label="Notara highlights">
+<section class="notara-hero">
+  <div class="notara-hero__top">
     <div class="notara-hero__headline">
-      <h2 class="notara-hero__title-line" style="padding-block:0.5rem;" style="margin-bottom:-1.0rem;">Smart Notetaking.</h2>
-      <h3 class="notara-hero__subtitle-line">Todo Management.</h3>
-      <h3 class="notara-hero__subtitle-line">Visual Organization.</h3>
+      <span class="notara-hero__badge">Notara v2.5.0</span>
+      <h1 class="notara-hero__title">Smart Notetaking.</h1>
+      <h2 class="notara-hero__subtitle">Task Management &amp; Visual Planning.</h2>
     </div>
 
     <img
-      class="notara-hero__title-logo"
+      class="notara-hero__logo"
       src="/logo.png"
       alt="Notara logo"
-      width="180"
-      height="180"
+      width="80"
+      height="80"
       loading="eager"
       decoding="async"
     />
   </div>
 
   <p class="notara-hero__lede">
-    Notara is a local notes workspace that combines markdown editing, todos, vision boards, calendar
-    planning, and an AI assistant with image generation capabilities into one sleek desktop and web
-    experience.
+    Notara is a private, local-first personal workspace combining Markdown editing in real directory trees,
+    due-linked task reminders with desktop system tray integration, vision boards, calendar planning,
+    and an OpenAI assistant with interactive change reviews.
   </p>
 
   <img
     class="notara-hero__screenshot"
     src="/screenshot.png"
-    alt="Notara app screenshot"
+    alt="Notara application interface"
     loading="lazy"
     decoding="async"
-    style="width:100%;max-width:900px;border-radius:0.75rem;margin-block:1.5rem;display:block;margin-inline:auto;"
   />
 
-  <div class="notara-hero__actions" style="padding-block:0.5rem;">
+  <div class="notara-hero__actions">
     <a class="notara-hero__button" href="/getting-started/installation/">Install Notara</a>
-    <a class="notara-hero__button-secondary" href="/reference/storage-and-runtimes/">See runtimes</a>
+    <a class="notara-hero__button-secondary" href="/getting-started/overview/">Product Overview</a>
+    <a class="notara-hero__button-secondary" href="/reference/storage-and-runtimes/">Storage &amp; Runtimes</a>
   </div>
 
-  <div class="notara-hero__meta" style="padding-block:0.5rem;">
-    <article class="notara-hero__meta-card" style="padding-block:1.25rem;">
-      <strong>Default theme</strong>
-      <span>Dark theme with pink accents and adjustable glass intensity.</span>
+  <div class="notara-hero__features">
+    <article class="notara-hero__feature-card">
+      <strong>Local-First Markdown</strong>
+      <span>Your notes live as real Markdown files in normal folders, with atomic saves and preserved frontmatter.</span>
     </article>
 
-    <article class="notara-hero__meta-card" style="padding-block: 1.5rem;">
-      <strong>Runtime targets</strong>
-      <span>Browser SPA, Tauri desktop app, and Dockerized self-hosted web runtime.</span>
+    <article class="notara-hero__feature-card">
+      <strong>Due-Linked Task Reminders</strong>
+      <span>Tasks schedule native background desktop notifications via Rust, keeping timers active in the system tray.</span>
     </article>
 
-    <article class="notara-hero__meta-card">
-      <strong>Storage model</strong>
-      <span>Desktop writes readable files to app storage while web falls back to local browser storage.</span>
+    <article class="notara-hero__feature-card">
+      <strong>Interactive AI Assistant</strong>
+      <span>OpenAI text and image tools propose structured changes with visual diffs before touching your files.</span>
     </article>
   </div>
 </section>

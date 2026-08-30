@@ -19,6 +19,12 @@ All notable changes to the Notara project will be documented in this file.
 - Browser builds display reminders with an informational note indicating that
   background native delivery runs in the desktop app.
 
+### 🎨 Documentation and icons
+
+- Overhauled the documentation website with the flat Midnight theme, removing legacy glassmorphism, background gradients, floating animations, and glow halos.
+- Regenerated all Tauri, web, and documentation site icons from `public/icon.png`.
+- Redesigned the hero component with a clean, flat overview, centered the middle documentation content, and slimmed the right table of contents sidebar.
+
 ### 🏷️ Versioning
 
 - Updated the application version to 2.5.0.

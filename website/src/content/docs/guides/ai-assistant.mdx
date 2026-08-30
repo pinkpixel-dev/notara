@@ -1,68 +1,61 @@
 ---
 title: AI Assistant & Images
-description: How Notara handles Pollinations chat, image generation, and saved AI output.
+description: How Notara handles OpenAI chat, image generation, and user-reviewed diff proposals.
 ---
 
 ## What the assistant does
 
-Notara’s AI assistant is designed as a workspace helper rather than a separate chat app. The current
-implementation supports:
+Notara includes an AI assistant designed to help with thinking and drafting without taking control of
+your files.
 
-- drafting and rewriting help
-- note summaries
-- idea generation
-- image generation from prompts
-- session continuity while you move around the app
-- chat archive saving
-- saving conversations into markdown notes
-- saving generated images into vision boards or local media storage
+Key capabilities include:
 
-## Pollinations configuration
+- Drafting notes, outlines, and summaries
+- Brainstorming ideas and task breakdowns
+- Proposing structured edits to notes with visual diffs
+- Generating images for vision boards and notes
+- Maintaining chat context during your active session
 
-The app stores a small Pollinations config locally with:
+## OpenAI configuration
 
-- API key
-- text model
-- image model
+Notara connects directly to OpenAI using your own API key. No third-party accounts or intermediate proxy
+servers are used.
 
-The default values in code are:
+To set up the assistant:
 
-| Setting | Default |
-| --- | --- |
-| Text model | `gemini-fast` |
-| Image model | `flux` |
-| API key | empty |
+1. Navigate to **Settings** in the main menu.
+2. Enter your OpenAI API key in the AI Configuration section.
+3. Select your desired text model and image generation model.
 
-## How requests are routed
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Text model | `gpt-4o-mini` | Fast, high-quality responses for notes and task proposals. |
+| Image model | `dall-e-3` | Standard image generation model for vision boards. |
+| API key | User provided | Stored locally in desktop application state. |
 
-### Browser and hosted web runtime
+## Interactive diff proposals
 
-Web builds send AI requests through proxy endpoints:
+Notara enforces a strict **user-review policy** for all AI actions.
 
-- `/api/pollinations/text`
-- `/api/pollinations/image`
+When the assistant offers to edit an existing note or generate a new one:
 
-That design avoids browser CORS issues and allows an optional server-side token to be injected.
+1. The assistant produces a structured proposal rather than writing directly to disk.
+2. Notara displays a visual diff comparison showing additions and deletions.
+3. You can review the changes and choose **Apply Changes** or **Dismiss**.
+4. Your files are only modified after your explicit approval.
 
-### Tauri desktop runtime
+## Image generation
 
-Desktop builds do not rely on those browser routes. Instead, they use Tauri’s native HTTP plugin to
-talk directly to `https://gen.pollinations.ai/` endpoints.
+You can request images directly in the assistant chat:
 
-That split matters because it keeps the desktop app functional even outside a hosted proxy setup.
+- Generated images render in the chat thread.
+- Click **Add to Vision Board** to place the image onto an active board.
+- Click **Save Image** to store the asset into your workspace `.notara/media/` directory.
 
-## Saving AI output
+## Privacy and security
 
-Generated and imported images can be stored in the local workspace under `data/media/`. Saved AI
-conversation archives are written to `data/ai/conversations.json` when filesystem access is
-available.
-
-## Token behavior
-
-If you provide a Pollinations token, Notara normalizes it into a `Bearer` authorization header. If
-you do not, the app still works for flows that do not require an authenticated token, and users can
-also enter their own key in Settings.
-
-## Accounts
-
-Notara has no account system. Pollinations only needs its provider key during the current OpenAI transition.
+- **No telemetry or data logging:** Your notes are never sent to external servers unless you explicitly
+  ask the assistant to analyze them.
+- **Direct API communication:** Desktop builds communicate directly with OpenAI's API endpoints using
+  Tauri's native HTTP transport.
+- **Local storage:** Conversation history is stored locally in your workspace.

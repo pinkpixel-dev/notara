@@ -1,69 +1,56 @@
 ---
 title: Release Notes
-description: Highlights from the current Notara release and the recent product direction.
+description: Release history and version highlights for Notara.
 ---
 
-## Current release
+## Current release: Notara 2.5.0
 
-**Notara 2.4.0** is the current release documented across this site. It formalizes Notara as a
-local-first workspace with desktop distribution, Docker support, richer markdown handling, and a
-stronger midnight visual identity.
+**Released August 30, 2026.**
 
-## 2.4.0 highlights
+Notara 2.5.0 introduces native due-linked task reminders and system tray integration for desktop builds,
+alongside a finalized flat surface design system.
 
-### Visual system
+### 2.5.0 highlights
 
-- midnight plus pink is now the default theme pairing
-- glass styling was expanded across the app
-- a transparency-to-frost control now adjusts glass intensity
-- the top menu bar and header actions were restyled to match the new visual system
+#### Task reminders and background delivery
 
-### Notes and markdown
+- Enable due-linked reminders on top-level tasks.
+- Keep task reminders aligned with the parent list date and task time.
+- Deliver native desktop notifications through the Rust backend.
+- Close the window to hide Notara in the system tray while timers stay active.
+- Quit Notara cleanly from the system tray menu.
+- Reconcile missed reminders at startup with a single overdue alert.
+- Automatically cancel reminders when a task is completed or deleted.
+- Automatically reschedule reminders when the list date or task time changes.
 
-- save button and File menu actions now flush note data immediately
-- keyboard shortcuts support save active note and save all
-- markdown preview gained better code highlighting and GitHub-flavored tables
-- the markdown toolbar now includes block styles, inline styles, links, images, color, and highlight tools
+#### Local-first Markdown workspace
 
-### AI workflows
+- Real nested directory organization and folder navigation.
+- Preserved YAML frontmatter and atomic file replacement in Rust.
+- Pinned note hoisting (up to five notes) and dedicated starred filtering.
+- Single-lane Auto Save queue with external edit conflict detection.
 
-- Pollinations settings now support API key, text model, and image model configuration
-- AI chat state persists while navigating during a session
-- chats can be archived more reliably and stored as markdown notes
-- generated images can be saved directly to vision boards or local media
+#### AI Assistant
 
-### Visual planning
+- OpenAI text and image generation using your own API key.
+- Safe execution loop where the assistant produces visual diff proposals for user review before saving.
 
-- vision board items can now be resized
-- text cards support inline editing with save and cancel controls
-- item colors and board-level color filters were added
-- calendar now uses Upcoming and Selected Date tabs plus a Today shortcut
+#### Design system
 
-### Delivery and packaging
-
-- Linux desktop bundles are available as `.deb`, `.rpm`, and `AppImage`
-- the repository includes a Windows NSIS installer workflow
-- Docker support packages the web runtime plus Pollinations proxy endpoints
-- desktop storage automatically lives in the Tauri app-data workspace
-
-## Other notable recent direction
-
-The repo history and changelog show a consistent shift toward a cleaner, more usable dark workspace:
-
-- older cosmic flourishes were reduced in favor of cleaner surfaces
-- glass palettes were unified and made more believable
-- layout complexity was reduced by removing nested panel structures
-- navigation around starred notes, tags, docs, and settings was made more direct
+- Minimalist Midnight theme (`hsl(240, 5%, 8%)`) with flat elevated surfaces and crisp typography.
+- Complete removal of legacy glassmorphism, background gradients, and glow halos.
 
 ## Download links
 
-- [Notara_2.4.0_amd64.deb](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.4.0_amd64.deb)
-- [Notara-2.4.0-1.x86_64.rpm](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-2.4.0-1.x86_64.rpm)
-- [Notara_2.4.0_amd64.AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.4.0_amd64.AppImage)
-- [Notara_2.4.0_x64-setup.exe](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.4.0_x64-setup.exe)
+- [Notara_2.5.0_amd64.deb](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.deb)
+- [Notara-2.5.0-1.x86_64.rpm](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-2.5.0-1.x86_64.rpm)
+- [Notara_2.5.0_amd64.AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.AppImage)
+- [Notara_2.5.0_x64-setup.exe](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_x64-setup.exe)
 
-## Changelog source
+## Package checksums
 
-This page is a curated summary of the repository’s `CHANGELOG.md`, `README.md`, `OVERVIEW.md`, and
-runtime code. If you want to maintain future docs consistency, updating those source documents first
-will keep the docs site easy to refresh.
+```text
+c5ae61127ad26965fb086b47a91047e47af6cec7fb94e420f20a28c0a62d297f  Notara_2.5.0_amd64.AppImage
+8ebadec4533f9db1a3f30965e378777797c54f4247ea23a49bf4f7cb90030778  Notara_2.5.0_amd64.deb
+3cda6349af874dd460682f356d1fcb2e392bd9b621c85b79db6b03e791fe40fa  Notara-2.5.0-1.x86_64.rpm
+```

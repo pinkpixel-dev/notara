@@ -7,91 +7,87 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## What Notara is
 
-Notara is a local-first personal workspace built with React, TypeScript, and Vite. The app ships as
-a browser SPA, a Tauri desktop app, and a Dockerized web runtime. Its center of gravity is markdown
-notes, but the product also includes task planning, visual boards, calendar organization, and AI
-tools without requiring a cloud account.
+Notara is a local-first personal workspace built with React, TypeScript, Vite, and Tauri 2. The app
+runs as a desktop application on Linux and Windows, as well as in modern web browsers. Its center
+of gravity is Markdown notes stored in real folders on your computer, paired with task planning,
+vision boards, calendar organization, and an AI assistant.
 
-The current release emphasizes three ideas:
+Notara is built on three core principles:
 
-1. **Keep data readable.** Desktop data is stored in JSON and markdown files inside a Notara
-   workspace rather than a hidden proprietary database.
-2. **Make planning multi-modal.** Notes, todos, vision boards, and calendar views all reference the
-   same personal workflow instead of living in separate tools.
-3. **Treat AI as an in-app tool, not the product.** The assistant helps with drafting, summaries,
-   and image generation, but your workspace remains usable without external setup.
+1. **Keep data in open formats.** Notes are normal Markdown files with standard YAML frontmatter in
+   your own folders, not records locked in a proprietary database.
+2. **Bring planning tools together.** Notes, dated tasks, vision boards, and calendar views work
+   in one workspace so you do not need four disconnected tools.
+3. **Keep AI helpful and safe.** The assistant drafts, summarizes, and generates images using OpenAI,
+   proposing changes as visual diffs for you to approve before modifying any file.
 
 ## Core areas of the app
 
 <CardGrid stagger>
-  <Card title="Notes">
-    Create markdown notes with live editing, preview, toolbar shortcuts, inline color accents,
-    highlights, tags, pinning, and save actions from buttons, menus, or keyboard shortcuts.
+  <Card title="Notes and Directory Trees">
+    Create and edit Markdown notes inside nested folders. Features include live preview, a formatting
+    toolbar, syntax-highlighted code blocks, table editing, pinned note hoisting, starred filters,
+    and single-lane Auto Save.
   </Card>
-  <Card title="Tags and starred notes">
-    Use color-coded tags, manage them from Settings, and keep important notes surfaced through the
-    starred flow in navigation and note headers.
-  </Card>
-  <Card title="Todos">
-    Build dated lists with nested sub-items, time fields, completion states, and an in-app calendar
-    picker that works cleanly in desktop builds.
-  </Card>
-  <Card title="Calendar">
-    See upcoming items, jump back to today quickly, and inspect selected-day content from a tighter
-    right-side panel layout.
+  <Card title="Tasks and Due-Linked Reminders">
+    Build dated to-do lists with nested sub-items and scheduled times. Enable reminders to receive
+    native desktop notifications managed by Rust and kept active via the system tray.
   </Card>
   <Card title="Vision Boards">
-    Organize image and text cards with drag-and-drop positioning, resizing, inline editing, item
-    color coding, and saved board filters.
+    Organize image and text cards with drag-and-drop placement, resizing, inline editing, color
+    accents, and board filters.
+  </Card>
+  <Card title="Calendar">
+    Review upcoming tasks and events, jump to today, and view selected-day notes and items in a
+    clean split layout.
   </Card>
   <Card title="AI Assistant">
-    Run Pollinations text and image generation, keep chat state during navigation, archive
-    conversations, save outputs to notes, and push generated images into vision boards or local media.
+    Chat with OpenAI models to brainstorm, draft, and summarize. When the assistant proposes note
+    or task edits, you review the diff before applying it.
+  </Card>
+  <Card title="Settings and Customization">
+    Choose between Midnight and Light themes, switch interface fonts, configure your OpenAI key,
+    and toggle Auto Save.
   </Card>
 </CardGrid>
 
 ## Design language
 
-The app’s theme system exposes four modes, but the default for v1.1.0 is **Midnight** with a
-**Rose Pink** accent. That default gives you:
+Notara uses a clean, flat design system built around semantic surface tokens:
 
-- a dark layered background with subtle depth gradients
-- frosted-glass panels controlled by a glass intensity slider
-- pink as the active accent for links, highlights, buttons, and focus states
-- a modern dense workspace layout designed for long-form use
+- **Midnight theme:** Dark charcoal background (`hsl(240, 5%, 8%)`), flat elevated panels, and crisp text.
+- **Light theme:** Clean, high-contrast light surfaces for daytime work.
+- **Accent choices:** Crisp pink, blue, orange, purple, or green accents for active states and highlights.
+- **Focused UI:** No gradients, no glass blur, no glow halos, and no fake depth.
 
-This docs site borrows that same visual direction so the transition from docs to product feels
-natural.
+## Local-first architecture
 
-## Local-first by default
+Notara does not require user accounts or cloud servers:
 
-Notara has no account or cloud-sync system. In the current development branch:
-
-- desktop builds automatically write into the Tauri app-data workspace
-- browser builds use browser storage when local files are unavailable
-- the app opens directly without sign-in
+- **Desktop builds:** Rust handles folder creation, atomic file replacements, revision checks, and backup snapshots.
+- **Web builds:** Connect to local folders using the File System Access API in supported browsers.
+- **Metadata sidecar:** Pins, stars, to-dos, vision boards, and reminder queues live in `.notara/` inside your workspace.
 
 ## Technology snapshot
 
 | Layer | Details |
 | --- | --- |
-| Frontend | React 19.1.1, TypeScript 5.5.3, Vite 7.3.1 |
-| Routing | React Router 7.9.2 |
-| Styling | TailwindCSS 3.4.17, shadcn/ui, Radix UI |
-| Desktop | Tauri 2.10.x with FS, HTTP, dialog, and log plugins |
-| AI transport | Pollinations via web proxy routes or Tauri native HTTP |
-| Persistence | Tauri app-data workspace, browser localStorage, and File System Access API where available |
+| Frontend | React 19, TypeScript, Vite |
+| Routing | React Router 7 |
+| Styling | TailwindCSS, Radix UI primitives, semantic tokens |
+| Desktop Runtime | Tauri 2 with Rust file engine and notification system |
+| AI Integration | OpenAI API (text generation, diff proposals, and image models) |
+| Storage | Local Markdown files and `.notara/` sidecar storage |
 
-## What changed in v1.1.0
+## Recent updates
 
-The current release is where Notara’s identity sharpened. Highlights include:
+Notara 2.5.0 introduces:
 
-- midnight plus pink as the default visual setup
-- broader glass styling and adjustable frost intensity
-- Linux and Windows desktop distribution
-- Docker delivery for self-hosted web runtime
-- improved markdown preview and save workflows
-- stronger AI settings, persistence, and save targets
-- richer vision board editing and filtering
+- Native due-linked task reminders with background system tray support
+- Startup reconciliation for overdue tasks
+- Real nested directory organization and folder navigation
+- Pinned note hoisting (up to five pins) and dedicated starred filtering
+- Single-lane serialized Auto Save with conflict review
+- OpenAI assistant with structured diff proposals
 
-For exact release details, see [Release Notes](/reference/releases/).
+For complete release history, see [Release Notes](/reference/releases/).

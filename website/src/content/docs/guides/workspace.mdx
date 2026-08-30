@@ -1,100 +1,85 @@
 ---
 title: Workspace & Content Model
-description: How notes, tags, todos, vision boards, and saved markdown files fit together in Notara.
+description: How notes, directory trees, frontmatter metadata, and the .notara sidecar work together.
 ---
 
-## The workspace structure
+## The local-first workspace
 
-Notara stores multiple kinds of content, but they all orbit the same personal workspace. Based on
-the current codebase, these are the core entities:
+Notara operates directly on a folder on your computer. When you choose or open a workspace, Notara
+treats the folder as the single source of truth for your notes.
 
-- **Note**: title, markdown content, timestamps, tag list, and pinned state
-- **NoteTag**: id, display name, and color
-- **TodoList**: title, date, time, and an array of todo items
-- **TodoItem**: text, checked state, optional sub-items, and time
-- **VisionBoard**: board name and an array of positioned items
-- **VisionBoardItem**: text or image content, position, optional size, and optional accent color
-- **AI conversation snapshot**: saved assistant session title, created timestamp, and message history
-
-## What gets saved where
-
-When the filesystem layer is available, Notara creates a structured workspace under `data/` and
-writes content into readable files:
+Unlike applications that hide your content in an internal SQLite database or bundle notes into large
+JSON files, Notara writes standard Markdown files (`.md`) directly into your directories.
 
 ```text
-data/
-  ai/
-    conversations.json
-  media/
-  notes/
-    notes.json
-    tags.json
-    markdown/
-      note-<id>.md
-  settings/
-  todos/
-    todos.json
-  vision-boards/
-    vision-boards.json
+my-workspace/
+  ├── Projects/
+  │   ├── Roadmap.md
+  │   └── Design Notes.md
+  ├── Daily/
+  │   └── 2026-08-30.md
+  ├── Ideas.md
+  └── .notara/
+      ├── workspace.json
+      ├── todos.json
+      ├── reminders.json
+      ├── vision-boards.json
+      ├── media/
+      └── backups/
 ```
 
-That means the app does not just save opaque JSON blobs. It also exports notes into individual
-markdown files with frontmatter metadata for title, timestamps, pinned state, and tag names.
+## How files and metadata are stored
 
-## Notes workflow
+### Markdown notes
 
-The note editor is the center of the workspace. Current capabilities include:
+- **File-based identity:** A note's identity is its relative path in the workspace (such as `Projects/Roadmap.md`).
+- **File renaming:** Changing a note's title renames the file on disk.
+- **Preserved frontmatter:** If your note has YAML frontmatter, Notara preserves any custom keys, comments,
+  and formatting. The app only updates the standard metadata keys it manages (`created`, `updated`).
 
-- live markdown editing with preview
-- formatting toolbar actions for headings, lists, quotes, links, images, inline styles, color
-  accents, and highlights
-- save actions from the toolbar, file menu, `Ctrl/Cmd+S`, and `Ctrl/Cmd+Shift+S`
-- pinning from the editor or note list
-- color-coded tags with management in Settings
-- syntax-highlighted code and GitHub-flavored markdown rendering
+### The `.notara` sidecar folder
 
-## Visual organization
+To keep your Markdown documents clean and prevent unnecessary file rewrites, workspace-specific state
+lives in a hidden `.notara/` directory at the root of your workspace:
 
-Notara gives you multiple views over the same personal content instead of forcing everything into a
-single list.
+| File | Purpose |
+| --- | --- |
+| `workspace.json` | Stores expanded folder state, pinned note paths, and starred note paths. |
+| `todos.json` | Stores your to-do lists, task items, sub-items, and due times. |
+| `reminders.json` | Persistent ledger for scheduled reminders and delivery tracking. |
+| `vision-boards.json` | Layout, card positions, text content, and color settings for vision boards. |
+| `media/` | Local storage for images added to vision boards or notes. |
+| `backups/` | Automatic backup snapshot created whenever a note is overwritten. |
 
-### Vision Boards
+## File operations and safety
 
-Vision boards support:
+Notara is built to prevent data loss when editing notes:
 
-- draggable image and text cards
-- item resizing
-- inline note editing
-- per-item color coding
-- saved color filters per board
-- direct saves of generated AI images into boards or local media
+### Atomic writes in Rust
 
-### Calendar
+On desktop, saving a note does not write directly into the existing file. Instead, the Rust backend
+writes the content to a temporary sibling file, flushes data to disk with `sync_all`, and performs an
+atomic rename over the target file.
 
-The calendar combines note and todo context with:
+### Revision guarding and conflict detection
 
-- an upcoming view for the next five events
-- a selected-date panel
-- a quick jump back to today
-- a narrower right panel designed for faster scanning
+Every time a note is read from disk, Notara records a revision stamp based on modified timestamp and file
+size. When saving:
 
-### Starred and tagged content
+1. The backend verifies that the file on disk still matches the expected revision.
+2. If another application (like VS Code or Obsidian) modified the file in the meantime, Notara detects
+   the mismatch and prompts you with a conflict resolution dialog.
+3. You can review both versions and choose whether to keep your changes or reload the disk version.
 
-Pinned notes surface in navigation and the dedicated starred page, while tags can be created,
-renamed, recolored, and deleted from the settings flow.
+### Auto Save
 
-## Browser fallback behavior
+Auto Save can be toggled in **Settings**. When enabled, edits queue a background save after 1.5 seconds
+of inactivity. All saves run through a single serialized write lane so rapid edits cannot interleave or
+corrupt file states.
 
-If Notara cannot access the local filesystem, it falls back to browser storage. The code currently
-persists notes, tags, and vision boards in `localStorage`, which keeps the web app usable even
-without Tauri or File System Access API support.
+## Directory organization
 
-## Why this matters
-
-This content model is what makes Notara portable. You can use the same workspace as:
-
-- a desktop-first personal vault
-- a browser-only notes app
-- a self-hosted Docker deployment
-
-The interface changes by runtime, but the underlying data shape stays familiar.
+- **Nested folders:** Create, rename, move, and delete folders directly inside Notara's sidebar tree.
+- **Hoisted pins:** Pin up to five notes to keep them visible at the top of the sidebar without
+  altering their location on disk.
+- **Starred filter:** Star any note to quickly locate it using the Starred toggle in the sidebar.

@@ -7,8 +7,8 @@ export default defineConfig({
       title: 'Notara Docs',
       titleDelimiter: ' | ',
       description:
-        'Guides, setup instructions, release downloads, and architecture notes.',
-      tagline: 'Notetaking, task management, and visual organization for your local workspace.',
+        'Official documentation for Notara, the local-first Markdown workspace.',
+      tagline: 'Notes, task management, and visual organization in your local workspace.',
       logo: {
         src: './public/logo.png',
         alt: 'Notara logo',

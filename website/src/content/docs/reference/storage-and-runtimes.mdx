@@ -1,73 +1,65 @@
 ---
 title: Storage & Runtime Targets
-description: Reference notes for where Notara stores data and how each runtime behaves.
+description: Reference documentation for file paths, security boundaries, and runtime targets in Notara.
 ---
 
 ## Runtime targets
 
-Notara currently supports three primary ways to run:
+Notara runs in two main environments:
 
-| Target | Runtime | What it is for |
+| Target | Runtime | Key Features |
 | --- | --- | --- |
-| Web | Vite SPA or Cloudflare Pages | Fast browser access and hosted deployment |
-| Desktop | Tauri 2 shell | Native-feeling Linux and Windows app with local app-data workspace |
-| Docker | Node 20 web runtime | Self-hosted browser deployment with Pollinations proxy routes |
+| Desktop App | Tauri 2 (Linux & Windows) | Full filesystem access, atomic writes, system tray background reminders, and native notifications. |
+| Web Application | Modern Web Browser | Uses File System Access API to edit local folders without installation. |
 
-## Desktop storage
+## Desktop file engine & security
 
-Tauri builds automatically use an app-data workspace. On Linux, that resolves to:
+On desktop builds, all file operations run through a Rust backend engine designed with strict safety boundaries:
 
-```text
-~/.local/share/dev.pinkpixel.notara/workspace/
-```
+### Path traversal & symlink guards
 
-If `XDG_DATA_HOME` is set, Tauri uses that location instead.
+- **Held root:** When a workspace folder is chosen, its canonical path is held in secure backend state.
+- **Strict path verification:** All commands receive relative paths from the webview and verify that the target
+  resolves inside the approved workspace root.
+- **Symlink protection:** Operations canonicalize symlinks before execution and refuse any path that escapes
+  the workspace root.
 
-The code marks this as the default desktop root, which means users do not need to choose a folder
-manually for normal desktop usage.
+### Atomic write lifecycle
 
-## Browser storage
+When saving a file:
 
-The browser runtime can use two local-first fallback paths:
+1. A temporary file is written in the same directory (`.filename.tmp`).
+2. Data is committed with `sync_all` to ensure physical disk persistence.
+3. The previous file is copied to `.notara/backups/`.
+4. The temporary file is atomically renamed over the target file.
 
-- **File System Access API** when available in a secure context
-- **localStorage** when direct directory access is unavailable
+## Task reminders and background delivery
 
-Browser directory handles are persisted in IndexedDB so Notara can reconnect to a previously granted
-folder when possible.
+Notara 2.5.0 includes a native background reminder system for scheduled tasks:
 
-## Filesystem readiness states
+### Rust scheduler & ledger
 
-The filesystem context tracks a small runtime state machine:
+- Reminder schedules and delivery state are tracked in `.notara/reminders.json`.
+- The Rust runtime schedules precise OS timers for upcoming reminders.
+- Completing or deleting a task immediately cancels its scheduled timer.
+- Changing a task's due date or time automatically reschedules its timer.
 
-- `unsupported`
-- `uninitialized`
-- `no-directory`
-- `needs-permission`
-- `ready`
-- `error`
+### System tray minimization
 
-This allows the app to distinguish between "the browser cannot do this", "we need permission", and
-"the local workspace is mounted and writable".
+- When you close the Notara desktop window, the app minimizes to the system tray rather than exiting.
+- Background timers remain active to deliver scheduled notifications on time.
+- To exit the app completely, choose **Quit Notara** from the system tray context menu.
 
-## AI transport differences
+### Startup reconciliation
 
-| Runtime | Text route | Image route |
-| --- | --- | --- |
-| Web / Cloudflare / Docker | `/api/pollinations/text` | `/api/pollinations/image` |
-| Tauri desktop | `https://gen.pollinations.ai/v1/chat/completions` | direct `https://gen.pollinations.ai/image/...` URL |
+If your computer was asleep or Notara was closed when a reminder was scheduled to fire:
 
-Desktop requests are sent with the Tauri HTTP plugin, including support for authorization headers.
+- At next startup, Notara scans the reminder ledger for overdue items.
+- It delivers a single overdue notice for missed tasks.
+- It does not repeat or loop notifications.
 
-## Architectural snapshot
+## AI transport layer
 
-At a high level, the current app layers look like this:
-
-1. React routes and page components define the note, todo, AI, calendar, and settings surfaces.
-2. Context providers manage notes, todos, theme settings, and filesystem access.
-3. The filesystem layer decides whether to use Tauri app storage, browser folder handles, or local
-   fallback storage.
-4. Pollinations helpers choose either proxy routes or native desktop HTTP based on runtime.
-
-That split is why Notara can keep one shared frontend while still behaving like a desktop app when it
-needs to.
+- **Desktop runtime:** Uses Tauri's native HTTP client to communicate directly with `https://api.openai.com/v1/`.
+- **Browser runtime:** Connects to OpenAI via standard `fetch` with browser-stored API credentials.
+- **Zero intermediate servers:** Notara never routes prompts through external proxy servers.
