@@ -3,8 +3,6 @@ title: Product Overview
 description: What Notara is, who it is for, and how the major features fit together.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
-
 ## What Notara is
 
 Notara is a local-first personal workspace built with React, TypeScript, Vite, and Tauri 2. The app
@@ -23,33 +21,36 @@ Notara is built on three core principles:
 
 ## Core areas of the app
 
-<CardGrid stagger>
-  <Card title="Notes and Directory Trees">
-    Create and edit Markdown notes inside nested folders. Features include live preview, a formatting
-    toolbar, syntax-highlighted code blocks, table editing, pinned note hoisting, starred filters,
-    and single-lane Auto Save.
-  </Card>
-  <Card title="Tasks and Due-Linked Reminders">
-    Build dated to-do lists with nested sub-items and scheduled times. Enable reminders to receive
-    native desktop notifications managed by Rust and kept active via the system tray.
-  </Card>
-  <Card title="Vision Boards">
-    Organize image and text cards with drag-and-drop placement, resizing, inline editing, color
-    accents, and board filters.
-  </Card>
-  <Card title="Calendar">
-    Review upcoming tasks and events, jump to today, and view selected-day notes and items in a
-    clean split layout.
-  </Card>
-  <Card title="AI Assistant">
-    Chat with OpenAI models to brainstorm, draft, and summarize. When the assistant proposes note
-    or task edits, you review the diff before applying it.
-  </Card>
-  <Card title="Settings and Customization">
-    Choose between Midnight and Light themes, switch interface fonts, configure your OpenAI key,
-    and toggle Auto Save.
-  </Card>
-</CardGrid>
+**Notes and Directory Trees**
+
+Create and edit Markdown notes inside nested folders. Features include live preview, a formatting
+toolbar, syntax-highlighted code blocks, table editing, pinned note hoisting, starred filters,
+and single-lane Auto Save.
+
+**Tasks and Due-Linked Reminders**
+
+Build dated to-do lists with nested sub-items and scheduled times. Enable reminders to receive
+native desktop notifications managed by Rust and kept active via the system tray.
+
+**Vision Boards**
+
+Organize image and text cards with drag-and-drop placement, resizing, inline editing, color
+accents, and board filters.
+
+**Calendar**
+
+Review upcoming tasks and events, jump to today, and view selected-day notes and items in a
+clean split layout.
+
+**AI Assistant**
+
+Chat with OpenAI models to brainstorm, draft, and summarize. When the assistant proposes note
+or task edits, you review the diff before applying it.
+
+**Settings and Customization**
+
+Choose between Midnight and Light themes, switch interface fonts, configure your OpenAI key,
+and toggle Auto Save.
 
 ## Design language
 
@@ -90,4 +91,4 @@ Notara 2.5.0 introduces:
 - Single-lane serialized Auto Save with conflict review
 - OpenAI assistant with structured diff proposals
 
-For complete release history, see [Release Notes](/reference/releases/).
+For complete release history, see [Release Notes](/reference/releases).

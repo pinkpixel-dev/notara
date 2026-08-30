@@ -2,6 +2,20 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.5.1 - August 30, 2026
+
+### 🌐 Documentation website
+
+- Migrated documentation site from Astro + Starlight to Docusaurus 3 Classic
+- Replaced all Starlight-specific MDX components (`<Card>`, `<CardGrid>`, `<Steps>`) with plain Markdown and custom React components
+- Ported WelcomeHero from Astro component to React TSX
+- Applied Midnight theme tokens to Docusaurus CSS variable system
+- Configured dark-only color mode with pink accent
+- Set `routeBasePath: '/'` so docs serve at root (no `/docs/` prefix)
+- Added DM Sans + DM Mono font pairing
+- Sidebar TOC now works correctly out of the box
+- Cloudflare Pages deploy scripts updated for Docusaurus `build/` output dir
+
 ## 2.5.0 - August 30, 2026
 
 ### 🔔 Task reminders

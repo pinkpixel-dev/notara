@@ -1,0 +1,604 @@
+/* ==========================================================================
+   Notara Docs — Midnight Theme
+   Matches Notara's flat surface design system.
+   No gradients, no glass, no glow, no fake depth.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Font import
+   -------------------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+/* --------------------------------------------------------------------------
+   Docusaurus CSS variable overrides — dark (only) mode
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme='dark'] {
+  /* Brand accent — Pink 500 */
+  --ifm-color-primary: hsl(330, 81%, 60%);
+  --ifm-color-primary-dark: hsl(330, 81%, 54%);
+  --ifm-color-primary-darker: hsl(330, 81%, 50%);
+  --ifm-color-primary-darkest: hsl(330, 81%, 42%);
+  --ifm-color-primary-light: hsl(330, 81%, 66%);
+  --ifm-color-primary-lighter: hsl(330, 81%, 72%);
+  --ifm-color-primary-lightest: hsl(330, 81%, 82%);
+
+  /* Surfaces */
+  --ifm-background-color: hsl(240, 5%, 8%);
+  --ifm-background-surface-color: hsl(240, 5%, 11%);
+  --ifm-navbar-background-color: hsl(240, 5%, 10%);
+  --ifm-footer-background-color: hsl(240, 5%, 6%);
+  --ifm-toc-border-color: hsl(240, 4%, 20%);
+  --ifm-hr-border-color: hsl(240, 4%, 20%);
+
+  /* Borders */
+  --ifm-color-emphasis-200: hsl(240, 4%, 20%);
+  --ifm-color-emphasis-300: hsl(240, 4%, 26%);
+  --ifm-color-emphasis-400: hsl(240, 4%, 32%);
+  --ifm-color-emphasis-600: hsl(240, 5%, 55%);
+
+  /* Text */
+  --ifm-font-color-base: hsl(0, 0%, 92%);
+  --ifm-font-color-secondary: hsl(240, 5%, 70%);
+  --ifm-heading-color: hsl(0, 0%, 96%);
+  --ifm-link-color: hsl(330, 81%, 64%);
+  --ifm-link-hover-color: hsl(330, 81%, 76%);
+
+  /* Typography */
+  --ifm-font-family-base: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ifm-font-family-monospace: 'DM Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.65;
+
+  /* Code */
+  --ifm-code-background: hsl(240, 5%, 13%);
+  --ifm-code-border-radius: 0.25rem;
+  --ifm-code-font-size: 0.875em;
+  --ifm-pre-background: hsl(240, 5%, 10%);
+
+  /* Sidebar */
+  --ifm-sidebar-width: 260px;
+  --doc-sidebar-width: 260px;
+
+  /* Navbar */
+  --ifm-navbar-height: 3.5rem;
+  --ifm-navbar-shadow: none;
+
+  /* Cards / misc */
+  --ifm-global-radius: 0.5rem;
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: none;
+}
+
+/* --------------------------------------------------------------------------
+   Base reset
+   -------------------------------------------------------------------------- */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* --------------------------------------------------------------------------
+   Navbar
+   -------------------------------------------------------------------------- */
+.navbar {
+  border-bottom: 1px solid hsl(240, 4%, 18%);
+  backdrop-filter: none;
+  background-color: var(--ifm-navbar-background-color);
+}
+
+.navbar__title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+.navbar__logo {
+  height: 2rem;
+  width: auto;
+  border-radius: 0.375rem;
+}
+
+.navbar__link {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: hsl(240, 5%, 70%);
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: var(--ifm-font-color-base);
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
+.theme-doc-sidebar-container {
+  border-right: 1px solid hsl(240, 4%, 18%) !important;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-container {
+  background-color: hsl(240, 5%, 9%);
+}
+
+.menu__link {
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  padding: 0.3rem 0.75rem;
+  color: hsl(240, 5%, 70%);
+  font-weight: 400;
+}
+
+.menu__link:hover {
+  color: var(--ifm-font-color-base);
+  background-color: hsl(240, 5%, 14%);
+}
+
+.menu__link--active {
+  color: var(--ifm-color-primary-light);
+  background-color: hsl(330, 40%, 13%);
+  font-weight: 500;
+}
+
+.menu__list-item-collapsible:hover {
+  background-color: transparent;
+}
+
+.menu__caret::before {
+  border-color: hsl(240, 5%, 50%);
+}
+
+.menu__list .menu__list {
+  border-left: 1px solid hsl(240, 4%, 20%);
+  margin-left: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(240, 5%, 55%);
+}
+
+.theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link:hover {
+  background-color: transparent;
+  color: hsl(240, 5%, 70%);
+}
+
+/* --------------------------------------------------------------------------
+   Table of Contents (right sidebar)
+   -------------------------------------------------------------------------- */
+.table-of-contents {
+  font-size: 0.8rem;
+  border-left: 1px solid hsl(240, 4%, 18%);
+  padding-left: 0.75rem;
+}
+
+.table-of-contents__link {
+  color: hsl(240, 5%, 60%);
+  line-height: 1.5;
+  padding: 0.2rem 0;
+  display: block;
+}
+
+.table-of-contents__link:hover,
+.table-of-contents__link--active {
+  color: var(--ifm-color-primary-light);
+  text-decoration: none;
+}
+
+.table-of-contents__left-border {
+  border-left: none;
+}
+
+/* --------------------------------------------------------------------------
+   Main content
+   -------------------------------------------------------------------------- */
+.docMainContainer {
+  padding-top: 0;
+}
+
+article header h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--ifm-heading-color);
+  margin-bottom: 1.25rem;
+}
+
+.markdown h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid hsl(240, 4%, 20%);
+  margin-top: 2rem;
+}
+
+.markdown h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.5rem;
+}
+
+.markdown p,
+.markdown li {
+  color: hsl(240, 5%, 72%);
+  line-height: 1.7;
+}
+
+.markdown a {
+  color: var(--ifm-link-color);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.markdown a:hover {
+  color: var(--ifm-link-hover-color);
+}
+
+/* --------------------------------------------------------------------------
+   Code blocks
+   -------------------------------------------------------------------------- */
+.prism-code {
+  background-color: var(--ifm-pre-background) !important;
+  border: 1px solid hsl(240, 4%, 18%);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+code {
+  background-color: var(--ifm-code-background) !important;
+  border: 1px solid hsl(240, 4%, 22%);
+  color: hsl(327, 96%, 82%) !important;
+  padding: 0.15em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+pre code {
+  background-color: transparent !important;
+  border: none;
+  color: inherit !important;
+  padding: 0;
+}
+
+.codeBlockTitle_node_modules-\@docusaurus-theme-classic-lib-theme-CodeBlock-Content-styles-module {
+  background-color: hsl(240, 5%, 12%) !important;
+  border-bottom: 1px solid hsl(240, 4%, 18%);
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+  border: 1px solid hsl(240, 4%, 20%);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.markdown th {
+  background-color: hsl(240, 5%, 13%);
+  color: var(--ifm-font-color-base);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid hsl(240, 4%, 20%);
+}
+
+.markdown td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid hsl(240, 4%, 16%);
+  color: hsl(240, 5%, 72%);
+}
+
+.markdown tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown tr:hover td {
+  background-color: hsl(240, 5%, 10%);
+}
+
+/* --------------------------------------------------------------------------
+   Blockquotes & admonitions
+   -------------------------------------------------------------------------- */
+.markdown blockquote {
+  border-left: 3px solid var(--ifm-color-primary);
+  background-color: hsl(240, 5%, 10%);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1.25rem;
+  color: hsl(240, 5%, 72%);
+  margin: 1rem 0;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.footer {
+  border-top: 1px solid hsl(240, 4%, 15%);
+}
+
+.footer__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(240, 5%, 55%);
+  margin-bottom: 0.75rem;
+}
+
+.footer__link-item {
+  font-size: 0.875rem;
+  color: hsl(240, 5%, 60%);
+  line-height: 2;
+}
+
+.footer__link-item:hover {
+  color: var(--ifm-font-color-base);
+}
+
+.footer__copyright {
+  font-size: 0.8rem;
+  color: hsl(240, 5%, 50%);
+  margin-top: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Hero section (WelcomeHero component)
+   -------------------------------------------------------------------------- */
+.notara-hero {
+  margin-bottom: 2.5rem;
+}
+
+.notara-hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.notara-hero__headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.notara-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.25rem;
+  border: 1px solid hsl(240, 4%, 22%);
+  background-color: hsl(240, 5%, 13%);
+  color: hsl(327, 96%, 82%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--ifm-font-family-monospace);
+  letter-spacing: 0.05em;
+  width: fit-content;
+  margin-bottom: 0.35rem;
+}
+
+.notara-hero__title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.notara-hero__subtitle {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 400;
+  color: hsl(240, 5%, 65%);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.notara-hero__logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(240, 4%, 20%);
+  background-color: hsl(240, 5%, 11%);
+  padding: 0.45rem;
+  object-fit: contain;
+}
+
+.notara-hero__lede {
+  color: hsl(240, 5%, 65%);
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 78ch;
+  margin: 0 0 1.5rem 0;
+}
+
+.notara-hero__screenshot {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(240, 4%, 20%);
+  background-color: hsl(240, 5%, 10%);
+  display: block;
+  margin-bottom: 1.75rem;
+}
+
+.notara-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.notara-hero__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background-color: var(--ifm-color-primary);
+  color: hsl(0, 0%, 100%) !important;
+  text-decoration: none !important;
+  transition: opacity 150ms ease;
+}
+
+.notara-hero__button:hover {
+  opacity: 0.88;
+  color: hsl(0, 0%, 100%) !important;
+}
+
+.notara-hero__button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: 1px solid hsl(240, 4%, 22%);
+  background-color: hsl(240, 5%, 12%);
+  color: hsl(0, 0%, 90%) !important;
+  text-decoration: none !important;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.notara-hero__button-secondary:hover {
+  background-color: hsl(240, 5%, 15%);
+  border-color: hsl(240, 4%, 28%);
+  color: hsl(0, 0%, 100%) !important;
+}
+
+.notara-hero__features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.notara-hero__feature-card {
+  padding: 1.1rem;
+  border: 1px solid hsl(240, 4%, 20%);
+  border-radius: 0.5rem;
+  background-color: hsl(240, 5%, 11%);
+}
+
+.notara-hero__feature-card strong {
+  display: block;
+  font-size: 0.9rem;
+  color: hsl(0, 0%, 92%);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.notara-hero__feature-card span {
+  font-size: 0.82rem;
+  color: hsl(240, 5%, 60%);
+  line-height: 1.55;
+}
+
+/* --------------------------------------------------------------------------
+   Doc quick-link cards (index page)
+   -------------------------------------------------------------------------- */
+.notara-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+
+.notara-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem;
+  border: 1px solid hsl(240, 4%, 20%);
+  border-radius: 0.5rem;
+  background-color: hsl(240, 5%, 11%);
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.notara-card:hover {
+  border-color: hsl(240, 4%, 28%);
+  background-color: hsl(240, 5%, 13%);
+}
+
+.notara-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 92%);
+  margin-bottom: 0.4rem;
+}
+
+.notara-card__body {
+  font-size: 0.85rem;
+  color: hsl(240, 5%, 60%);
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .notara-hero__top {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .notara-hero__logo {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  article header h1 {
+    font-size: 1.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Misc polish
+   -------------------------------------------------------------------------- */
+.breadcrumbs__link {
+  font-size: 0.82rem;
+  color: hsl(240, 5%, 55%);
+}
+
+.pagination-nav__link {
+  border: 1px solid hsl(240, 4%, 20%);
+  border-radius: 0.5rem;
+  background-color: hsl(240, 5%, 10%);
+}
+
+.pagination-nav__link:hover {
+  border-color: hsl(240, 4%, 28%);
+  background-color: hsl(240, 5%, 13%);
+}
+
+.pagination-nav__label {
+  color: var(--ifm-font-color-base);
+}
+
+.theme-last-updated {
+  font-size: 0.78rem;
+  color: hsl(240, 5%, 50%);
+}

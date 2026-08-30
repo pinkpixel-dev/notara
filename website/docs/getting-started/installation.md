@@ -3,26 +3,16 @@ title: Installation & Downloads
 description: Installation instructions for Notara desktop packages, web builds, and development from source.
 ---
 
-import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
-
 ## Release downloads
 
 Notara `2.5.0` is available in the following desktop packages:
 
-<CardGrid>
-  <Card title="Linux .deb" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.deb">
-    Desktop package for Debian, Ubuntu, Linux Mint, and derivatives.
-  </Card>
-  <Card title="Linux .rpm" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-2.5.0-1.x86_64.rpm">
-    RPM package for Fedora, RHEL, and compatible distributions.
-  </Card>
-  <Card title="Linux AppImage" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.AppImage">
-    Standalone portable binary for most Linux distributions.
-  </Card>
-  <Card title="Windows installer" href="https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_x64-setup.exe">
-    NSIS installer for 64-bit Windows systems.
-  </Card>
-</CardGrid>
+| Package | Download |
+| --- | --- |
+| Linux `.deb` | [Notara_2.5.0_amd64.deb](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.deb) |
+| Linux `.rpm` | [Notara-2.5.0-1.x86_64.rpm](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara-2.5.0-1.x86_64.rpm) |
+| Linux `AppImage` | [Notara_2.5.0_amd64.AppImage](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_amd64.AppImage) |
+| Windows installer | [Notara_2.5.0_x64-setup.exe](https://pub-7910a730d724411db0d8fb3f65278e6a.r2.dev/Notara_2.5.0_x64-setup.exe) |
 
 ## Package installation
 
@@ -66,8 +56,6 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicat
 
 ### Web development
 
-<Steps>
-
 1. Clone the repository:
 
    ```bash
@@ -88,8 +76,6 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicat
    ```
 
 4. Open `http://localhost:3489` in your browser.
-
-</Steps>
 
 ### Desktop development
 
@@ -125,7 +111,7 @@ To enable the AI assistant:
 
 ## Deploying the documentation website
 
-The documentation site in `website/` is built with Astro and Starlight:
+The documentation site in `website/` is built with Docusaurus:
 
 ```bash
 cd website

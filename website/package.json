@@ -1,20 +1,52 @@
 {
   "name": "@pinkpixel/notara-docs",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "cf:dev": "npm run build && npx wrangler pages dev ./dist --project-name notara-docs",
-    "deploy": "npm run build && npx wrangler pages deploy ./dist --project-name notara-docs",
-    "deploy:production": "npm run build && npx wrangler pages deploy ./dist --project-name notara-docs --branch main"
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "dev": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "typecheck": "tsc",
+    "cf:dev": "npm run build && npx wrangler pages dev ./build --project-name notara-docs",
+    "deploy": "npm run build && npx wrangler pages deploy ./build --project-name notara-docs",
+    "deploy:production": "npm run build && npx wrangler pages deploy ./build --project-name notara-docs --branch main"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.38.1",
-    "astro": "^6.0.4",
-    "sharp": "^0.34.5"
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@types/react": "^19.0.0",
+    "typescript": "~6.0.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0"
   }
 }
