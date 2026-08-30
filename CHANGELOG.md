@@ -2,6 +2,26 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.4.0 - August 30, 2026
+
+### 💾 Note saving
+
+- Settings now includes a working Auto Save option under Editor. It is off by
+  default and stays set after Notara restarts.
+- When enabled, Auto Save writes changed new and existing notes after 1.5
+  seconds without typing. Manual Save remains available for an immediate write.
+- Save status is visible in the editor. Conflicts pause Auto Save for review,
+  and failed writes remain unsaved so they can be retried.
+
+### 🐛 Note folders
+
+- New note here now creates the note inside the selected folder, including
+  nested folders, instead of placing it under Uncategorized.
+
+### 🏷️ Versioning
+
+- Updated the application version to 2.4.0.
+
 ## 2.3.2 - August 30, 2026
 
 ### 🐛 Linux packaging

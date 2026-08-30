@@ -10,6 +10,7 @@ import {
 import { ChevronDown, Pin, Plus, Star } from 'lucide-react';
 import TagSelector from './TagSelector';
 import type { NoteTag } from '@/types';
+import type { NoteSaveStatus } from './useNotePersistence';
 
 /** How the editor body is laid out. */
 export type EditorMode = 'edit' | 'split' | 'preview';
@@ -25,7 +26,7 @@ interface NoteEditorHeaderProps {
   isStarred: boolean;
   mode: EditorMode;
   isSaving: boolean;
-  isDirty: boolean;
+  saveStatus: NoteSaveStatus;
   /** A note with no file yet cannot be copied, so Save as is unavailable. */
   isNew: boolean;
   selectedTags: NoteTag[];
@@ -51,7 +52,7 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
   isStarred,
   mode,
   isSaving,
-  isDirty,
+  saveStatus,
   isNew,
   selectedTags,
   availableTags,
@@ -63,14 +64,15 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
   onSave,
   onSaveAs,
 }) => (
-    <div className="p-4 border-b border-border flex justify-between items-center">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Pinning keeps a note at the top of the notes bar and is capped.
             Starring marks it important and is not. They are separate
             controls because they answer different questions. */}
         <button
           type="button"
           onClick={onTogglePin}
+          disabled={isSaving}
           className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
             isPinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
           }`}
@@ -83,6 +85,7 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
         <button
           type="button"
           onClick={onToggleStar}
+          disabled={isSaving}
           className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors ${
             isStarred ? 'text-primary' : 'text-muted-foreground hover:text-primary'
           }`}
@@ -114,7 +117,7 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
           ))}
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
         <TagSelector
           selectedTags={selectedTags}
           onChange={onTagsChange}
@@ -131,12 +134,35 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = ({
         </Button>
         {/* Named rather than shown only as a colour, so the state is
             readable without relying on seeing the dot. */}
-        {isDirty && (
-          <span className="ml-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-            Unsaved
-          </span>
-        )}
+        <span
+          className={cn(
+            'ml-2 flex items-center gap-1.5 whitespace-nowrap text-xs',
+            saveStatus === 'error' || saveStatus === 'conflict'
+              ? 'text-destructive'
+              : 'text-muted-foreground'
+          )}
+          role={saveStatus === 'error' || saveStatus === 'conflict' ? 'alert' : 'status'}
+          aria-live={saveStatus === 'error' || saveStatus === 'conflict' ? 'assertive' : 'polite'}
+        >
+          <span
+            className={cn(
+              'h-1.5 w-1.5 rounded-full',
+              saveStatus === 'saved' && 'bg-emerald-500',
+              (saveStatus === 'unsaved' || saveStatus === 'not-saved') && 'bg-primary',
+              saveStatus === 'saving' && 'bg-amber-500',
+              (saveStatus === 'error' || saveStatus === 'conflict') && 'bg-destructive'
+            )}
+            aria-hidden="true"
+          />
+          {{
+            'not-saved': 'Not saved',
+            saved: 'Saved',
+            unsaved: 'Unsaved',
+            saving: 'Saving...',
+            error: 'Save failed',
+            conflict: 'Changed on disk',
+          }[saveStatus]}
+        </span>
         {/* Save and Save As sit together, because they answer the same
             question and only differ in where the write lands. Save As is a
             menu rather than a second button so the primary action stays

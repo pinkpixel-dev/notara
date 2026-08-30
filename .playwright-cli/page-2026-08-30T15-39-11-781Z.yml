@@ -1,0 +1,57 @@
+- generic [ref=e2]:
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - generic [ref=e135]:
+        - button "Go back" [ref=e136] [cursor=pointer]
+        - heading "Settings" [level=1] [ref=e139]
+      - button "Close settings" [ref=e140] [cursor=pointer]
+    - generic [ref=e144]:
+      - tablist [ref=e145]:
+        - tab "Appearance" [selected] [ref=e146] [cursor=pointer]
+        - tab "Editor" [ref=e147] [cursor=pointer]
+        - tab "Tags" [ref=e148] [cursor=pointer]
+        - tab "AI & Data" [ref=e149] [cursor=pointer]
+        - tab "About" [ref=e150] [cursor=pointer]
+      - tabpanel "Appearance" [ref=e152]:
+        - generic [ref=e153]:
+          - generic [ref=e154]:
+            - heading "Theme Settings" [level=3] [ref=e155]
+            - paragraph [ref=e156]: Customize how Notara looks
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - text: Theme Selection
+              - generic [ref=e159]:
+                - button "MidnightSelected Dark charcoal surfaces with crisp light text" [pressed] [ref=e160] [cursor=pointer]:
+                  - generic [ref=e162]: MidnightSelected
+                  - generic [ref=e163]: Dark charcoal surfaces with crisp light text
+                - button "Light Soft white surfaces with dark text" [ref=e164] [cursor=pointer]:
+                  - generic [ref=e166]: Light
+                  - generic [ref=e167]: Soft white surfaces with dark text
+            - generic [ref=e168]:
+              - text: Accent Color
+              - generic [ref=e169]:
+                - button "Use Ocean Blue accent color" [ref=e170] [cursor=pointer]
+                - button "Use Rose Pink accent color" [pressed] [ref=e172] [cursor=pointer]
+                - button "Use Sunset Orange accent color" [ref=e176] [cursor=pointer]
+                - button "Use Royal Purple accent color" [ref=e178] [cursor=pointer]
+                - button "Use Forest Green accent color" [ref=e180] [cursor=pointer]
+            - generic [ref=e182]:
+              - text: Interface Font
+              - combobox "Interface Font" [ref=e183] [cursor=pointer]:
+                - generic: Inter
+              - paragraph [ref=e186]: Sets the font for the whole interface. The Notara wordmark always stays on Poppins.
+            - generic [ref=e187]:
+              - text: Font Size
+              - combobox "Font Size" [ref=e188] [cursor=pointer]:
+                - generic: Medium
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - text: Enable Animations
+                - paragraph [ref=e193]: Turn this off to stop transitions and entrance animations.
+              - switch "Enable Animations" [checked] [ref=e194] [cursor=pointer]
+          - generic [ref=e195]:
+            - button "Reset" [ref=e196] [cursor=pointer]
+            - button "Save Changes" [ref=e197] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"

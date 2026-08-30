@@ -21,6 +21,7 @@ import NoteViewPage from "./pages/NoteViewPage";
 import TodoPage from "./pages/TodoPage";
 import { removeLegacyCredentialStorage } from "./lib/legacy-cleanup";
 import { WorkspaceFocusProvider } from "./context/WorkspaceFocusContext";
+import { EditorSettingsProvider } from "./context/EditorSettingsContext";
 
 const queryClient = new QueryClient();
 
@@ -65,11 +66,13 @@ const App = () => {
       <FileSystemProvider>
         <WorkspaceProvider>
         <ThemeProvider>
-          <NotesProvider>
-            <TodoProvider>
-              <RouterProvider router={router} />
-            </TodoProvider>
-          </NotesProvider>
+          <EditorSettingsProvider>
+            <NotesProvider>
+              <TodoProvider>
+                <RouterProvider router={router} />
+              </TodoProvider>
+            </NotesProvider>
+          </EditorSettingsProvider>
         </ThemeProvider>
         </WorkspaceProvider>
       </FileSystemProvider>

@@ -17,6 +17,10 @@ import { useSidebarPane } from '@/hooks/use-sidebar-pane';
 const HomePage: React.FC = () => {
   const { activeNote, setActiveNote, notesStatus } = useNotes();
   const [isCreatingNote, setIsCreatingNote] = useState(false);
+  // A note path can change when its title changes. The editor session changes
+  // only when the user opens another note or starts a new one, so a save-driven
+  // rename cannot remount the editor and discard text typed during the write.
+  const [editorSession, setEditorSession] = useState(0);
   const [noteAwaitingDelete, setNoteAwaitingDelete] = useState<Note | null>(null);
   const [noteAwaitingMove, setNoteAwaitingMove] = useState<Note | null>(null);
   const [noteAwaitingRename, setNoteAwaitingRename] = useState<Note | null>(null);
@@ -54,8 +58,8 @@ const HomePage: React.FC = () => {
   /**
    * Runs an action, or holds it back while the user decides about unsaved work.
    *
-   * Every route out of the open note goes through here. Saving happens on
-   * demand rather than as you type, so leaving takes the buffer with it.
+   * Every route out of the open note goes through here. The guard remains
+   * active when Auto Save is off, pending, or unable to write the latest text.
    */
   const guardUnsaved = useCallback(
     (action: () => void) => {
@@ -72,6 +76,7 @@ const HomePage: React.FC = () => {
 
   const openNote = useCallback(
     (note: Note) => {
+      setEditorSession((session) => session + 1);
       setActiveNote(note);
       setIsCreatingNote(false);
       // On mobile only one pane shows, so opening a note has to move the view.
@@ -94,6 +99,7 @@ const HomePage: React.FC = () => {
 
   const startNewNote = useCallback(
     (directory: string) => {
+      setEditorSession((session) => session + 1);
       setNewNoteDirectory(directory);
       setActiveNote(null);
       setIsCreatingNote(true);
@@ -138,15 +144,16 @@ const HomePage: React.FC = () => {
 
   const editor = isCreatingNote ? (
     <NoteEditor
-      key="new-note-editor"
+      key={`note-editor-${editorSession}`}
       isNew={true}
+      directory={newNoteDirectory}
       onSave={handleSaveNewNote}
       onCreateNote={handleCreateNote}
       onDirtyChange={setIsEditorDirty}
     />
   ) : activeNote ? (
     <NoteEditor
-      key={activeNote.id}
+      key={`note-editor-${editorSession}`}
       note={activeNote}
       onCreateNote={handleCreateNote}
       onDirtyChange={setIsEditorDirty}

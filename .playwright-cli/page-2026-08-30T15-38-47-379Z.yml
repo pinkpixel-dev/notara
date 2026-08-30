@@ -1,0 +1,75 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - link:
+            - /url: /
+          - menubar:
+            - menuitem: File
+            - menuitem: Edit
+            - menuitem: View
+        - navigation:
+          - list:
+            - listitem:
+              - link:
+                - /url: /
+                - generic: Notes
+            - listitem:
+              - link:
+                - /url: /todos
+                - generic: To-Do
+            - listitem:
+              - link:
+                - /url: /calendar
+                - generic: Calendar
+            - listitem:
+              - link:
+                - /url: /vision-board
+                - generic: Vision Board
+            - listitem:
+              - link:
+                - /url: /constellations
+                - generic: Constellations
+        - generic:
+          - button:
+            - generic: Choose folder
+          - button
+          - link:
+            - /url: /tags
+          - button
+          - button [expanded]
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - region:
+                  - generic:
+                    - generic:
+                      - button
+                    - generic:
+                      - generic:
+                        - generic: Search notes
+                        - searchbox
+                    - group:
+                      - button [pressed]: All0
+                      - button: Starred0
+                    - generic:
+                      - generic:
+                        - paragraph: Choose a folder for your notes
+                        - paragraph: Notara reads and writes plain Markdown files. Pick the folder they should live in and your notes appear here.
+                        - button: Choose folder
+              - separator
+              - generic:
+                - region:
+                  - generic:
+                    - generic:
+                      - paragraph: Choose a folder for your notes to get started. Notara saves each note as a Markdown file in that folder.
+    - list
+    - region "Notifications alt+T"
+  - menu "More" [active] [ref=e114]:
+    - menuitem "Settings" [ref=e115]
+    - menuitem "Markdown Cheat Sheet" [ref=e120]
+    - separator [ref=e127]
+    - menuitem "Documentation" [ref=e128]

@@ -1,0 +1,40 @@
+- generic [ref=e2]:
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - generic [ref=e135]:
+        - button "Go back" [ref=e136] [cursor=pointer]
+        - heading "Settings" [level=1] [ref=e139]
+      - button "Close settings" [ref=e140] [cursor=pointer]
+    - generic [ref=e144]:
+      - tablist [ref=e145]:
+        - tab "Appearance" [ref=e146] [cursor=pointer]
+        - tab "Editor" [active] [selected] [ref=e147] [cursor=pointer]
+        - tab "Tags" [ref=e148] [cursor=pointer]
+        - tab "AI & Data" [ref=e149] [cursor=pointer]
+        - tab "About" [ref=e150] [cursor=pointer]
+      - tabpanel "Editor" [ref=e198]:
+        - generic [ref=e199]:
+          - generic [ref=e200]:
+            - heading "Editor Settings" [level=3] [ref=e201]
+            - paragraph [ref=e202]: Customize your writing experience
+          - generic [ref=e203]:
+            - generic [ref=e204]:
+              - generic [ref=e205]:
+                - text: Auto Save
+                - paragraph [ref=e206]: Save note changes automatically after you stop typing.
+              - switch "Auto Save" [ref=e207] [cursor=pointer]
+            - generic [ref=e208]:
+              - generic [ref=e209]: Spell Check
+              - switch "Spell Check" [checked] [ref=e210] [cursor=pointer]
+            - generic [ref=e211]:
+              - generic [ref=e212]: Live Markdown Preview
+              - switch "Live Markdown Preview" [checked] [ref=e213] [cursor=pointer]
+            - generic [ref=e214]:
+              - generic [ref=e215]: Show Line Numbers
+              - switch "Show Line Numbers" [ref=e216] [cursor=pointer]
+          - generic [ref=e217]:
+            - button "Reset" [ref=e218] [cursor=pointer]
+            - button "Save Changes" [ref=e219] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"

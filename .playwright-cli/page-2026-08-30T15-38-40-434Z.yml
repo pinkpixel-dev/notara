@@ -1,0 +1,57 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /
+        - menubar [ref=e8]:
+          - menuitem "File" [ref=e9]
+          - menuitem "Edit" [ref=e10]
+          - menuitem "View" [ref=e11]
+      - navigation "Sections" [ref=e13]:
+        - list [ref=e14]:
+          - listitem [ref=e15]:
+            - link "Notes" [ref=e16] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e21]:
+            - link "To-Do" [ref=e22] [cursor=pointer]:
+              - /url: /todos
+          - listitem [ref=e27]:
+            - link "Calendar" [ref=e28] [cursor=pointer]:
+              - /url: /calendar
+          - listitem [ref=e32]:
+            - link "Vision Board" [ref=e33] [cursor=pointer]:
+              - /url: /vision-board
+          - listitem [ref=e39]:
+            - link "Constellations" [ref=e40] [cursor=pointer]:
+              - /url: /constellations
+      - generic [ref=e44]:
+        - button "Choose workspace folder" [ref=e45] [cursor=pointer]:
+          - generic [ref=e48]: Choose folder
+        - button "Search notes" [ref=e49] [cursor=pointer]
+        - link "Open tags" [ref=e53] [cursor=pointer]:
+          - /url: /tags
+        - button "Open the assistant panel" [ref=e57] [cursor=pointer]
+        - button "More" [ref=e61] [cursor=pointer]
+    - generic [ref=e69]:
+      - region "Notes" [ref=e71]:
+        - generic [ref=e72]:
+          - button "Rescan the workspace folder" [ref=e74] [cursor=pointer]
+          - generic [ref=e81]:
+            - generic [ref=e82]: Search notes
+            - searchbox "Search notes" [ref=e83]
+          - group "Filter notes" [ref=e84]:
+            - button "All0" [pressed] [ref=e85] [cursor=pointer]
+            - button "Starred0" [ref=e86] [cursor=pointer]
+          - generic [ref=e87]:
+            - list
+            - generic [ref=e88]:
+              - paragraph [ref=e91]: Choose a folder for your notes
+              - paragraph [ref=e92]: Notara reads and writes plain Markdown files. Pick the folder they should live in and your notes appear here.
+              - button "Choose folder" [ref=e93] [cursor=pointer]
+      - separator [ref=e96]
+      - region "Editor" [ref=e106]:
+        - paragraph [ref=e113]: Choose a folder for your notes to get started. Notara saves each note as a Markdown file in that folder.
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"

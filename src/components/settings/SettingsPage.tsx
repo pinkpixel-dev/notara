@@ -13,10 +13,15 @@ import { useTheme } from '@/context/ThemeContext';
 import { APP_VERSION } from '@/lib/app-info';
 import { AiDataSettings } from './AiDataSettings';
 import { TagSettings } from './TagSettings';
+import { useEditorSettings } from '@/context/EditorSettingsContext';
 
 const SettingsPage: React.FC = () => {
-  const [autoSave, setAutoSave] = useState(true);
   const [spellCheck, setSpellCheck] = useState(true);
+  const {
+    settings: editorSettings,
+    setAutoSave,
+    resetEditorSettings,
+  } = useEditorSettings();
   const {
     settings, setThemeMode, setAccentColor, setFontSize, setFontFamily, setAnimations,
     resetToDefaults, availableThemes, availableAccentColors, availableFonts,
@@ -30,7 +35,7 @@ const SettingsPage: React.FC = () => {
 
   const handleResetSettings = () => {
     resetToDefaults();
-    setAutoSave(true);
+    resetEditorSettings();
     setSpellCheck(true);
   };
 
@@ -182,8 +187,13 @@ const SettingsPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="autosave">Auto Save</Label>
-                    <Switch id="autosave" checked={autoSave} onCheckedChange={setAutoSave} />
+                    <div className="space-y-1 pr-4">
+                      <Label htmlFor="autosave">Auto Save</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Save note changes automatically after you stop typing.
+                      </p>
+                    </div>
+                    <Switch id="autosave" checked={editorSettings.autoSave} onCheckedChange={setAutoSave} />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="spellcheck">Spell Check</Label>

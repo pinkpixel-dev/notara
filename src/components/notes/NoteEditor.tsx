@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useNotes, PIN_LIMIT } from '@/context/NotesContextTypes';
-import { useFileSystem } from '@/context/FileSystemContext';
-import type { NotesBundle } from '@/lib/filesystem';
 import { Note } from '@/types';
 import { cn } from '@/lib/utils';
 import type { EditorMode } from './NoteEditorHeader';
@@ -9,7 +7,6 @@ import MarkdownPreview from './MarkdownPreview';
 import MarkdownToolbar from './MarkdownToolbar';
 import { toast } from '@/hooks/use-toast';
 import NoteConflictDialog from './NoteConflictDialog';
-import { NoteConflictError } from '@/lib/notes/store';
 import { isNewNoteDirty, isNoteDirty } from '@/lib/notes/dirty';
 import SaveAsDialog from './SaveAsDialog';
 import NoteEditorHeader from './NoteEditorHeader';
@@ -17,6 +14,8 @@ import { parentOf } from '@/lib/workspace/types';
 import { usePublishWorkspaceFocus } from '@/context/WorkspaceFocusContext';
 import NoteFindReplaceBar, { type NoteFindHighlightState } from './NoteFindReplaceBar';
 import NoteHighlightedTextarea from './NoteHighlightedTextarea';
+import { useEditorSettings } from '@/context/EditorSettingsContext';
+import { useNotePersistence, type NoteSaveSnapshot } from './useNotePersistence';
 
 interface NoteEditorProps {
   note?: Note;
@@ -50,16 +49,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const {
     notes,
     tags: availableTags,
-    visionBoards,
     addNote,
     updateNote,
     reloadNote,
-    persistBundle,
     togglePin,
     toggleStar,
     setActiveNote,
   } = useNotes();
-  const { status } = useFileSystem();
+  const { settings: editorSettings } = useEditorSettings();
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [selectedTags, setSelectedTags] = useState(note?.tags || []);
@@ -71,46 +68,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     matches: [],
     currentIndex: -1,
   });
-  const [isSaving, setIsSaving] = useState(false);
-  // Set when a save is refused because the file moved underneath us. Holding it
-  // here keeps the user's unsaved text in the editor while they decide.
-  const [hasConflict, setHasConflict] = useState(false);
+  const [isSaveAsBusy, setIsSaveAsBusy] = useState(false);
   const [isSaveAsOpen, setIsSaveAsOpen] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
-
-  /**
-   * Which note the buffer was last filled from.
-   *
-   * Pinning or starring the open note saves it, which hands this component a
-   * new `note` object for the same note. Refilling the buffer on that would
-   * throw away whatever the user had typed but not yet saved, so the buffer is
-   * only refilled when a genuinely different note arrives.
-   */
-  const loadedNoteIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (isNew) {
-      if (loadedNoteIdRef.current !== null) {
-        loadedNoteIdRef.current = null;
-        setTitle('');
-        setContent('');
-        setSelectedTags([]);
-        setIsPinned(false);
-        setIsStarred(false);
-        setMode('edit');
-      }
-      return;
-    }
-
-    if (note && loadedNoteIdRef.current !== note.id) {
-      loadedNoteIdRef.current = note.id;
-      setTitle(note.title);
-      setContent(note.content);
-      setSelectedTags(note.tags);
-      setIsPinned(note.isPinned);
-      setIsStarred(note.isStarred);
-    }
-  }, [isNew, note]);
+  const currentNoteRef = useRef(note);
+  currentNoteRef.current = note;
 
   /**
    * Whether there is unsaved work in the buffer.
@@ -121,6 +83,57 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const isDirty = isNew
     ? isNewNoteDirty({ title, content })
     : isNoteDirty({ title, content, tags: selectedTags }, note);
+
+  const saveSnapshot = useMemo<NoteSaveSnapshot>(
+    () => ({ title, content, tags: selectedTags, isPinned, isStarred }),
+    [content, isPinned, isStarred, selectedTags, title]
+  );
+  const draftRef = useRef(saveSnapshot);
+  draftRef.current = saveSnapshot;
+
+  const reconcileSavedSnapshot = useCallback((saved: Note, written: NoteSaveSnapshot) => {
+    // A blank or filesystem-normalized title comes back changed. Adopt it only
+    // when the user has not typed a newer title while the write was in flight.
+    if (draftRef.current.title === written.title && saved.title !== written.title) {
+      setTitle(saved.title);
+    }
+  }, []);
+
+  const replaceWithDiskNote = useCallback((fresh: Note) => {
+    setTitle(fresh.title);
+    setContent(fresh.content);
+    setSelectedTags(fresh.tags);
+    setIsPinned(fresh.isPinned);
+    setIsStarred(fresh.isStarred);
+  }, []);
+
+  const adoptExternalIdentity = useCallback((fresh: Note) => {
+    setTitle(fresh.title);
+  }, []);
+
+  const persistence = useNotePersistence({
+    note,
+    isNew,
+    directory,
+    isDirty,
+    autoSave: editorSettings.autoSave,
+    snapshot: saveSnapshot,
+    addNote,
+    updateNote,
+    reloadNote,
+    onSave,
+    reconcileSavedSnapshot,
+    replaceWithDiskNote,
+    adoptExternalIdentity,
+  });
+
+  const updateContent: React.Dispatch<React.SetStateAction<string>> = useCallback(
+    (next) => {
+      persistence.resumeAfterEdit();
+      setContent(next);
+    },
+    [persistence]
+  );
 
   const replaceFocusedContent = useCallback((nextContent: string) => {
     setContent(nextContent);
@@ -163,109 +176,57 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     return () => window.removeEventListener('beforeunload', warn);
   }, [isDirty]);
 
-  const handleSave = useCallback(async () => {
-    setIsSaving(true);
-
-    const saveData = {
-      title: title || 'Untitled',
-      content,
-      tags: selectedTags,
-      isPinned,
-      isStarred,
-    };
-
-    try {
-      // The note writes its own file, so there is no bundle to assemble here.
-      // A title change renames that file, which means the saved note can come
-      // back carrying a different path than the one that went in.
-      const savedNote = isNew
-        ? await addNote({ ...saveData, directory })
-        : note
-          ? await updateNote(note.id, saveData)
-          : null;
-
-      if (!savedNote) {
-        throw new Error('Nothing to save yet');
-      }
-
-      toast({
-        title: 'Note saved',
-        description: `Written to ${savedNote.path}.`,
-      });
-
-      if (onSave) {
-        onSave(savedNote);
-      }
-    } catch (error) {
-      // A refused write is not a failure, it is a question. The editor keeps
-      // the user's text and asks which version should win.
-      if (error instanceof NoteConflictError || (error as Error)?.name === 'NoteConflictError') {
-        setHasConflict(true);
-        return;
-      }
-
-      console.error('Failed to save note', error);
-      toast({
-        title: 'Save failed',
-        description:
-          (error instanceof Error && error.message) || 'Unable to save the current note.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    addNote,
-    directory,
-    isNew,
-    isPinned,
-    isStarred,
-    note,
-    onSave,
-    selectedTags,
-    title,
-    updateNote,
-    content,
-  ]);
-
   const refusePin = (reason: string) => {
     toast({ title: 'Pin limit reached', description: reason, variant: 'destructive' });
   };
 
   const handleTogglePin = useCallback(async () => {
-    if (!isNew && note) {
-      // Pinning a saved note rewrites its file, so this waits for the write
-      // rather than flipping the control and hoping.
-      const result = await togglePin(note.id);
-      if (!result.ok) {
-        refusePin(result.reason);
+    if (!(await persistence.beginMetadataWrite())) {
+      return;
+    }
+    try {
+      const currentNote = currentNoteRef.current;
+      if (!isNew && currentNote) {
+        // Pinning a saved note rewrites its file, so this waits for the write
+        // rather than flipping the control and hoping.
+        const result = await togglePin(currentNote.id);
+        if (!result.ok) {
+          refusePin(result.reason);
+          return;
+        }
+        setIsPinned((pinned) => !pinned);
         return;
       }
+
+      // An unsaved note is not in the list yet, so the cap is measured against
+      // the notes that are already pinned.
+      if (!isPinned && notes.filter((entry) => entry.isPinned).length >= PIN_LIMIT) {
+        refusePin(`You can pin up to ${PIN_LIMIT} notes. Unpin one to make room.`);
+        return;
+      }
+
       setIsPinned((pinned) => !pinned);
-      return;
+    } finally {
+      persistence.endMetadataWrite();
     }
-
-    // An unsaved note is not in the list yet, so the cap is measured against
-    // the notes that are already pinned.
-    if (!isPinned && notes.filter((entry) => entry.isPinned).length >= PIN_LIMIT) {
-      refusePin(`You can pin up to ${PIN_LIMIT} notes. Unpin one to make room.`);
-      return;
-    }
-
-    setIsPinned((pinned) => !pinned);
-  }, [isNew, isPinned, note, notes, togglePin]);
+  }, [isNew, isPinned, notes, persistence, togglePin]);
 
   const handleToggleStar = useCallback(async () => {
+    if (!(await persistence.beginMetadataWrite())) {
+      return;
+    }
     setIsStarred((starred) => !starred);
 
-    if (isNew || !note) {
+    const currentNote = currentNoteRef.current;
+    if (isNew || !currentNote) {
+      persistence.endMetadataWrite();
       return;
     }
 
     // Starring writes the note's file. If that fails the control goes back to
     // where it was, so it never shows a state the file does not have.
     try {
-      await toggleStar(note.id);
+      await toggleStar(currentNote.id);
     } catch (error) {
       console.error('Failed to update the note', error);
       setIsStarred((starred) => !starred);
@@ -274,75 +235,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         description: error instanceof Error ? error.message : 'Unable to write the note file.',
         variant: 'destructive',
       });
-    }
-  }, [isNew, note, toggleStar]);
-
-  /** Overwrite the file with what is in the editor. */
-  const resolveKeepMine = useCallback(async () => {
-    if (!note) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const saved = await updateNote(
-        note.id,
-        { title: title || 'Untitled', content, tags: selectedTags, isPinned, isStarred },
-        { force: true }
-      );
-      setHasConflict(false);
-      toast({
-        title: 'Your version was kept',
-        description: saved
-          ? `Written to ${saved.path}. The previous file is in .notara/backups.`
-          : 'The note was written.',
-      });
-      if (saved && onSave) {
-        onSave(saved);
-      }
-    } catch (error) {
-      toast({
-        title: 'Save failed',
-        description:
-          (error instanceof Error && error.message) || 'Unable to save the current note.',
-        variant: 'destructive',
-      });
     } finally {
-      setIsSaving(false);
+      persistence.endMetadataWrite();
     }
-  }, [content, isPinned, isStarred, note, onSave, selectedTags, title, updateNote]);
-
-  /** Throw away the editor's text and take whatever is on disk. */
-  const resolveUseTheirs = useCallback(async () => {
-    if (!note) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const fresh = await reloadNote(note.id);
-      if (fresh) {
-        // The effect that syncs these fields keys off the note object, and the
-        // reloaded note may be the same object identity, so they are set here.
-        setTitle(fresh.title);
-        setContent(fresh.content);
-        setSelectedTags(fresh.tags);
-        setIsPinned(fresh.isPinned);
-        setIsStarred(fresh.isStarred);
-      }
-      setHasConflict(false);
-      toast({ title: 'Reloaded from disk' });
-    } catch (error) {
-      toast({
-        title: 'Could not reload the note',
-        description:
-          (error instanceof Error && error.message) || 'Unable to read the note file.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [note, reloadNote]);
+  }, [isNew, persistence, toggleStar]);
 
   /**
    * Writes the buffer to a new note and moves the editor to it.
@@ -353,19 +249,32 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
    */
   const handleSaveAs = useCallback(
     async (targetDirectory: string, targetTitle: string) => {
-      setIsSaving(true);
+      if (!(await persistence.beginDirectWrite())) {
+        return;
+      }
+
+      const editorTitleAtStart = draftRef.current.title;
+      const contentAtStart = draftRef.current.content;
+      const tagsAtStart = draftRef.current.tags;
+      setIsSaveAsBusy(true);
       try {
         const copy = await addNote({
           title: targetTitle,
-          content,
-          tags: selectedTags,
+          content: contentAtStart,
+          tags: tagsAtStart,
           directory: targetDirectory,
         });
 
         setIsSaveAsOpen(false);
-        // Moving the active note remounts the editor against the copy, so the
-        // buffer lines up with the file that was just written.
+        // The editor session stays mounted so text typed during the write is
+        // preserved. The returned copy becomes the new persistence target.
+        persistence.adoptDirectTarget(copy);
         setActiveNote(copy);
+        if (draftRef.current.title === editorTitleAtStart) {
+          setTitle(copy.title);
+        }
+        setIsPinned(copy.isPinned);
+        setIsStarred(copy.isStarred);
 
         toast({ title: 'Copy saved', description: `Written to ${copy.path}.` });
 
@@ -381,14 +290,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           variant: 'destructive',
         });
       } finally {
-        setIsSaving(false);
+        setIsSaveAsBusy(false);
+        persistence.endDirectWrite();
       }
     },
-    [addNote, content, onSave, selectedTags, setActiveNote]
+    [addNote, onSave, persistence, setActiveNote]
   );
 
   useEffect(() => {
-    const handleSaveEvent = () => handleSave();
+    const handleSaveEvent = () => void persistence.saveNow();
     const handleSaveAsEvent = () => setIsSaveAsOpen(true);
 
     window.addEventListener('notara:save-active-note', handleSaveEvent);
@@ -398,7 +308,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       window.removeEventListener('notara:save-active-note', handleSaveEvent);
       window.removeEventListener('notara:save-note-as', handleSaveAsEvent);
     };
-  }, [handleSave]);
+  }, [persistence]);
 
   return (
     <div className="h-full flex flex-col">
@@ -406,17 +316,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         isPinned={isPinned}
         isStarred={isStarred}
         mode={mode}
-        isSaving={isSaving}
-        isDirty={isDirty}
+        isSaving={persistence.isSaving || isSaveAsBusy}
+        saveStatus={persistence.status}
         isNew={isNew}
         selectedTags={selectedTags}
         availableTags={availableTags}
         onTogglePin={handleTogglePin}
         onToggleStar={handleToggleStar}
         onModeChange={setMode}
-        onTagsChange={setSelectedTags}
+        onTagsChange={(tags) => {
+          persistence.resumeAfterEdit();
+          setSelectedTags(tags);
+        }}
         onCreateNote={onCreateNote}
-        onSave={handleSave}
+        onSave={() => void persistence.saveNow()}
         onSaveAs={() => setIsSaveAsOpen(true)}
       />
 
@@ -424,14 +337,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            persistence.resumeAfterEdit();
+            setTitle(e.target.value);
+          }}
           placeholder="Note Title"
           className="w-full shrink-0 text-2xl font-bold mb-4 bg-transparent border-none outline-none focus:ring-0"
         />
 
         <NoteFindReplaceBar
           content={content}
-          setContent={setContent}
+          setContent={updateContent}
           textareaRef={editorRef}
           mode={mode}
           onModeChange={setMode}
@@ -448,10 +364,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         >
           {mode !== 'preview' && (
             <div className="flex min-h-0 flex-1 flex-col">
-              <MarkdownToolbar textareaRef={editorRef} content={content} setContent={setContent} />
+              <MarkdownToolbar textareaRef={editorRef} content={content} setContent={updateContent} />
               <NoteHighlightedTextarea
                 content={content}
-                setContent={setContent}
+                setContent={updateContent}
                 textareaRef={editorRef}
                 mode={mode}
                 matches={findHighlight.matches}
@@ -475,19 +391,19 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
 
       <NoteConflictDialog
-        open={hasConflict}
-        path={note?.path ?? ''}
-        isBusy={isSaving}
-        onKeepMine={() => void resolveKeepMine()}
-        onUseTheirs={() => void resolveUseTheirs()}
-        onCancel={() => setHasConflict(false)}
+        open={persistence.hasConflict}
+        path={persistence.conflictPath}
+        isBusy={persistence.isSaving}
+        onKeepMine={() => void persistence.keepMine()}
+        onUseTheirs={() => void persistence.useTheirs()}
+        onCancel={persistence.cancelConflict}
       />
 
       <SaveAsDialog
         open={isSaveAsOpen}
         initialTitle={title || 'Untitled'}
         initialDirectory={note ? parentOf(note.path) : ''}
-        isBusy={isSaving}
+        isBusy={persistence.isSaving || isSaveAsBusy}
         onConfirm={(directory, nextTitle) => void handleSaveAs(directory, nextTitle)}
         onCancel={() => setIsSaveAsOpen(false)}
       />
