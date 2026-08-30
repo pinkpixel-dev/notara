@@ -2,6 +2,19 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.3.2 - August 30, 2026
+
+### 🐛 Linux packaging
+
+- Both desktop build commands now apply `NO_STRIP=YES` automatically on Linux.
+  This prevents the bundled `linuxdeploy` strip tool from failing on libraries
+  that contain `.relr.dyn` sections.
+- Windows and macOS builds keep the standard Tauri environment.
+
+### 🏷️ Versioning
+
+- Updated the application version to 2.3.2.
+
 ## 2.3.1 - August 30, 2026
 
 ### 🐛 Find navigation

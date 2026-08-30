@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/notara",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Feature-rich note-taking application and markdown editor with AI assistant.",
   "type": "module",
   "scripts": {
@@ -11,8 +11,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "tauri:build:linux": "NO_STRIP=YES tauri build --bundles deb,appimage,rpm",
+    "tauri:build": "node scripts/tauri-build.mjs",
+    "tauri:build:linux": "node scripts/tauri-build.mjs --bundles deb,appimage,rpm",
     "tauri:icon": "tauri icon public/icon.png",
     "deploy": "npm run deploy:cloudflare",
     "deploy:cloudflare": "node deploy-cloudflare.js",
