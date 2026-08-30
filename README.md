@@ -6,7 +6,7 @@
 
 Notara is a local-first note workspace for Markdown notes, tasks, calendar organization, vision boards, and optional AI tools. It runs as a React web app and a Tauri desktop app for Linux and Windows.
 
-[![Version](https://img.shields.io/badge/version-2.3.0-555.svg)](https://github.com/pinkpixel-dev/notara)
+[![Version](https://img.shields.io/badge/version-2.3.1-555.svg)](https://github.com/pinkpixel-dev/notara)
 [![License](https://img.shields.io/badge/license-Apache%202.0-555.svg)](LICENSE)
 
 ![Notara screenshot](screenshot.png)

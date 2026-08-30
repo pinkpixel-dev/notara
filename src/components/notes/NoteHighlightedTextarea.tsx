@@ -35,10 +35,48 @@ const NoteHighlightedTextarea: React.FC<NoteHighlightedTextareaProps> = ({
     highlight.scrollLeft = textarea.scrollLeft;
   }, [textareaRef]);
 
+  const revealCurrentMatch = useCallback(() => {
+    const textarea = textareaRef.current;
+    const highlight = highlightRef.current;
+    if (!textarea || !highlight || !isHighlighting || currentIndex < 0) {
+      return;
+    }
+
+    const currentMatch = highlight.querySelector<HTMLElement>(
+      `[data-find-match-index="${currentIndex}"]`
+    );
+    if (!currentMatch) {
+      return;
+    }
+
+    const padding = Math.min(24, textarea.clientHeight / 4);
+    const matchTop = currentMatch.offsetTop;
+    const matchBottom = matchTop + currentMatch.offsetHeight;
+    const visibleTop = textarea.scrollTop;
+    const visibleBottom = visibleTop + textarea.clientHeight;
+    let nextScrollTop = visibleTop;
+
+    if (matchTop < visibleTop + padding) {
+      nextScrollTop = Math.max(0, matchTop - padding);
+    } else if (matchBottom > visibleBottom - padding) {
+      nextScrollTop = matchBottom - textarea.clientHeight + padding;
+    }
+
+    if (nextScrollTop !== visibleTop) {
+      textarea.scrollTop = nextScrollTop;
+      highlight.scrollTop = textarea.scrollTop;
+    }
+  }, [currentIndex, isHighlighting, textareaRef]);
+
   useEffect(() => {
     const frame = window.requestAnimationFrame(syncScroll);
     return () => window.cancelAnimationFrame(frame);
-  }, [content, currentIndex, matches, syncScroll]);
+  }, [content, matches, syncScroll]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(revealCurrentMatch);
+    return () => window.cancelAnimationFrame(frame);
+  }, [revealCurrentMatch]);
 
   const highlightedContent = () => {
     const parts: React.ReactNode[] = [];
@@ -49,6 +87,7 @@ const NoteHighlightedTextarea: React.FC<NoteHighlightedTextareaProps> = ({
       parts.push(
         <mark
           key={`${match.start}-${match.end}`}
+          data-find-match-index={index}
           className={cn(
             'rounded-sm text-foreground',
             index === currentIndex

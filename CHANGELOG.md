@@ -2,6 +2,18 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.3.1 - August 30, 2026
+
+### 🐛 Find navigation
+
+- The editor now scrolls when the active Find match moves outside the visible
+  area. Previous and next navigation keeps the current result on screen without
+  moving the Find controls.
+
+### 🏷️ Versioning
+
+- Updated the application version to 2.3.1.
+
 ## 2.3.0 - August 30, 2026
 
 ### 🔎 Find and replace
