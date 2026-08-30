@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TodoDateField from './TodoDateField';
 
+import { Switch } from '@/components/ui/switch';
+import { Bell, Info } from 'lucide-react';
+
 interface TodoDialogsProps {
   isAddingList: boolean;
   setIsAddingList: (open: boolean) => void;
@@ -23,6 +26,9 @@ interface TodoDialogsProps {
   setNewItemContent: (value: string) => void;
   newItemTime: string;
   setNewItemTime: (value: string) => void;
+  newItemReminderEnabled: boolean;
+  setNewItemReminderEnabled: (value: boolean) => void;
+  isDesktop: boolean;
 
   onCreateList: () => void;
   onEditList: () => void;
@@ -40,6 +46,8 @@ const TodoDialogs: React.FC<TodoDialogsProps> = ({
   newDate, setNewDate,
   newItemContent, setNewItemContent,
   newItemTime, setNewItemTime,
+  newItemReminderEnabled, setNewItemReminderEnabled,
+  isDesktop,
   onCreateList, onEditList, onAddItem, onEditItem,
 }) => {
   const resetListDraft = () => {
@@ -137,6 +145,30 @@ const TodoDialogs: React.FC<TodoDialogsProps> = ({
                 onChange={(e) => setNewItemTime(e.target.value)}
               />
             </div>
+            <div className="flex items-center justify-between pt-2 border-t border-border/40">
+              <div className="space-y-0.5">
+                <Label htmlFor="item-reminder" className="text-sm font-medium flex items-center gap-1.5">
+                  <Bell className="h-4 w-4 text-primary" />
+                  Due-linked Reminder
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isDesktop
+                    ? 'Notify at the scheduled date and time'
+                    : 'Reminders are desktop-only'}
+                </p>
+              </div>
+              <Switch
+                id="item-reminder"
+                checked={newItemReminderEnabled}
+                onCheckedChange={setNewItemReminderEnabled}
+              />
+            </div>
+            {!isDesktop && newItemReminderEnabled && (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
+                <Info className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span>Running in browser: reminders will activate when opened in the Notara desktop app.</span>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -146,6 +178,7 @@ const TodoDialogs: React.FC<TodoDialogsProps> = ({
                 setIsEditingItem(false);
                 setNewItemContent('');
                 setNewItemTime('12:00');
+                setNewItemReminderEnabled(false);
               }}
             >
               Cancel

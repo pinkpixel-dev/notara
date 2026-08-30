@@ -9,6 +9,7 @@ export interface TodoContextType {
   addTodoItem: (listId: string, item: Partial<TodoItem>) => TodoItem;
   updateTodoItem: (listId: string, itemId: string, item: Partial<TodoItem>) => void;
   deleteTodoItem: (listId: string, itemId: string) => void;
+  toggleItemReminder: (listId: string, itemId: string, enabled?: boolean) => void;
 }
 
 export const TodoContext = createContext<TodoContextType | undefined>(undefined);

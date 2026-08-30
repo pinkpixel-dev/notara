@@ -62,6 +62,7 @@ export interface TodoItem {
   content: string;
   checked: boolean;
   time: string;      // HH:mm format
+  reminderEnabled?: boolean;
   subItems?: TodoItem[];
 }
 
@@ -71,5 +72,20 @@ export interface TodoList {
   date: string;   // ISO date string (yyyy-MM-dd)
   time: string;   // HH:mm format
   items: TodoItem[];
+}
+
+export interface TaskReminderRecord {
+  id: string;
+  taskId: string;
+  listId: string;
+  taskTitle: string;
+  listTitle: string;
+  date: string;
+  time: string;
+  triggerAtUtc: string;
+  state: 'scheduled' | 'delivered' | 'dismissed' | 'cancelled';
+  deliveredAt?: string | null;
+  dismissedAt?: string | null;
+  isOverdueNotice: boolean;
 }
 

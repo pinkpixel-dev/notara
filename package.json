@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/notara",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Feature-rich note-taking application and markdown editor with AI assistant.",
   "type": "module",
   "scripts": {

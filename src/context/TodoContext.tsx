@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TodoList, TodoItem } from '../types';
 import { TodoContext } from './TodoContextTypes';
 import { useFileSystem } from './FileSystemContext';
+import { syncTodoReminders } from '@/lib/reminders/client';
 
 export const TodoProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const { status, loadTodos, saveTodos } = useFileSystem();
@@ -89,6 +90,8 @@ export const TodoProvider: React.FC<{children: React.ReactNode}> = ({ children }
     } else {
       persistToLocalStorage(todoLists);
     }
+
+    void syncTodoReminders(todoLists);
   }, [isInitialised, saveTodos, status, todoLists]);
 
   const addTodoList = (list: Partial<TodoList>) => {
@@ -120,6 +123,7 @@ export const TodoProvider: React.FC<{children: React.ReactNode}> = ({ children }
       content: item.content || '',
       checked: item.checked || false,
       time: item.time || '12:00',
+      reminderEnabled: item.reminderEnabled || false,
       subItems: item.subItems || []
     };
     setTodoLists(todoLists.map(l => l.id === listId ? { ...l, items: [...l.items, newItem] } : l));
@@ -147,6 +151,24 @@ export const TodoProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }));
   };
 
+  const toggleItemReminder = (listId: string, itemId: string, enabled?: boolean) => {
+    setTodoLists(todoLists.map(l => {
+      if (l.id === listId) {
+        return {
+          ...l,
+          items: l.items.map(i => {
+            if (i.id === itemId) {
+              const nextEnabled = enabled !== undefined ? enabled : !i.reminderEnabled;
+              return { ...i, reminderEnabled: nextEnabled };
+            }
+            return i;
+          })
+        };
+      }
+      return l;
+    }));
+  };
+
   return (
     <TodoContext.Provider value={{
       todoLists,
@@ -155,9 +177,10 @@ export const TodoProvider: React.FC<{children: React.ReactNode}> = ({ children }
       deleteTodoList,
       addTodoItem,
       updateTodoItem,
-      deleteTodoItem
+      deleteTodoItem,
+      toggleItemReminder,
     }}>
       {children}
     </TodoContext.Provider>
   );
-}; 
+};

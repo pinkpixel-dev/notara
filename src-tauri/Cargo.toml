@@ -1,6 +1,6 @@
 [package]
 name = "notara"
-version = "2.4.0"
+version = "2.5.0"
 description = "Notara desktop application powered by Tauri."
 authors = ["Pink Pixel <admin@pinkpixel.dev>"]
 license = "Apache-2.0"
@@ -21,7 +21,7 @@ tauri-build = { version = "2.5.6", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.10.3", features = [] }
+tauri = { version = "2.10.3", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
@@ -29,6 +29,8 @@ tauri-plugin-persisted-scope = "2"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 ring = "0.17"
 base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+tauri-plugin-notification = "2"
 
 [dev-dependencies]
 tempfile = "3"

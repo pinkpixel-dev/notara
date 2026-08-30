@@ -47,6 +47,7 @@ fn display_name(root: &Path) -> String {
 pub fn approve_workspace<R: Runtime>(
     app: AppHandle<R>,
     workspace: State<'_, ApprovedWorkspace>,
+    engine: State<'_, crate::reminders::ReminderEngine>,
     path: String,
 ) -> Result<ApprovedWorkspaceInfo, String> {
     let root = canonical_root(Path::new(&path))?;
@@ -66,6 +67,7 @@ pub fn approve_workspace<R: Runtime>(
     }
 
     workspace.set(root.clone());
+    let _ = engine.set_workspace(&app, &root);
 
     Ok(ApprovedWorkspaceInfo {
         name: display_name(&root),
@@ -80,8 +82,12 @@ pub fn approve_workspace<R: Runtime>(
 /// and reconnecting to the same folder is the common case, so leaving the scope
 /// alone avoids a permission prompt the user already answered.
 #[tauri::command]
-pub fn forget_workspace(workspace: State<'_, ApprovedWorkspace>) -> Result<(), String> {
+pub fn forget_workspace(
+    workspace: State<'_, ApprovedWorkspace>,
+    engine: State<'_, crate::reminders::ReminderEngine>,
+) -> Result<(), String> {
     workspace.clear();
+    engine.clear_workspace();
     Ok(())
 }
 

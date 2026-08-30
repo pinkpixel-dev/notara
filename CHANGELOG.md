@@ -2,6 +2,27 @@
 
 All notable changes to the Notara project will be documented in this file.
 
+## 2.5.0 - August 30, 2026
+
+### 🔔 Task reminders
+
+- Added due-linked reminders for tasks. Each top-level task can enable a
+  reminder that uses its parent list date and its task time.
+- Scheduling, background timers, restart reconciliation, and deduplication are
+  owned directly by the Rust runtime.
+- Closing the window on desktop hides Notara to the system tray so scheduled
+  reminders continue to fire in the background.
+- Completing or deleting a task cancels its reminder. Changing a list date or
+  task time automatically reschedules the reminder.
+- Missed reminders fire a single overdue notification after restart without
+  repeated delivery or notification loops.
+- Browser builds display reminders with an informational note indicating that
+  background native delivery runs in the desktop app.
+
+### 🏷️ Versioning
+
+- Updated the application version to 2.5.0.
+
 ## 2.4.0 - August 30, 2026
 
 ### 💾 Note saving
